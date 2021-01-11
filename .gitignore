@@ -24,6 +24,7 @@
 .idea/inspectionProfiles/
 .idea/dictionaries
 .idea/misc.xml
+.idea/jarRepositories.xml
 
 # bazel
 bazel-bazel

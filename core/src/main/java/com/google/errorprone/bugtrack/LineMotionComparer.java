@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.google.errorprone.bugtrack.DiagnosticUtils.extractDiagnosticType;
+
 public class LineMotionComparer implements BugComparer {
     private final Repository repo;
     private final RevCommit oldCommit;
@@ -96,14 +98,8 @@ public class LineMotionComparer implements BugComparer {
 
             return newLine.isPresent() && newLine.get() == newDiagnostic.getLineNumber();
         } catch (IOException | DiffException e) {
-            System.out.println("whoopsie when comparing");
             return false;
         }
-    }
-
-    private String extractDiagnosticType(Diagnostic<? extends JavaFileObject> diagnostic) {
-        String message = diagnostic.getMessage(null);
-        return message.substring(1, message.indexOf(']'));
     }
 
     @Override

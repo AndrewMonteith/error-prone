@@ -16,9 +16,9 @@
 
 package com.google.errorprone.bugtrack.projects;
 
-import com.google.common.io.Files;
-
 import java.nio.file.Path;
+
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 
 public class JUnitProject implements CorpusProject {
     @Override
@@ -28,7 +28,7 @@ public class JUnitProject implements CorpusProject {
 
     @Override
     public boolean shouldScanFile(Path file) {
-        return Files.getFileExtension(file.toString()).equals("java");
+        return isJavaFile(file);
     }
 
     @Override

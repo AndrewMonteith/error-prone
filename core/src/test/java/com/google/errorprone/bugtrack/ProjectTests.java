@@ -16,9 +16,6 @@
 
 package com.google.errorprone.bugtrack;
 
-import com.google.errorprone.bugtrack.BugComparer;
-import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.LineMotionComparer;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.projects.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -91,11 +88,25 @@ public class ProjectTests {
     }
 
     @Test
+    public void canScanJUnit() throws IOException {
+        // GIVEN:
+        CorpusProject project = new JUnitProject();
+        String commitHash = "7a098547474fb11c91262476a172f994e8051ada";
+        // Note 9b061ea8c96fa6cba0ac9d7cfd5e8ffbd030b34a does not compile
+
+        // WHEN:
+        Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
+                new ProjectHarness(project, true).collectDiagnostics(commitHash);
+
+        // THEN:
+        Assert.assertTrue(diagnostics.size() > 0);
+    }
+
+    @Test
     public void canWalkCommits() throws IOException, GitAPIException {
         // GIVEN:
         CorpusProject project = new JSoupProject();
         CommitRange range = new CommitRange("3c37bffe", "690d6019");
-
         // THEN:
         new ProjectHarness(project, true).walkCommitRange(range);
     }
@@ -115,17 +126,13 @@ public class ProjectTests {
     }
 
     @Test
-    public void example_DetectingANewBug2() throws IOException, GitAPIException {
+    public void walkAProject() throws IOException, GitAPIException {
         // GIVEN:
-        CorpusProject project = new JSoupProject();
-
-        String oldCommit = "26adfcbcb07bca87f0d50084aaca7549c97abb0c";
-        String newCommit = "38c13b5ae97c294afb859c49ded903beb7b9b100";
-
-        BugComparer comparer = new LineMotionComparer(project.loadRepo(), oldCommit, newCommit);
+        CorpusProject project = new JUnitProject();
+        CommitRange range = new CommitRange("0900bc02145d1793149433332d41181b9bef84fe",
+                "50a285d3ce69b4556ac46d8633f6beb4527b4679");
 
         // THEN:
-        new ProjectHarness(project).compareTwoCommits(oldCommit, newCommit, comparer);
+        new ProjectHarness(project, false).walkCommitRange(range);
     }
-
 }

@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.harness;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
@@ -28,6 +29,8 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 
 public final class MavenCommitWalker implements Iterator<Collection<DiagnosticsScan>>, Iterable<Collection<DiagnosticsScan>> {
     private final RootAlternatingProject project;
@@ -45,11 +48,17 @@ public final class MavenCommitWalker implements Iterator<Collection<DiagnosticsS
     private static List<String> parseCmdLineArguments(String rawCmdLineArgs) {
         List<String> args = new ArrayList<>();
 
+        Set<String> singleArgBlockList = ImmutableSet.of("-nowarn", "-deprecation");
+
         String[] individualArgs = rawCmdLineArgs.split(" ");
         for (int i = 0; i < individualArgs.length; ++i) {
-            if (individualArgs[i].equals("-nowarn")) { continue; }
+            if (singleArgBlockList.contains(individualArgs[i])) { continue; }
             else if (individualArgs[i].equals("-d")) { ++i; continue; }
-            else if (Files.getFileExtension(individualArgs[i]).equals("java")) { continue; }
+            else if (isJavaFile(individualArgs[i])) { continue; }
+            else if (individualArgs[i].equals("1.5")) { individualArgs[i] = "1.7"; }
+            else if (individualArgs[i].equals("1.6")) { individualArgs[i] = "1.7"; }
+            else if (individualArgs[i].startsWith("-Xlint")) { continue; }
+            else if (individualArgs[i].startsWith("-Xdoclint")) { continue; }
 
             args.add(individualArgs[i]);
         }
@@ -67,7 +76,6 @@ public final class MavenCommitWalker implements Iterator<Collection<DiagnosticsS
         try {
             project.switchDir();
             RevCommit commit = commits.next();
-            System.out.printf("Setting %s to %s\n", project.getRoot(), commit.getName());
             new Git(project.loadRepo()).checkout().setName(commit.getName()).call();
             updateCurrentDiagnosticsScan();
         } catch (Exception e) {
@@ -103,7 +111,7 @@ public final class MavenCommitWalker implements Iterator<Collection<DiagnosticsS
 
         String scriptOutput = ShellUtils.runCommand(new File(project.getRoot()),
                 "/usr/bin/python3.8",
-                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_classpath.py",
+                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_maven_cmdargs.py",
                 project.getRoot());
 
         String[] scriptOutputLines = scriptOutput.split("\n");

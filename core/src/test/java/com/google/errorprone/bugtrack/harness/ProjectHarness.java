@@ -66,14 +66,19 @@ public final class ProjectHarness {
 
     public void walkCommitRange(CommitRange range) throws IOException, GitAPIException {
         List<RevCommit> commits = GitUtils.expandCommitRange(project.loadRepo(), range);
-        if (verbose) {
-            System.out.printf("Going to scan %d commits\n", commits.size());
-        }
+        System.out.printf("Going to scan %d commits\n", commits.size());
+
+        final List<DiagnosticsDistribution> distributions = new ArrayList<>();
 
         forEachCommitWithDiagnostics(commits, (commit, diagnostics) -> {
-            if (verbose) {
-                System.out.printf("Commit %s had %d alerts\n", commit.getName(), diagnostics.size());
+            System.out.printf("Commit %s had %d alerts\n", commit.getName(), diagnostics.size());
+
+            DiagnosticsDistribution distribution = DiagnosticsDistribution.fromDiagnostics(diagnostics);
+            if (!distributions.isEmpty() && !Iterables.getLast(distributions).equals(distribution)) {
+                // The distribution has changed, let's tell them
+                System.out.println("Diagnostics distribution has changed since last!");
             }
+            distributions.add(distribution);
         });
     }
 
@@ -86,8 +91,16 @@ public final class ProjectHarness {
         }
 
         Streams.zip(Streams.stream(commits), Streams.stream(scanWalker), Pair::of).forEach(commitToScan -> {
-            consumer.accept(commitToScan.fst,
-                    DiagnosticsCollector.collectDiagnostics(commitToScan.snd, verbose));
+            Collection<Diagnostic<? extends JavaFileObject>> diagnostics = new ArrayList<>();
+
+            try {
+                diagnostics.addAll(DiagnosticsCollector.collectDiagnostics(commitToScan.snd, verbose));
+            } catch (AssertionError e) {
+                System.out.println("Failed to collect diagnostics for commit " + commitToScan.fst.getName());
+                return;
+            }
+
+            consumer.accept(commitToScan.fst, diagnostics);
         });
     }
 

@@ -25,10 +25,13 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.io.IOException;
 import java.util.List;
 
+@RunWith(JUnit4.class)
 public final class LinesChangedCommitFilterTest {
     @Test
     public void lineChangeFilterNotTriggeredUnderThreshold() throws IOException, GitAPIException {

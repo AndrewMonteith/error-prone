@@ -24,7 +24,11 @@ import java.util.Set;
 public final class ShouldScanUtils {
 
     public static boolean isJavaFile(Path path) {
-       return Files.getFileExtension(path.toString()).equals("java");
+        return isJavaFile(path.toString());
+    }
+
+    public static boolean isJavaFile(String path) {
+        return Files.getFileExtension(path).equals("java");
     }
 
     public static boolean underMain(Path path) {

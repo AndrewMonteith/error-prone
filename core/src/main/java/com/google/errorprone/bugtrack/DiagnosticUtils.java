@@ -44,4 +44,8 @@ public final class DiagnosticUtils {
         }
     }
 
+    public static String extractDiagnosticType(Diagnostic<? extends JavaFileObject> diagnostic) {
+        String message = diagnostic.getMessage(null);
+        return message.substring(1, message.indexOf(']'));
+    }
 }

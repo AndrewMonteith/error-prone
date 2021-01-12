@@ -30,7 +30,6 @@ public class DubboProject implements CorpusProject {
     @Override
     public boolean shouldScanFile(Path file) {
         return isJavaFile(file) && underMain(file);
-//        return Files.getFileExtension(file.toString()).equals("java");
     }
 
     @Override

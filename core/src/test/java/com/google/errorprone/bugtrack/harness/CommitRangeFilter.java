@@ -16,7 +16,6 @@
 
 package com.google.errorprone.bugtrack.harness;
 
-import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 

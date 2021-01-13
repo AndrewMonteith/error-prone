@@ -41,7 +41,12 @@ public interface CorpusProject {
 
     BuildSystem getBuildSystem();
 
-    default Repository loadRepo() throws IOException {
-        return FileRepositoryBuilder.create(new File(getRoot(), ".git"));
+    default Repository loadRepo() {
+        try {
+            return FileRepositoryBuilder.create(new File(getRoot(), ".git"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

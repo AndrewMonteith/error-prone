@@ -32,6 +32,8 @@ import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class ProjectHarness {
     private final CorpusProject project;
@@ -51,14 +53,15 @@ public final class ProjectHarness {
     }
 
     public Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(RevCommit commit) throws IOException {
-        Collection<DiagnosticsScan> diagnosticScans = new MavenCommitWalker(project, ImmutableList.of(commit)).next();
+        Collection<DiagnosticsScan> diagnosticScans = Iterables.getLast(loadScanWalker(ImmutableList.of(commit)));
         return DiagnosticsCollector.collectDiagnostics(diagnosticScans, verbose);
     }
 
     private Iterable<Collection<DiagnosticsScan>> loadScanWalker(Iterable<RevCommit> commits) throws IOException {
         switch (project.getBuildSystem()) {
             case Maven:
-                return new MavenCommitWalker(project, commits);
+                return new CommitWalker(project, commits, new MavenCommitWalker());
+//                return new MavenCommitWalker(project, commits);
             default:
                 throw new IllegalArgumentException("not yet supporting build system of project " + project.getRoot());
         }
@@ -97,11 +100,23 @@ public final class ProjectHarness {
                 diagnostics.addAll(DiagnosticsCollector.collectDiagnostics(commitToScan.snd, verbose));
             } catch (AssertionError e) {
                 System.out.println("Failed to collect diagnostics for commit " + commitToScan.fst.getName());
-                return;
             }
 
             consumer.accept(commitToScan.fst, diagnostics);
         });
+    }
+
+    public void forEachCommitIdWithDiagnostics(Iterable<String> commits,
+                                               BiConsumer<RevCommit, Collection<Diagnostic<? extends JavaFileObject>>> consumer) throws IOException {
+        forEachCommitWithDiagnostics(Streams.stream(commits)
+                .map(commitId -> {
+                    try {
+                        return GitUtils.parseCommit(project.loadRepo(), commitId);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                }).collect(Collectors.toList()), consumer);
     }
 
     public void compareTwoCommits(String oldCommitId, String newCommitId, BugComparer comparer) throws IOException {

@@ -16,120 +16,60 @@
 
 package com.google.errorprone.bugtrack.harness;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
-import com.google.errorprone.bugtrack.projects.RootAlternatingProject;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
+public class MavenCommitWalker extends ProjectScanner {
+    private Map<String, DiagnosticsScan> scans;
 
-public final class MavenCommitWalker implements Iterator<Collection<DiagnosticsScan>>, Iterable<Collection<DiagnosticsScan>> {
-    private final RootAlternatingProject project;
-    private final Iterator<RevCommit> commits;
-    private final Map<String, DiagnosticsScan> currentScans;
-
-    private boolean firstCall = true;
-
-    public MavenCommitWalker(CorpusProject project, Iterable<RevCommit> commits) throws IOException {
-        this.project = new RootAlternatingProject(project);
-        this.commits = commits.iterator();
-        this.currentScans = new HashMap<>();
-    }
-
-    private static List<String> parseCmdLineArguments(String rawCmdLineArgs) {
-        List<String> args = new ArrayList<>();
-
-        Set<String> singleArgBlockList = ImmutableSet.of("-nowarn", "-deprecation");
-
-        String[] individualArgs = rawCmdLineArgs.split(" ");
-        for (int i = 0; i < individualArgs.length; ++i) {
-            if (singleArgBlockList.contains(individualArgs[i])) { continue; }
-            else if (individualArgs[i].equals("-d")) { ++i; continue; }
-            else if (isJavaFile(individualArgs[i])) { continue; }
-            else if (individualArgs[i].equals("1.5")) { individualArgs[i] = "1.7"; }
-            else if (individualArgs[i].equals("1.6")) { individualArgs[i] = "1.7"; }
-            else if (individualArgs[i].startsWith("-Xlint")) { continue; }
-            else if (individualArgs[i].startsWith("-Xdoclint")) { continue; }
-
-            args.add(individualArgs[i]);
-        }
-
-        return args;
+    public MavenCommitWalker() {
+        scans = new HashMap<>();
     }
 
     @Override
-    public boolean hasNext() {
-        return commits.hasNext();
+    public void cleanProject(File projectDir) throws IOException, InterruptedException {
+        ShellUtils.runCommand(projectDir, "mvn", "clean");
     }
 
     @Override
-    public Collection<DiagnosticsScan> next() {
-        try {
-            project.switchDir();
-            RevCommit commit = commits.next();
-            new Git(project.loadRepo()).checkout().setName(commit.getName()).call();
-            updateCurrentDiagnosticsScan();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return currentScans.values();
-    }
-
-    private void cleanProject() {
-        try {
-            ShellUtils.runCommand(new File(project.getRoot()), "mvn", "clean");
-            ShellUtils.runCommand(project.getOtherDir().toFile(), "mvn", "clean");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private List<ProjectFile> findFilesToScan(String sourcepath) {
-        return Arrays.stream(sourcepath.split(":"))
-                .map(path -> FileUtils.findFilesMatchingGlob(Paths.get(path), "**/*.java"))
-                .flatMap(Collection::stream)
-                .filter(project::shouldScanFile)
-                .map(file -> new ProjectFile(project, file))
-                .collect(Collectors.toList());
-    }
-
-    private void updateCurrentDiagnosticsScan() throws IOException, InterruptedException {
-        if (firstCall) {
-            cleanProject();
-            firstCall = false;
-        }
-
+    public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
         String scriptOutput = ShellUtils.runCommand(new File(project.getRoot()),
                 "/usr/bin/python3.8",
                 "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_maven_cmdargs.py",
                 project.getRoot());
 
+        /*
+            As we wind the commits forward we need to be watch for a few things.
+              1. Files added by a commit should be included alongside unchanged/changed files.
+              2. Files detected should not be scanned again.
+
+            In the case of 1, maven will generate a command to recompile the file. That command
+            will include the sourcepath which we scan to check for files added/removed.
+
+            In the case of 2, there is a guard on the diagnostics collector to ensure only
+            files on disk are scanned.
+         */
+
         String[] scriptOutputLines = scriptOutput.split("\n");
         for (int i = 0; i < scriptOutputLines.length; i += 2) {
             String scanName = scriptOutputLines[i];
-            List<String> cmdLineArguments = parseCmdLineArguments(scriptOutputLines[i + 1]);
-            List<ProjectFile> filesToParse = findFilesToScan(
+            List<String> cmdLineArguments = filterCmdLineArgs(scriptOutputLines[i + 1]);
+            List<ProjectFile> filesToParse = getFilesFromSourcepath(project,
                     cmdLineArguments.get(cmdLineArguments.indexOf("-sourcepath") + 1));
 
-            currentScans.put(scanName, new DiagnosticsScan(
+            scans.put(scanName, new DiagnosticsScan(
                     scanName,
                     filesToParse,
                     cmdLineArguments));
         }
-    }
 
-    @Override
-    public Iterator<Collection<DiagnosticsScan>> iterator() {
-        return this;
+        return scans.values();
     }
 }

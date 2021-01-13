@@ -24,20 +24,25 @@ import com.google.errorprone.scanner.BuiltInCheckerSuppliers;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class DiagnosticsCollector {
     public static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(DiagnosticsScan scan) {
-        List<Diagnostic<? extends JavaFileObject>> diagnostics = new ArrayList<>();
         if (scan.files.isEmpty()) {
-            return diagnostics;
+            return Collections.emptyList();
         }
 
         CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
 
-        scan.files.stream()
+        Collection<ProjectFile> files = scan.files.stream()
                 .filter(ProjectFile::exists)
-                .forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
+                .collect(Collectors.toList());
 
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
         helper.setArgs(scan.cmdLineArguments);
 
         return helper.collectDiagnostics();

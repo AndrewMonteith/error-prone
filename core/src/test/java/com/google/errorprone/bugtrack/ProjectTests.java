@@ -16,9 +16,13 @@
 
 package com.google.errorprone.bugtrack;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
+import com.google.errorprone.bugtrack.harness.MavenCommitWalker;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.projects.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +31,10 @@ import org.junit.runners.JUnit4;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -100,6 +107,30 @@ public class ProjectTests {
 
         // THEN:
         Assert.assertTrue(diagnostics.size() > 0);
+    }
+
+    @Test
+    public void detectsChangesInDiagnosticsInMavenProject() throws IOException {
+        // GIVEN:
+        CorpusProject project = new JSoupProject();
+        List<String> commits = ImmutableList.of(
+                "3c37bffed94c19c5f500217eb568bcdf394be64e",
+                "afd73606a90909444e1c443b555dae7b71e6a5a0",
+                "724b2c5bf576cbd548738756bfe5f7a7b90c6239",
+                "690d601950bf44fc84dcc711b2ef265f9542df62"
+        );
+
+        // WHEN:
+        List<Integer> numberOfDiagnostics = new ArrayList<>();
+        new ProjectHarness(project, true).forEachCommitIdWithDiagnostics(
+                commits, (commit, diagnostics) -> numberOfDiagnostics.add(diagnostics.size()));
+
+        // THEN:
+        Assert.assertEquals(4, numberOfDiagnostics.size());
+        Assert.assertEquals((int)numberOfDiagnostics.get(0), 376);
+        Assert.assertEquals((int)numberOfDiagnostics.get(1), 376);
+        Assert.assertEquals((int)numberOfDiagnostics.get(2), 378);
+        Assert.assertEquals((int)numberOfDiagnostics.get(3), 378);
     }
 
     @Test

@@ -18,6 +18,8 @@ package com.google.errorprone.bugtrack.harness;
 
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DiagnosticsScan {
@@ -29,5 +31,11 @@ public class DiagnosticsScan {
         this.name = name;
         this.files = files;
         this.cmdLineArguments = cmdLineArguments;
+    }
+
+    public DiagnosticsScan(DiagnosticsScan scan) {
+        this.name = new String(scan.name);
+        this.files = new ArrayList<>(scan.files);
+        this.cmdLineArguments = new ArrayList<>(scan.cmdLineArguments);
     }
 }

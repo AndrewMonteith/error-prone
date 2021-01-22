@@ -25,11 +25,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class MavenCommitWalker extends ProjectScanner {
+public class MavenProjectScanner extends ProjectScanner {
     private Map<String, DiagnosticsScan> scans;
 
-    public MavenCommitWalker() {
+    public MavenProjectScanner() {
         scans = new HashMap<>();
     }
 
@@ -38,12 +39,16 @@ public class MavenCommitWalker extends ProjectScanner {
         ShellUtils.runCommand(projectDir, "mvn", "clean");
     }
 
+    private void removeNonExistentFiles() {
+        scans.values().forEach(scan -> scan.files.removeIf(file -> !file.toFile().exists()));
+    }
+
     @Override
     public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
-        String scriptOutput = ShellUtils.runCommand(new File(project.getRoot()),
+        String scriptOutput = ShellUtils.runCommand(project.getRoot().toFile(),
                 "/usr/bin/python3.8",
                 "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_maven_cmdargs.py",
-                project.getRoot());
+                project.getRoot().toString());
 
         /*
             As we wind the commits forward we need to be watch for a few things.
@@ -70,6 +75,9 @@ public class MavenCommitWalker extends ProjectScanner {
                     cmdLineArguments));
         }
 
-        return scans.values();
+        removeNonExistentFiles();
+
+        // Deep copy to ensure any changes don't mutate our internal copies.
+        return scans.values().stream().map(DiagnosticsScan::new).collect(Collectors.toList());
     }
 }

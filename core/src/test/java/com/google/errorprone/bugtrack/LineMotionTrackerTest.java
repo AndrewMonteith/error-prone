@@ -62,8 +62,8 @@ public class LineMotionTrackerTest {
 
     @Test
     public void canTrackRealLifeDiffChange() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("Tag.java");
-        List<String> newFile = loadTestFile("Tag_Newer.java");
+        List<String> oldFile = loadTestFile("Tag");
+        List<String> newFile = loadTestFile("Tag_Newer");
 
         LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
 
@@ -74,8 +74,8 @@ public class LineMotionTrackerTest {
 
     @Test
     public void canTrackLinesAroundADeletion() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("Tag.java");
-        List<String> newFile = loadTestFile("Tag_Newer.java");
+        List<String> oldFile = loadTestFile("Tag");
+        List<String> newFile = loadTestFile("Tag_Newer");
 
         LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
 
@@ -87,8 +87,8 @@ public class LineMotionTrackerTest {
 
     @Test
     public void canTrackLinesAroundAnInsertion() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("Tag.java");
-        List<String> newFile = loadTestFile("Tag_Newer.java");
+        List<String> oldFile = loadTestFile("Tag");
+        List<String> newFile = loadTestFile("Tag_Newer");
 
         LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
 

@@ -32,7 +32,6 @@ import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class ProjectHarness {
@@ -60,8 +59,9 @@ public final class ProjectHarness {
     private Iterable<Collection<DiagnosticsScan>> loadScanWalker(Iterable<RevCommit> commits) throws IOException {
         switch (project.getBuildSystem()) {
             case Maven:
-                return new CommitWalker(project, commits, new MavenCommitWalker());
-//                return new MavenCommitWalker(project, commits);
+                return new CommitWalker(project, commits, new MavenProjectScanner());
+            case Gradle:
+                return new CommitWalker(project, commits, new GradleProjectScanner());
             default:
                 throw new IllegalArgumentException("not yet supporting build system of project " + project.getRoot());
         }
@@ -178,5 +178,10 @@ public final class ProjectHarness {
 
         System.out.println("Unmatched new diagnostics:");
         unmatchedNew.forEach(System.out::println);
+    }
+
+    public void findInterestingPairs(CommitRange range) throws GitAPIException {
+        List<RevCommit> commits = GitUtils.expandCommitRange(project.loadRepo(), range);
+
     }
 }

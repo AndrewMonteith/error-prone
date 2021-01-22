@@ -21,7 +21,6 @@ import com.google.errorprone.bugtrack.projects.RootAlternatingProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -41,7 +40,7 @@ public final class CommitWalker implements Iterable<Collection<DiagnosticsScan>>
 
     private void cleanProject() {
         try {
-            projectScanner.cleanProject(new File(project.getRoot()));
+            projectScanner.cleanProject(project.getRoot().toFile());
             projectScanner.cleanProject(project.getOtherDir().toFile());
         } catch (Exception e) {
             e.printStackTrace();

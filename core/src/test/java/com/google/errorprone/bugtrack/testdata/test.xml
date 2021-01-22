@@ -13,7 +13,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
---><project xmlns:if="ant:if" xmlns:unless="ant:unless" name="Tomcat 10.0" default="deploy" basedir=".">
+--><project xmlns:if="ant:if" xmlns:unless="ant:unless" name="Tomcat 10.0" default="deploy" basedir="">
 
     <!-- ===================== Initialize Property Values ==================== -->
 
@@ -1141,7 +1141,7 @@
         </copy>
         <copy todir="${tomcat.build}/webapps/docs" encoding="ISO-8859-1">
             <filterset refid="version.filters"/>
-            <fileset dir=".">
+            <fileset dir="">
                 <include name="BUILDING.txt"/>
                 <include name="RUNNING.txt"/>
             </fileset>
@@ -1444,7 +1444,7 @@
         <!-- temporary directory to store the generated code -->
         <tempfile property="xreflect.directory" destDir="${java.io.tmpdir}" prefix="apache-tomcat-xreflect-"/>
         <echo>Generating Reflection Less Introspection to: ${xreflect.directory}</echo>
-        <mkdir dir="${xreflect.directory}"/>
+        <mkdir dir="test.xml"/>
         <copy todir="${xreflect.directory}/sources">
             <fileset dir="java"/>
         </copy>
@@ -1473,7 +1473,7 @@
         <!-- Leave generated code in an easy place for review -->
         <copy todir="${java.io.tmpdir}" file="${xreflect.directory}/sources/org/apache/tomcat/util/XReflectionIntrospectionUtils.java" overwrite="true"/>
         <!-- Delete our temporary compilation directory -->
-        <delete dir="${xreflect.directory}"/>
+        <delete dir="test.xml"/>
     </target>
 
     <target name="embed" description="Creates the experimental embedded release" depends="embed-jars,embed-sources,embed-programmatic-jar">
@@ -1606,7 +1606,7 @@
             <or>
                 <and>
                     <length string="${test.openssl.path}" trim="true" length="0" when="gt"/>
-                    <available file="${test.openssl.path}" property="test.openssl.exists"/>
+                    <available file="test.xml" property="test.openssl.exists"/>
                 </and>
                 <and>
                     <length string="${test.openssl.path}" trim="true" length="0" when="eq"/>
@@ -1622,7 +1622,7 @@
 
         <sequential>
             <mkdir dir="${test.reports}"/>
-            <junit printsummary="yes" fork="yes" dir="." showoutput="${test.verbose}" errorproperty="test.result.error" failureproperty="test.result.failure" haltonfailure="${test.haltonfailure}" threads="${test.threads}">
+            <junit printsummary="yes" fork="yes" dir="" showoutput="${test.verbose}" errorproperty="test.result.error" failureproperty="test.result.failure" haltonfailure="${test.haltonfailure}" threads="${test.threads}">
 
                 <jvmarg value="${test.jvmarg.egd}"/>
                 <jvmarg value="-Dfile.encoding=UTF-8"/>
@@ -1802,7 +1802,7 @@
         <!-- Copy the top-level documentation files -->
         <copy todir="${tomcat.dist}" encoding="ISO-8859-1">
             <filterset refid="version.filters"/>
-            <fileset dir=".">
+            <fileset dir="">
                 <include name="LICENSE"/>
                 <include name="NOTICE"/>
                 <include name="RELEASE-NOTES"/>
@@ -2713,7 +2713,7 @@
 
     <target name="testexist">
         <echo message="Testing  for ${destfile}"/>
-        <available file="${destfile}" property="exist"/>
+        <available file="test.xml" property="exist"/>
     </target>
 
     <macrodef name="verifyChecksum">
@@ -2874,12 +2874,12 @@
         <local name="temp.file"/>
         <mkdir dir="${base.path}"/>
         <tempfile property="temp.file" destdir="${base.path}" prefix="download-" suffix=".zip"/>
-        <get src="${sourcefile}" httpusecaches="${trydownload.httpusecaches}" dest="${temp.file}"/>
+        <get src="${sourcefile}" httpusecaches="${trydownload.httpusecaches}" dest="test.xml"/>
         <verifyChecksum enabled="${checksum.enabled}" algorithm="${checksum.algorithm}" value="${checksum.value}" file="${temp.file}" name="${sourcefile}"/>
 
-        <mkdir dir="${destdir}"/>
-        <unzip src="${temp.file}" dest="${destdir}"/>
-        <delete file="${temp.file}"/>
+        <mkdir dir="test.xml"/>
+        <unzip src="test.xml" dest="test.xml"/>
+        <delete file="test.xml"/>
     </target>
 
     <target name="downloadzip-2" unless="exist" depends="testexist">
@@ -2898,9 +2898,9 @@
 
         <verifyChecksum enabled="${checksum.enabled}" algorithm="${checksum.algorithm}" value="${checksum.value}" file="${temp.file}" name="${sourcefile.1}"/>
 
-        <mkdir dir="${destdir}"/>
-        <unzip src="${temp.file}" dest="${destdir}"/>
-        <delete file="${temp.file}"/>
+        <mkdir dir="test.xml"/>
+        <unzip src="test.xml" dest="test.xml"/>
+        <delete file="test.xml"/>
     </target>
 
     <target name="downloadfile" unless="exist" depends="testexist,setproxy">
@@ -2908,11 +2908,11 @@
         <local name="temp.file"/>
         <mkdir dir="${base.path}"/>
         <tempfile property="temp.file" destdir="${base.path}" prefix="download-" suffix=".tmp"/>
-        <get src="${sourcefile}" httpusecaches="${trydownload.httpusecaches}" dest="${temp.file}"/>
+        <get src="${sourcefile}" httpusecaches="${trydownload.httpusecaches}" dest="test.xml"/>
         <verifyChecksum enabled="${checksum.enabled}" algorithm="${checksum.algorithm}" value="${checksum.value}" file="${temp.file}" name="${destfile}"/>
 
-        <mkdir dir="${destdir}"/>
-        <move file="${temp.file}" tofile="${destfile}"/>
+        <mkdir dir="test.xml"/>
+        <move file="test.xml" tofile="test.xml"/>
     </target>
 
     <target name="downloadfile-2" unless="exist" depends="testexist">
@@ -2931,20 +2931,20 @@
             <param name="destfile" value="${temp.file}"/>
         </antcall>
 
-        <available file="${temp.file}" property="exist"/>
+        <available file="test.xml" property="exist"/>
         <fail unless="exist" message="Failed to download [${destfile}]. All download sources are unavailable."/>
 
         <verifyChecksum enabled="${checksum.enabled}" algorithm="${checksum.algorithm}" value="${checksum.value}" file="${temp.file}" name="${destfile}"/>
 
-        <mkdir dir="${destdir}"/>
-        <move file="${temp.file}" tofile="${destfile}"/>
+        <mkdir dir="test.xml"/>
+        <move file="test.xml" tofile="test.xml"/>
     </target>
 
     <target name="trydownload.check" depends="setproxy">
         <condition property="trydownload.run">
             <and>
                 <not>
-                    <available file="${destfile}"/>
+                    <available file="test.xml"/>
                 </not>
                 <http url="${sourcefile}"/>
             </and>
@@ -2953,7 +2953,7 @@
 
     <target name="trydownload" if="trydownload.run" depends="trydownload.check">
         <!-- Downloads a file if not yet downloaded and the source URL is available -->
-        <get src="${sourcefile}" httpusecaches="${trydownload.httpusecaches}" dest="${destfile}"/>
+        <get src="${sourcefile}" httpusecaches="${trydownload.httpusecaches}" dest="test.xml"/>
     </target>
 
     <!-- ============================ IDE Support ============================ -->
@@ -3109,7 +3109,7 @@
     <target name="add-osgi" if="${addOSGi}">
         <echo message="add-osgi ${jarfile} ${addOSGi}"/>
         <local name="filename"/>
-        <basename property="filename" file="${jarfile}"/>
+        <basename property="filename" file="test.xml"/>
         <bnd basedir="${basedir}" output="${jarfile}.tmp">
             <classpath>
                 <pathelement location="${bnd.jar}"/>
@@ -3119,13 +3119,13 @@
                 <pathelement location="${tomcat.bnd}/${filename}.tmp.bnd"/>
             </bndfiles>
         </bnd>
-        <delete file="${jarfile}"/>
-        <move file="${jarfile}.tmp" tofile="${jarfile}"/>
+        <delete file="test.xml"/>
+        <move file="${jarfile}.tmp" tofile="test.xml"/>
     </target>
 
     <target name="add-graal" if="${addGraal}">
         <echo message="add-graal  ${addGraal} ${jarfile} ${graalFiles} ${graalPrefix}"/>
-        <zip destfile="${jarfile}" update="true">
+        <zip destfile="test.xml" update="true">
             <zipfileset dir="${basedir}/${graalFiles}" prefix="META-INF/native-image/${graalPrefix}" includes="*.*"/>
         </zip>
     </target>

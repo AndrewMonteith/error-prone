@@ -17,7 +17,6 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.common.base.Splitter;
-import com.google.common.primitives.Bytes;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -31,7 +30,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -106,6 +104,14 @@ public class GitUtils {
 
     public static List<DiffEntry> computeDiffs(Git git, RevCommit olderCommit, RevCommit newerCommit) throws GitAPIException, IOException {
         return computeDiffs(git.getRepository(), olderCommit, newerCommit);
+    }
+
+    public static void checkoutMaster(Repository repo) {
+        try {
+            new Git(repo).checkout().setName("master").call();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
     }
 
 }

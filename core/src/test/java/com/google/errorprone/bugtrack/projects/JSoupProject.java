@@ -17,13 +17,14 @@
 package com.google.errorprone.bugtrack.projects;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 
 public class JSoupProject implements CorpusProject {
     @Override
-    public String getRoot() {
-        return "/home/monty/IdeaProjects/java-corpus/jsoup";
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/java-corpus/jsoup");
     }
 
     @Override

@@ -17,11 +17,12 @@
 package com.google.errorprone.bugtrack.projects;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class TomcatProject implements CorpusProject {
     @Override
-    public String getRoot() {
-        return "/home/monty/IdeaProjects/java-corpus/tomcat";
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/java-corpus/tomcat");
     }
 
     @Override

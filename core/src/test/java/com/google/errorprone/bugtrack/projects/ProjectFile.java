@@ -18,19 +18,18 @@ package com.google.errorprone.bugtrack.projects;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public final class ProjectFile {
     private final CorpusProject project;
     private final Path projPath;
 
     public ProjectFile(CorpusProject project, Path path) {
-        this.project = project;
-
-        if (path.startsWith(project.getRoot())) {
-            path = Paths.get(path.toString().substring(project.getRoot().length() + 1));
+        if (!path.startsWith(project.getRoot())) {
+            throw new IllegalArgumentException(path.toString() + " not in " + project.getRoot());
         }
-        this.projPath = path;
+
+        this.project = project;
+        this.projPath = project.getRoot().relativize(path);
     }
 
     public boolean exists() {
@@ -38,14 +37,11 @@ public final class ProjectFile {
     }
 
     public File toFile() {
-        return Paths.get(project.getRoot(), projPath.toString()).toFile();
+        return project.getRoot().resolve(projPath).toFile();
     }
 
-    public File getRelativeFile() {
-        return projPath.toFile();
-    }
-
-    public String getProjectRoot() {
-        return project.getRoot();
+    @Override
+    public String toString() {
+        return toFile().toString();
     }
 }

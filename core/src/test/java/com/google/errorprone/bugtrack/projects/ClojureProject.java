@@ -17,14 +17,15 @@
 package com.google.errorprone.bugtrack.projects;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.underDirectory;
 
 public class ClojureProject implements CorpusProject {
     @Override
-    public String getRoot() {
-        return "/home/monty/IdeaProjects/java-corpus/clojure";
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/java-corpus/clojure");
     }
 
     @Override

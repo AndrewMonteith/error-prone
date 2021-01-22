@@ -17,11 +17,12 @@
 package com.google.errorprone.bugtrack.projects;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class TestProject implements CorpusProject {
     @Override
-    public String getRoot() {
-        return "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/test_repo";
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/test_repo");
     }
 
     @Override

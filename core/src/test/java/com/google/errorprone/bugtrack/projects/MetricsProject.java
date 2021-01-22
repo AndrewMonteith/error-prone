@@ -19,17 +19,19 @@ package com.google.errorprone.bugtrack.projects;
 import com.google.common.collect.ImmutableSet;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 
-import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.notInBlockList;
 
 public class MetricsProject implements CorpusProject {
-    @Override
-    public String getRoot() {
-        return "/home/monty/IdeaProjects/java-corpus/metrics";
-    }
-
     private static final Set<String> JAVA_FILES_BLOCKLIST = ImmutableSet.of("FileDescriptorRatioGaugeTest.java");
+
+    @Override
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/java-corpus/metrics");
+    }
 
     @Override
     public boolean shouldScanFile(Path file) {

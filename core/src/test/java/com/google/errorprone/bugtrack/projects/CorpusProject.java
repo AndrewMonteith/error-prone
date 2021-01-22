@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Error Prone Authors.
+ * Copyright 2021 The Error Prone Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,8 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import javax.validation.constraints.NotNull;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.function.Predicate;
 
 public interface CorpusProject {
     enum BuildSystem {
@@ -35,7 +31,7 @@ public interface CorpusProject {
     }
 
     @NotNull
-    String getRoot();
+    Path getRoot();
 
     boolean shouldScanFile(Path file);
 
@@ -43,7 +39,7 @@ public interface CorpusProject {
 
     default Repository loadRepo() {
         try {
-            return FileRepositoryBuilder.create(new File(getRoot(), ".git"));
+            return FileRepositoryBuilder.create(getRoot().resolve(".git").toFile());
         } catch (IOException e) {
             e.printStackTrace();
             return null;

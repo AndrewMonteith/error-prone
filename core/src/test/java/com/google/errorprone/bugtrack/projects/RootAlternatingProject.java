@@ -27,7 +27,7 @@ public final class RootAlternatingProject implements CorpusProject {
 
     public RootAlternatingProject(CorpusProject project) {
         this.project = project;
-        this.projDir1 = Paths.get(project.getRoot());
+        this.projDir1 = project.getRoot();
         this.projDir2 = Paths.get(project.getRoot() + "_2");
     }
 
@@ -44,11 +44,11 @@ public final class RootAlternatingProject implements CorpusProject {
     }
 
     @Override
-    public String getRoot() {
+    public Path getRoot() {
         if (returnDir1) {
-            return projDir1.toString();
+            return projDir1;
         } else {
-            return projDir2.toString();
+            return projDir2;
         }
     }
 

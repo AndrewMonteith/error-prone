@@ -142,12 +142,12 @@ public final class ProjectHarness {
             Iterables.transform(diagnostics, DatasetDiagnostic::new).forEach(sink::add);
         });
 
-        compareDiagnostics(oldDiagnostics, newDiagnostics, comparer);
+        System.out.println(computeMatches(oldDiagnostics, newDiagnostics, comparer));
     }
 
-    private void compareDiagnostics(Collection<DatasetDiagnostic> oldDiagnostics,
-                                    Collection<DatasetDiagnostic> newDiagnostics,
-                                    BugComparer comparer) {
+    public MatchResults computeMatches(Collection<DatasetDiagnostic> oldDiagnostics,
+                                       Collection<DatasetDiagnostic> newDiagnostics,
+                                       BugComparer comparer) {
         Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = new HashMap<>();
 
         oldDiagnostics.forEach(oldDiagnostic -> {
@@ -162,7 +162,7 @@ public final class ProjectHarness {
             }
         });
 
-        System.out.println(new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics));
+        return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
     }
 
     public void serialiseCommit(String commit, String output) throws IOException {
@@ -206,6 +206,6 @@ public final class ProjectHarness {
     }
 
     public void compareDiagnosticsFile(DatasetDiagnosticsFile oldDiagnostics, DatasetDiagnosticsFile newDiagnostics, BugComparer comparer) {
-        compareDiagnostics(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer);
+        System.out.println(computeMatches(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer));
     }
 }

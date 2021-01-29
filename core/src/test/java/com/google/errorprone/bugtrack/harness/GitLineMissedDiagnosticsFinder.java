@@ -16,42 +16,103 @@
 
 package com.google.errorprone.bugtrack.harness;
 
-import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.DiagnosticUtils;
+import com.google.errorprone.bugtrack.DatasetDiagnosticsFile;
 import com.google.errorprone.bugtrack.GitUtils;
+import com.google.errorprone.bugtrack.LineMotionComparer;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import org.eclipse.jgit.lib.Repository;
+import com.google.errorprone.bugtrack.projects.GuiceProject;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.junit.Test;
+import org.openjdk.tools.javac.util.Pair;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiFunction;
 
-import static com.google.errorprone.bugtrack.DiagnosticUtils.extractDiagnosticType;
-
 public final class GitLineMissedDiagnosticsFinder {
-    public static void findLikelyMissedDiagnostics(CorpusProject project,
-                                                   RevCommit oldCommit,
-                                                   RevCommit newCommit,
-                                                   MatchResults results) throws IOException {
-
-        Repository repo = project.loadRepo();
-        /*
-            Look for new diagnostics of the same type who's diagnostic contains a fragment of or looks similar to the old diagnostic.
-         */
-        for (DatasetDiagnostic unmatchedOldDiag : results.getUnmatchedOldDiagnostics()) {
-            String oldLine = GitUtils.loadJavaLine(repo, oldCommit, unmatchedOldDiag);
-
+    private static double computeSimilarityFromString(String oldLine, String newLine) {
+        // How much of newLine is a substring of oldLine
+        int maxLen = 0;
+        for (int i = 0; i < newLine.length(); ++i) {
+            for (int j = i; j < newLine.length(); ++j) {
+                if (oldLine.contains(newLine.substring(i, j))) {
+                    maxLen = Math.max(maxLen, j - i + 1);
+                }
+            }
         }
-        results.getUnmatchedOldDiagnostics().forEach(unmatchedOldDiag -> {
-//            String oldLine = GitUtilksgetLine(results. unmatchedOldDiag.getFileName(), unmatchedOldDiag.getLineNumber())
 
-
-
-        });
+        return (double) maxLen / newLine.length();
     }
 
+    private static Map<DatasetDiagnostic, String> loadDiagnosticLines(CorpusProject project, RevCommit commit, Iterable<DatasetDiagnostic> diagnostics) throws IOException {
+        Map<DatasetDiagnostic, String> result = new HashMap<>();
+        for (DatasetDiagnostic diagnostic : diagnostics) {
+            result.put(diagnostic, GitUtils.loadJavaLine(project.loadRepo(), commit, diagnostic));
+        }
+        return result;
+    }
+
+    private static void findLinkelyMissedDiagnostics(MatchResults results,
+                                                     BiFunction<DatasetDiagnostic, DatasetDiagnostic, Double> computeSimilarity) {
+        for (DatasetDiagnostic unmatchedOldDiag : results.getUnmatchedOldDiagnostics()) {
+            System.out.println(unmatchedOldDiag);
+
+            results.getUnmatchedNewDiagnostics().stream()
+                    .filter(unmatchedNewDiag -> unmatchedOldDiag.isSameType(unmatchedNewDiag) && unmatchedOldDiag.getFileName().equals(unmatchedNewDiag.getFileName()))
+                    .map(unmatchedNewDiag -> new Pair<>(unmatchedNewDiag, computeSimilarity.apply(unmatchedOldDiag, unmatchedNewDiag)))
+                    .sorted((p1, p2) -> p2.snd.compareTo(p1.snd)) // sort in descending order
+                    .limit(2)
+                    .forEach(match -> {
+                        System.out.printf("Possibly matching %s %d %d with score %.3f\n",
+                                match.fst.getFileName(), match.fst.getLineNumber(), match.fst.getColumnNumber(), match.snd);
+                    });
+
+            System.out.print("-----\n\n");
+        }
+    }
+
+    /*
+        Look for new diagnostics of the same type who's diagnostic contains a fragment of or looks similar to the old diagnostic.
+     */
+    public static void proposeMissedMatchesWithSubstringSimilarity(CorpusProject project,
+                                                                   RevCommit oldCommit,
+                                                                   RevCommit newCommit,
+                                                                   MatchResults results) throws IOException {
+        Map<DatasetDiagnostic, String> unmatchedOldDiagLines = loadDiagnosticLines(project, oldCommit, results.getUnmatchedOldDiagnostics());
+        Map<DatasetDiagnostic, String> unmatchedNewDiagLines = loadDiagnosticLines(project, newCommit, results.getUnmatchedNewDiagnostics());
+
+        BiFunction<DatasetDiagnostic, DatasetDiagnostic, Double> computeSimilary = (oldDiag, newDiag) -> computeSimilarityFromString(
+                unmatchedOldDiagLines.get(oldDiag), unmatchedNewDiagLines.get(newDiag));
+
+        findLinkelyMissedDiagnostics(results, computeSimilary);
+    }
+
+    public static void proposeMissedMatchesWithLineDistanceSimilarity(MatchResults results) throws IOException {
+        findLinkelyMissedDiagnostics(results,
+                (oldDiag, newDiag) -> (double) 3 / (Math.abs(oldDiag.getLineNumber() - newDiag.getLineNumber()) + 1));
+    }
+
+    @Test
+    public void findCandidates() throws IOException, GitAPIException {
+        CorpusProject project = new GuiceProject();
+        RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
+        RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "9b371d3663db9db230417f3cc394e72b705d7d7f");
+
+        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
+
+        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"));
+
+        MatchResults results = new ProjectHarness(project).computeMatches(
+                oldDiagnostics.diagnostics, newDiagnostics.diagnostics,
+                new LineMotionComparer(project.loadRepo(), oldDiagnostics.commitId, newDiagnostics.commitId));
+
+        proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
+//        proposeMissedMatchesWithLineDistanceSimilarity(results);
+    }
 }

@@ -200,7 +200,6 @@ public class ProjectTests {
 
 
         BugComparer comparer = new LineMotionComparer(project.loadRepo(), oldDiagnostics.commitId, newDiagnostics.commitId);
-
         /*
             Between commits: 875868e7263491291d4f8bdc1332bfea746ad673 and 9b371d3663db9db230417f3cc394e72b705d7d7f in Guice
               the following commits are not tracked properly:
@@ -219,9 +218,26 @@ public class ProjectTests {
             And 9b371d3663db9db230417f3cc394e72b705d7d7f:Modules.java is
                 280: scopeInstancesInUse
                 281:     .computeIfAbsent(scope, k -> Lists.newArrayList())
+                282:     .add(binding.getSource());
 
             In reality git diff information works on a line by line basis. So since the expression splits apart
-              onto two lines then that's why we cannot track.
+              onto two lines then that's why we cannot track it. We see the same effect for between the commits
+              for the following diagnostics:
+
+            /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/WeakKeySet.java 95 42
+                [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
+                95. Multiset<Object> sources = backingMap.computeIfAbsent(key, k -> LinkedHashMultiset.create());
+            /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/WeakKeySet.java 88 15
+                88. backingMap.computeIfAbsent(key, k -> LinkedHashMultiset.create()).add(convertedSource);
+
+            /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/RealMapBinder.java 476 37
+            [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
+                476. bindingMultimapMutable.computeIfAbsent(key, k -> ImmutableSet.builder());
+            /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/RealMapBinder.java 477 19
+                476. bindingMultimapMutable
+                477      .computeIfAbsent(key, k -> ImmutableSet.builder())
+                478      .add(valueBinding);
+
          */
 
         // THEN:

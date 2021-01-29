@@ -16,9 +16,6 @@
 
 package com.google.errorprone.bugtrack;
 
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import java.util.Collection;
 import java.util.Optional;
 
 public interface BugComparer {

@@ -97,7 +97,7 @@ public final class GitLineMissedDiagnosticsFinder {
     }
 
     @Test
-    public void findCandidates() throws IOException, GitAPIException {
+    public void example_FindingCandidates() throws IOException, GitAPIException {
         CorpusProject project = new GuiceProject();
         RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
         RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "9b371d3663db9db230417f3cc394e72b705d7d7f");
@@ -115,4 +115,25 @@ public final class GitLineMissedDiagnosticsFinder {
         proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);
     }
+
+    @Test
+    public void example_FindingCandidates2() throws IOException, GitAPIException {
+        CorpusProject project = new GuiceProject();
+        RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
+        RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "d071802d48a50dffd89b0cfc61eff251251e637a");
+
+        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
+
+        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/30 d071802d48a50dffd89b0cfc61eff251251e637a"));
+
+        MatchResults results = new ProjectHarness(project).computeMatches(
+                oldDiagnostics.diagnostics, newDiagnostics.diagnostics,
+                new LineMotionComparer(project.loadRepo(), oldDiagnostics.commitId, newDiagnostics.commitId));
+
+        proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
+//        proposeMissedMatchesWithLineDistanceSimilarity(results);
+    }
+
 }

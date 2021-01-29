@@ -224,13 +224,13 @@ public class ProjectTests {
               onto two lines then that's why we cannot track it. We see the same effect for between the commits
               for the following diagnostics:
 
-            /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/WeakKeySet.java 95 42
+        (*) /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/WeakKeySet.java 95 42
                 [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
                 95. Multiset<Object> sources = backingMap.computeIfAbsent(key, k -> LinkedHashMultiset.create());
             /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/WeakKeySet.java 88 15
                 88. backingMap.computeIfAbsent(key, k -> LinkedHashMultiset.create()).add(convertedSource);
 
-            /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/RealMapBinder.java 476 37
+        (*) /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/RealMapBinder.java 476 37
             [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
                 476. bindingMultimapMutable.computeIfAbsent(key, k -> ImmutableSet.builder());
             /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/RealMapBinder.java 477 19
@@ -238,6 +238,35 @@ public class ProjectTests {
                 477      .computeIfAbsent(key, k -> ImmutableSet.builder())
                 478      .add(valueBinding);
 
+            Extending the search to between 875868e7263491291d4f8bdc1332bfea746ad673 and d071802d48a50dffd89b0cfc61eff251251e637a we get:
+            ----DIAGNOSTIC
+            /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/Messages.java 136 25
+            [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: create(String messageFormat, Throwable cause, Object... arguments)
+                136. public static Message create(Throwable cause, String messageFormat, Object... arguments) {
+            Possibly matching /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/Messages.java 136 25 with score 1.000
+                136. public static Message create(
+                137.     ErrorId errorId, Throwable cause, String messageFormat, Object... arguments) {
+
+        (*) /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Elements.java 340 75
+                [BooleanParameter] Use parameter comments to document ambiguous literals
+                340.           binder.modules.put(module, new ModuleInfo(binder, moduleSource, false));
+                Possibly matching /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Elements.java 351 73 with score 1.000
+                351.         binder.modules.put(module, new ModuleInfo(binder, moduleSource, false));
+
+                INTERESTING NOTE: So I currently don't consider these lines because they have a different amount of whitespace in front of them.
+                                    My current justification is because whitespace could be semantic? I'm tempted to consider these lines equal.
+                                    Ask andy for his opinion.
+
+         (*) ----DIAGNOSTIC
+             /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Message.java 50 10
+                public Message(List<Object> sources, String message, Throwable cause) {
+             [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: <init>(String message, Throwable cause, List<Object> sources)
+
+             Possibly matching /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Message.java 60 10 with score 1.000
+                59. /** @since 2.0 *\/
+                60. public Message(List<Object> sources, String message, Throwable cause) {
+             Possibly matching /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Message.java 52 10 with score 0.622
+                52. public Message(ErrorId errorId, List<Object> sources, String message, Throwable cause) {
          */
 
         // THEN:

@@ -17,8 +17,11 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.bugtrack.harness.DiagnosticsDistribution;
+import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.projects.*;
+import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,9 +31,12 @@ import org.junit.runners.JUnit4;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -42,6 +48,7 @@ public class ProjectTests {
                 new ProjectHarness(project, true).collectDiagnostics(commitHash);
 
         // THEN:
+        System.out.println(diagnostics.size());
         Assert.assertTrue(diagnostics.size() > 0);
     }
 
@@ -49,6 +56,55 @@ public class ProjectTests {
     public void canScanJSoup() throws IOException {
         assertFindsDiagnostics(new JSoupProject(),
                                "79496d8d047f2d0774e0ad9d8169a021cb828fab");
+    }
+
+    @Test
+    public void canScanGuice() throws IOException {
+        assertFindsDiagnostics(new GuiceProject(),
+                "dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a");
+    }
+
+    @Test
+    public void canSerialiseDiagnostics2() throws IOException {
+        assertFindsDiagnostics(new GuiceProject(),
+                "dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a");
+        // GIVEN:
+//        CorpusProject jsoup = new GuiceProject();
+////        String oldCommit = "468c5369b52ca45de3c7e54a3d2ddae352495851";
+////        String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
+//        String commitHash = "dd873be40013bffbe07552367326bd2b60eaa807";
+//        String newCommitHash = "37255a24d9bfc37bf8b76cb594d05e3203c984e0";
+//        Path output = Paths.get("/home/monty/IdeaProjects/java-corpus/guice_85");
+//
+//        // WHEN:
+//        new ProjectHarness(jsoup).serialiseCommit(commitHash, output.toString());
+//
+//        // THEN:
+    }
+
+    @Test
+    public void canSerialiseDiagnostics() throws IOException {
+        // GIVEN:
+        CorpusProject jsoup = new JSoupProject();
+        String commitHash = "468c5369b52ca45de3c7e54a3d2ddae352495851";
+        Path output = Paths.get("/home/monty/IdeaProjects/java-corpus/jsoup_output");
+
+        // WHEN:
+        new ProjectHarness(jsoup, true).serialiseCommit(commitHash, output.toString());
+
+        // THEN:
+        Assert.assertEquals(376, DatasetDiagnosticsFile.loadFromFile(output).diagnostics.size());
+    }
+
+    @Test
+    public void serialiseDiagnostics() throws IOException, GitAPIException {
+        CorpusProject project  = new GuiceProject();
+        CommitRange range = new CommitRange("0367f870f7d412918dab2c596bb6b0ac3f4e93ca", "1a299822f02642b5cdc6606430266987d0bb4b24");
+
+        new ProjectHarness(project).serialiseCommits(range,
+                new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice");
+
     }
 
     @Test
@@ -80,17 +136,7 @@ public class ProjectTests {
     @Test
     public void canScanSpringFramework() throws IOException {
         assertFindsDiagnostics(new SpringFrameworkProject(),
-                               "a5a4960859d0d15bfe677be86291cd1e59047436");
-    }
-
-    @Test
-    public void findInterestingCommitPairs() throws IOException, GitAPIException {
-        // GIVEN:
-        CorpusProject springFrameworkProject = new SpringFrameworkProject();
-        CommitRange range = new CommitRange("0f1f95e0909c5d32bbc9305ae85c57312a491058", "a5a4960859d0d15bfe677be86291cd1e59047436");
-
-        // WHEN:
-        new ProjectHarness(springFrameworkProject).findInterestingPairs(range);
+                               "1cb9f2c7b2a25daae014349ba3df7823b3584171");
     }
 
     @Test
@@ -117,6 +163,7 @@ public class ProjectTests {
         Assert.assertEquals((int)numberOfDiagnostics.get(3), 378);
     }
 
+
     @Test
     public void canWalkCommits() throws IOException, GitAPIException {
         // GIVEN:
@@ -127,7 +174,7 @@ public class ProjectTests {
     }
 
     @Test
-    public void example_DetectingNewBug() throws IOException, GitAPIException {
+    public void example_DetectingNewBugWithScanning() throws IOException, GitAPIException {
         // GIVEN:
         CorpusProject project = new JSoupProject();
 
@@ -137,17 +184,52 @@ public class ProjectTests {
         BugComparer comparer = new LineMotionComparer(project.loadRepo(), oldCommit, newCommit);
 
         // THEN:
-        new ProjectHarness(project).compareTwoCommits(oldCommit, newCommit, comparer);
+        new ProjectHarness(project, true).compareTwoCommits(oldCommit, newCommit, comparer);
     }
 
     @Test
-    public void walkAProject() throws IOException, GitAPIException {
+    public void example_DetectingNewBugWithLogs() throws IOException {
+
+    }
+
+    @Test
+    public void example_CompareLogFiles() throws IOException, GitAPIException {
         // GIVEN:
-        CorpusProject project = new JUnitProject();
-        CommitRange range = new CommitRange("0900bc02145d1793149433332d41181b9bef84fe",
-                "50a285d3ce69b4556ac46d8633f6beb4527b4679");
+        CorpusProject project = new GuiceProject();
+
+        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
+
+        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"));
+
+
+        BugComparer comparer = new LineMotionComparer(project.loadRepo(), oldDiagnostics.commitId, newDiagnostics.commitId);
+
+        /*
+            Between commits: 875868e7263491291d4f8bdc1332bfea746ad673 and 9b371d3663db9db230417f3cc394e72b705d7d7f in Guice
+              the following commits are not tracked properly:
+
+            OLD:
+              /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/util/Modules.java 240 38
+              [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
+                   (see https://errorprone.info/bugpattern/AndroidJdkLibsChecker)
+            NEW:
+              /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/util/Modules.java 281 19
+              [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
+                    (see https://errorprone.info/bugpattern/AndroidJdkLibsChecker)
+
+            This is 875868e7263491291d4f8bdc1332bfea746ad673:Modules.java is
+                240: scopeInstancesInUse.computeIfAbsent(scope, k -> Lists.newArrayList());
+            And 9b371d3663db9db230417f3cc394e72b705d7d7f:Modules.java is
+                280: scopeInstancesInUse
+                281:     .computeIfAbsent(scope, k -> Lists.newArrayList())
+
+            In reality git diff information works on a line by line basis. So since the expression splits apart
+              onto two lines then that's why we cannot track.
+         */
 
         // THEN:
-        new ProjectHarness(project, false).walkCommitRange(range);
+        new ProjectHarness(project).compareDiagnosticsFile(oldDiagnostics, newDiagnostics, comparer);
     }
 }

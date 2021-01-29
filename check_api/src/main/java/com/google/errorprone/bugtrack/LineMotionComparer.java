@@ -53,8 +53,8 @@ public class LineMotionComparer implements BugComparer {
                 GitUtils.parseCommit(repo, newCommitHash));
     }
 
-    private boolean inSameFile(Diagnostic<? extends JavaFileObject> oldDiagnostic,
-                               Diagnostic<? extends JavaFileObject> newDiagnostic) {
+    private boolean inSameFile(DatasetDiagnostic oldDiagnostic,
+                               DatasetDiagnostic newDiagnostic) {
         String oldPath = DiagnosticUtils.getProjectRelativePath(oldDiagnostic);
         String newPath = DiagnosticUtils.getProjectRelativePath(newDiagnostic);
 
@@ -66,16 +66,16 @@ public class LineMotionComparer implements BugComparer {
                 .anyMatch(diff -> diff.getOldPath().equals(oldPath) && diff.getNewPath().equals(newPath));
     }
 
-    private LineMotionTracker createLineMotionTracker(Diagnostic<? extends JavaFileObject> oldDiagnostic,
-                                                      Diagnostic<? extends JavaFileObject> newDiagnostic) throws DiffException, IOException {
+    private LineMotionTracker createLineMotionTracker(DatasetDiagnostic oldDiagnostic,
+                                                      DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
         List<String> oldText = GitUtils.loadSrcFile(repo, oldCommit, DiagnosticUtils.getProjectRelativePath(oldDiagnostic));
         List<String> newText = GitUtils.loadSrcFile(repo, newCommit, DiagnosticUtils.getProjectRelativePath(newDiagnostic));
 
         return new LineMotionTracker(oldText, newText);
     }
 
-    private LineMotionTracker getLineMotionTracker(Diagnostic<? extends JavaFileObject> oldDiagnostic,
-                                                   Diagnostic<? extends JavaFileObject> newDiagnostic) throws DiffException, IOException {
+    private LineMotionTracker getLineMotionTracker(DatasetDiagnostic oldDiagnostic,
+                                                   DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
         String oldFile = DiagnosticUtils.getProjectRelativePath(oldDiagnostic);
         if (!lineTrackers.containsKey(oldFile)) {
             lineTrackers.put(oldFile, createLineMotionTracker(oldDiagnostic, newDiagnostic));
@@ -85,8 +85,8 @@ public class LineMotionComparer implements BugComparer {
     }
 
     @Override
-    public boolean areSame(Diagnostic<? extends JavaFileObject> oldDiagnostic,
-                           Diagnostic<? extends JavaFileObject> newDiagnostic) {
+    public boolean areSame(DatasetDiagnostic oldDiagnostic,
+                           DatasetDiagnostic newDiagnostic) {
         if (!inSameFile(oldDiagnostic, newDiagnostic)) {
             return false;
         }
@@ -103,12 +103,12 @@ public class LineMotionComparer implements BugComparer {
     }
 
     @Override
-    public Optional<Diagnostic<? extends JavaFileObject>> breakTies(Diagnostic<? extends JavaFileObject> oldDiagnostic,
-                                                                    Collection<Diagnostic<? extends JavaFileObject>> matchingNewDiagnostics) {
+    public Optional<DatasetDiagnostic> breakTies(DatasetDiagnostic oldDiagnostic,
+                                                 Collection<DatasetDiagnostic> matchingNewDiagnostics) {
         // Break tie by choosing same diagnostic type
         final String oldDiagnosticType = extractDiagnosticType(oldDiagnostic);
 
-        Collection<Diagnostic<? extends JavaFileObject>> sameTypeNewDiagnostics = CollectionUtil.filter(
+        Collection<DatasetDiagnostic> sameTypeNewDiagnostics = CollectionUtil.filter(
                 matchingNewDiagnostics, diagnostic -> extractDiagnosticType(diagnostic).equals(oldDiagnosticType));
 
         if (sameTypeNewDiagnostics.size() == 0) {
@@ -118,11 +118,11 @@ public class LineMotionComparer implements BugComparer {
         }
 
         // Then break type by choosing same diagnostic type and column number
-        Collection<Diagnostic<? extends JavaFileObject>> sameColumnDiagnostics = sameTypeNewDiagnostics.stream()
+        Collection<DatasetDiagnostic> sameColumnDiagnostics = sameTypeNewDiagnostics.stream()
                 .filter(diag -> diag.getColumnNumber() == oldDiagnostic.getColumnNumber()).collect(Collectors.toList());
 
-        if (sameColumnDiagnostics.size() == 1) {
-            return Optional.of(Iterables.getOnlyElement(sameColumnDiagnostics));
+        if (!sameColumnDiagnostics.isEmpty()) {
+            return Optional.of(Iterables.getLast(sameColumnDiagnostics));
         }
 
         return Optional.empty();

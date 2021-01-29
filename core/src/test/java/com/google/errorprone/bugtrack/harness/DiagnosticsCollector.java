@@ -17,9 +17,11 @@
 package com.google.errorprone.bugtrack.harness;
 
 import com.google.common.collect.Iterables;
+import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.scanner.BuiltInCheckerSuppliers;
+import com.google.errorprone.scanner.ScannerSupplier;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -32,6 +34,13 @@ public final class DiagnosticsCollector {
             return Collections.emptyList();
         }
 
+        Iterable<BugCheckerInfo> allChecksButVarChecker = Iterables.filter(Iterables.concat(
+                BuiltInCheckerSuppliers.ENABLED_ERRORS,
+                BuiltInCheckerSuppliers.ENABLED_WARNINGS,
+                BuiltInCheckerSuppliers.DISABLED_CHECKS),
+            check -> !check.canonicalName().equals("Var"));
+
+//        CompilationTestHelper helper = CompilationTestHelper.newInstance(ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker), DiagnosticsCollector.class);
         CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
 
         Collection<ProjectFile> files = scan.files.stream()
@@ -64,22 +73,20 @@ public final class DiagnosticsCollector {
                 ++current;
             }
 
-            diagnostics.addAll(collectDiagnostics(scan));
+            try {
+                Collection<Diagnostic<? extends JavaFileObject>> scanDiagnostics = collectDiagnostics(scan);
+                if (printProgress){
+                    System.out.printf("%s had %d files and generated %d alerts\n", scan.name, scan.files.size(), scanDiagnostics.size());
+                }
+
+                diagnostics.addAll(scanDiagnostics);
+            } catch(Throwable e) {
+                System.out.println("Failed to scan a target");
+                e.printStackTrace();
+                System.out.println(scan);
+            }
         }
 
         return diagnostics;
-    }
-
-    public static void printDiagnosticsDistribution(List<Diagnostic<? extends JavaFileObject>> diagnostics) {
-        final Map<String, Integer> distribution = new HashMap<>();
-        diagnostics.forEach(diagnostic -> {
-            String msg = diagnostic.getMessage(null);
-            String diagnosticType = msg.substring(1, msg.indexOf(']'));
-
-            distribution.put(diagnosticType, distribution.getOrDefault(diagnosticType, 0) + 1);
-        });
-
-        distribution.forEach((diagnosticType, frequency) ->
-                System.out.printf("%s occured %d times\n", diagnosticType, frequency));
     }
 }

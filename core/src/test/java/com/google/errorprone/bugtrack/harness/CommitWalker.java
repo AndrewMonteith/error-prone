@@ -26,14 +26,12 @@ import java.util.Collections;
 import java.util.Iterator;
 
 public final class CommitWalker implements Iterable<Collection<DiagnosticsScan>>, Iterator<Collection<DiagnosticsScan>> {
-    private final RootAlternatingProject project;
+    private final CorpusProject project;
     private final Iterator<RevCommit> commits;
     private final ProjectScanner projectScanner;
 
-    private boolean firstCall = true;
-
     public CommitWalker(CorpusProject project, Iterable<RevCommit> commits, ProjectScanner scanner) {
-        this.project = new RootAlternatingProject(project);
+        this.project = project;
         this.commits = commits.iterator();
         this.projectScanner = scanner;
     }
@@ -41,7 +39,6 @@ public final class CommitWalker implements Iterable<Collection<DiagnosticsScan>>
     private void cleanProject() {
         try {
             projectScanner.cleanProject(project.getRoot().toFile());
-            projectScanner.cleanProject(project.getOtherDir().toFile());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -55,12 +52,7 @@ public final class CommitWalker implements Iterable<Collection<DiagnosticsScan>>
     @Override
     public Collection<DiagnosticsScan> next() {
         try {
-            if (firstCall) {
-                cleanProject();
-                firstCall = false;
-            }
-
-            project.switchDir();
+            cleanProject();
             RevCommit commit = commits.next();
             new Git(project.loadRepo()).checkout().setName(commit.getName()).call();
             return projectScanner.getScans(project);

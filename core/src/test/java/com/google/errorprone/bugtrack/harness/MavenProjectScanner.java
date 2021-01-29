@@ -21,63 +21,53 @@ import com.google.errorprone.bugtrack.projects.ProjectFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MavenProjectScanner extends ProjectScanner {
-    private Map<String, DiagnosticsScan> scans;
-
-    public MavenProjectScanner() {
-        scans = new HashMap<>();
-    }
-
     @Override
     public void cleanProject(File projectDir) throws IOException, InterruptedException {
         ShellUtils.runCommand(projectDir, "mvn", "clean");
     }
 
-    private void removeNonExistentFiles() {
-        scans.values().forEach(scan -> scan.files.removeIf(file -> !file.toFile().exists()));
+    private List<ProjectFile> getFilesFromSourcepaths(CorpusProject project, String sourcepaths, Set<String> scannedSourcepaths) {
+        return Arrays.stream(sourcepaths.split(":"))
+                .filter(sourcepath -> !scannedSourcepaths.contains(sourcepath))
+                .peek(scannedSourcepaths::add)
+                .map(sourcepath -> getFilesFromSourcepath(project, sourcepath))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
-    @Override
-    public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
-        String scriptOutput = ShellUtils.runCommand(project.getRoot().toFile(),
-                "/usr/bin/python3.8",
-                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_maven_cmdargs.py",
-                project.getRoot().toString());
+    public Collection<DiagnosticsScan> parseScansOutput(CorpusProject project, String buildOutput) {
+        Collection<DiagnosticsScan> scans = new ArrayList<>();
+        Set<String> scannedSourcepaths = new HashSet<>();
 
-        /*
-            As we wind the commits forward we need to be watch for a few things.
-              1. Files added by a commit should be included alongside unchanged/changed files.
-              2. Files detected should not be scanned again.
+        String[] buildOutputLines = buildOutput.split("\n");
+        for (int i = 0; i < buildOutputLines.length; i += 2) {
+            String scanName = buildOutputLines[i];
+            List<String> cmdLineArguments = filterCmdLineArgs(buildOutputLines[i + 1]);
 
-            In the case of 1, maven will generate a command to recompile the file. That command
-            will include the sourcepath which we scan to check for files added/removed.
+            List<ProjectFile> filesToParse = getFilesFromSourcepaths(project,
+                    cmdLineArguments.get(cmdLineArguments.indexOf("-sourcepath") + 1), scannedSourcepaths);
 
-            In the case of 2, there is a guard on the diagnostics collector to ensure only
-            files on disk are scanned.
-         */
-
-        String[] scriptOutputLines = scriptOutput.split("\n");
-        for (int i = 0; i < scriptOutputLines.length; i += 2) {
-            String scanName = scriptOutputLines[i];
-            List<String> cmdLineArguments = filterCmdLineArgs(scriptOutputLines[i + 1]);
-            List<ProjectFile> filesToParse = getFilesFromSourcepath(project,
-                    cmdLineArguments.get(cmdLineArguments.indexOf("-sourcepath") + 1));
-
-            scans.put(scanName, new DiagnosticsScan(
+            scans.add(new DiagnosticsScan(
                     scanName,
                     filesToParse,
                     cmdLineArguments));
         }
 
-        removeNonExistentFiles();
+        return scans;
+    }
 
-        // Deep copy to ensure any changes don't mutate our internal copies.
-        return scans.values().stream().map(DiagnosticsScan::new).collect(Collectors.toList());
+    @Override
+    public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
+        String buildOutput = ShellUtils.runCommand(project.getRoot().toFile(),
+                "/usr/bin/python3.8",
+                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_maven_cmdargs.py",
+                project.getRoot().toString());
+
+        return parseScansOutput(project, buildOutput);
     }
 }

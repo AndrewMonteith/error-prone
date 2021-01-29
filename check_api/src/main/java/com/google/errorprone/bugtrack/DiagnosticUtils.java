@@ -34,9 +34,7 @@ public final class DiagnosticUtils {
         return -1;
     }
 
-    public static String getProjectRelativePath(Diagnostic<? extends JavaFileObject> diagnostic) {
-        String absolutePath = diagnostic.getSource().getName();
-
+    private static String getProjectRelativePath(String absolutePath) {
         if (absolutePath.startsWith(CORPUS_ROOT)) {
             return absolutePath.substring(ordinalIndexOf(absolutePath, '/', 6) + 1);
         } else {
@@ -44,8 +42,23 @@ public final class DiagnosticUtils {
         }
     }
 
-    public static String extractDiagnosticType(Diagnostic<? extends JavaFileObject> diagnostic) {
-        String message = diagnostic.getMessage(null);
+    public static String getProjectRelativePath(Diagnostic<? extends JavaFileObject> diagnostic) {
+        return getProjectRelativePath(diagnostic.getSource().getName());
+    }
+
+    public static String getProjectRelativePath(DatasetDiagnostic diagnostic) {
+        return getProjectRelativePath(diagnostic.getFileName());
+    }
+
+    private static String getDiagnosticType(String message) {
         return message.substring(1, message.indexOf(']'));
+    }
+
+    public static String extractDiagnosticType(Diagnostic<? extends JavaFileObject> diagnostic) {
+        return getDiagnosticType(diagnostic.getMessage(null));
+    }
+
+    public static String extractDiagnosticType(DatasetDiagnostic diagnostic) {
+        return getDiagnosticType(diagnostic.getMessage());
     }
 }

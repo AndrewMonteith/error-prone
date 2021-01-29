@@ -45,10 +45,13 @@ public abstract class ProjectScanner {
             if (singleArgBlockList.contains(individualArgs[i])) { continue; }
             else if (individualArgs[i].equals("-d")) { ++i; continue; }
             else if (isJavaFile(individualArgs[i])) { continue; }
-            else if (individualArgs[i].equals("1.5")) { individualArgs[i] = "1.7"; }
-            else if (individualArgs[i].equals("1.6")) { individualArgs[i] = "1.7"; }
+            else if (individualArgs[i].equals("-target") || individualArgs[i].equals("-source")) {
+                individualArgs[i+1] = "1.8";
+                ++i; continue;
+            }
             else if (individualArgs[i].startsWith("-Xlint")) { continue; }
             else if (individualArgs[i].startsWith("-Xdoclint")) { continue; }
+            else if (individualArgs[i].startsWith("-W")) { continue; }
 
             args.add(individualArgs[i]);
         }
@@ -57,9 +60,11 @@ public abstract class ProjectScanner {
     }
 
     protected List<ProjectFile> getFilesFromSourcepath(CorpusProject project, String sourcepath) {
-        return Arrays.stream(sourcepath.split(":"))
-                .map(path -> FileUtils.findFilesMatchingGlob(Paths.get(path), "**/*.java"))
-                .flatMap(Collection::stream)
+        if (sourcepath.contains(":")) {
+            throw new RuntimeException("this method can only scan a single sourcepath");
+        }
+
+        return FileUtils.findFilesMatchingGlob(Paths.get(sourcepath), "**/*.java").stream()
                 .filter(project::shouldScanFile)
                 .map(file -> new ProjectFile(project, file))
                 .collect(Collectors.toList());

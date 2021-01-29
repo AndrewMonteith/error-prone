@@ -7,6 +7,9 @@ import subprocess
 # Collect output from mvn install
 os.chdir(sys.argv[1])
 
+def extract_raw_args(cmdline):
+    return cmdline[cmdline.find("arguments:")+11:]
+
 def print_targets(output):
     build_output = output.split('\n')
 
@@ -20,14 +23,16 @@ def print_targets(output):
             i -= 1
 
         task_name = extract_proj_name.match(build_output[i]).groups()[0]
-        print(task_name)
-        print(compiler_arg)
+        if "compileTestFixturesJava" in task_name:
+            continue
 
-# Parse mvn install for command line options
-build_proc = subprocess.run(["./gradlew", "-d", "classes"],
+        print(task_name)
+        print(extract_raw_args(compiler_arg))
+
+build_proc = subprocess.run(["./gradlew", "--debug", "--no-build-cache", "classes"],
                             capture_output=True)
 
-test_build_proc = subprocess.run(["./gradlew", "-d", "testClasses"],
+test_build_proc = subprocess.run(["./gradlew", "--debug", "--no-build-cache", "testClasses"],
                                   capture_output=True)
 
 print_targets(build_proc.stdout.decode("utf-8"))

@@ -18,7 +18,7 @@ def escape_ansi(line):
 build_output = [escape_ansi(line)
                 for line in install_proc.stdout.decode('utf-8').split("\n")]
 # build_output = [escape_ansi(line)
-#                 for line in open("/home/monty/IdeaProjects/java-corpus/jsoup/output_2").readlines()]
+#                 for line in open("/home/monty/IdeaProjects/java-corpus/jsoup/jsoup_output").readlines()]
 
 proj_re = re.compile(r"^.*\[.*INFO.*\].* @ .*")
 proj_name_re = re.compile(r"^\[INFO\] --- .* \((.*)\) @ (.*) .*")

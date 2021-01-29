@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.projects;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Objects;
 
 public final class ProjectFile {
     private final CorpusProject project;
@@ -43,5 +44,18 @@ public final class ProjectFile {
     @Override
     public String toString() {
         return toFile().toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProjectFile that = (ProjectFile) o;
+        return Objects.equals(projPath, that.projPath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(projPath);
     }
 }

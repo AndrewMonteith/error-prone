@@ -17,10 +17,7 @@
 package com.google.errorprone.bugtrack.harness;
 
 import com.google.common.collect.*;
-import com.google.errorprone.bugtrack.BugComparer;
-import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.GitUtils;
-import com.google.errorprone.bugtrack.CollectionUtil;
+import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -30,6 +27,9 @@ import org.openjdk.tools.javac.util.Pair;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -90,7 +90,7 @@ public final class ProjectHarness {
         Iterable<Collection<DiagnosticsScan>> scanWalker = loadScanWalker(commits);
 
         if (verbose) {
-            System.out.println("Loaded diagnostic scan information");
+            System.out.println("Loading diagnostic scan information");
         }
 
         Streams.zip(Streams.stream(commits), Streams.stream(scanWalker), Pair::of).forEach(commitToScan -> {
@@ -129,22 +129,27 @@ public final class ProjectHarness {
     }
 
     public void compareTwoCommits(RevCommit oldCommit, RevCommit newCommit, BugComparer comparer) throws IOException {
-        Collection<Diagnostic<? extends JavaFileObject>> oldDiagnostics = new ArrayList<>();
-        Collection<Diagnostic<? extends JavaFileObject>> newDiagnostics = new ArrayList<>();
+        Collection<DatasetDiagnostic> oldDiagnostics = new ArrayList<>();
+        Collection<DatasetDiagnostic> newDiagnostics = new ArrayList<>();
 
         forEachCommitWithDiagnostics(ImmutableList.of(oldCommit, newCommit), (commit, diagnostics) -> {
-            if (commit == oldCommit) {
-                oldDiagnostics.addAll(diagnostics);
-            } else {
-                newDiagnostics.addAll(diagnostics);
-            }
+            Collection<DatasetDiagnostic> sink = (commit == oldCommit) ? oldDiagnostics : newDiagnostics;
+
+            Iterables.transform(diagnostics, DatasetDiagnostic::new).forEach(sink::add);
         });
 
-        Map<Diagnostic<? extends JavaFileObject>, Diagnostic<? extends JavaFileObject>> matchedDiagnostics = new HashMap<>();
+        compareDiagnostics(oldDiagnostics, newDiagnostics, comparer);
+    }
+
+    private void compareDiagnostics(Collection<DatasetDiagnostic> oldDiagnostics,
+                                    Collection<DatasetDiagnostic> newDiagnostics,
+                                    BugComparer comparer) {
+        Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = new HashMap<>();
 
         oldDiagnostics.forEach(oldDiagnostic -> {
-            Collection<Diagnostic<? extends JavaFileObject>> matching = CollectionUtil.filter(
-                    newDiagnostics, newDiagnostic -> comparer.areSame(oldDiagnostic, newDiagnostic));
+            Collection<DatasetDiagnostic> matching = CollectionUtil.filter(
+                    newDiagnostics, newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) &&
+                            comparer.areSame(oldDiagnostic, newDiagnostic));
 
             if (matching.size() == 1) {
                 matchedDiagnostics.put(oldDiagnostic, Iterables.getOnlyElement(matching));
@@ -154,34 +159,50 @@ public final class ProjectHarness {
             }
         });
 
-        printMatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
+        System.out.println(new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics));
     }
 
-    private void printMatchResults(Collection<Diagnostic<? extends JavaFileObject>> oldDiagnostics,
-                                   Collection<Diagnostic<? extends JavaFileObject>> newDiagnostics,
-                                   Map<Diagnostic<? extends JavaFileObject>, Diagnostic<? extends JavaFileObject>> matches) {
-        Set<Diagnostic<? extends JavaFileObject>> unmatchedOld = Sets.difference(
-                Sets.newHashSet(oldDiagnostics), Sets.newHashSet(matches.keySet()));
+    public void serialiseCommit(String commit, String output) throws IOException {
+        serialiseCommit(GitUtils.parseCommit(project.loadRepo(), commit), output);
+    }
 
-        Set<Diagnostic<? extends JavaFileObject>> unmatchedNew = Sets.difference(
-                Sets.newHashSet(newDiagnostics), Sets.newHashSet(matches.values()));
+    public void serialiseCommit(RevCommit commit, String output) throws IOException {
+        Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(commit);
 
-        System.out.printf("There are %d old and %d new diagnostics\n", oldDiagnostics.size(), newDiagnostics.size());
-        System.out.printf("We matched %d old diagnostics\n", matches.keySet().size());
-        System.out.printf("We could not match %d old and %d new diagnostics\n", unmatchedOld.size(), unmatchedNew.size());
+        System.out.println(diagnostics.size());
 
-        if (!unmatchedOld.isEmpty()) {
-            System.out.println("Unmatched old diagnostics:");
-            unmatchedOld.forEach(System.out::println);
-            System.out.println();
+        StringBuilder fileOutput = new StringBuilder();
+        fileOutput.append(commit.getName()).append(" ").append(diagnostics.size()).append("\n");
+        diagnostics.forEach(diagnostic -> fileOutput.append(new DatasetDiagnostic(diagnostic)));
+
+        Files.write(Paths.get(output), fileOutput.toString().getBytes());
+    }
+
+    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, String output) throws GitAPIException, IOException {
+        List<RevCommit> commits = filter.filterCommits(GitUtils.expandCommitRange(project.loadRepo(), range));
+        Path outputDir = Paths.get(output);
+        if (!outputDir.toFile().isDirectory()) {
+            throw new RuntimeException(output + " is not a directory.");
         }
 
-        System.out.println("Unmatched new diagnostics:");
-        unmatchedNew.forEach(System.out::println);
+        int commitNum = 0;
+        for (RevCommit commit : commits) {
+            Path diagnosticsOutput = outputDir.resolve(commitNum + " " + commit.getName());
+            try {
+                serialiseCommit(commit, diagnosticsOutput.toString());
+            } catch (Exception e) {
+                try {
+                    Files.write(diagnosticsOutput, Arrays.asList("failed to write", Arrays.toString(e.getStackTrace())));
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+
+            ++commitNum;
+        }
     }
 
-    public void findInterestingPairs(CommitRange range) throws GitAPIException {
-        List<RevCommit> commits = GitUtils.expandCommitRange(project.loadRepo(), range);
-
+    public void compareDiagnosticsFile(DatasetDiagnosticsFile oldDiagnostics, DatasetDiagnosticsFile newDiagnostics, BugComparer comparer) {
+        compareDiagnostics(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer);
     }
 }

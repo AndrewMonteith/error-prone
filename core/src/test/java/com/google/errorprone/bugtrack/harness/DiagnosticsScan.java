@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.harness;
 
+import com.google.common.base.Joiner;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 
 import java.util.ArrayList;
@@ -34,8 +35,15 @@ public class DiagnosticsScan {
     }
 
     public DiagnosticsScan(DiagnosticsScan scan) {
-        this.name = new String(scan.name);
+        this.name = scan.name;
         this.files = new ArrayList<>(scan.files);
         this.cmdLineArguments = new ArrayList<>(scan.cmdLineArguments);
+    }
+
+    @Override
+    public String toString() {
+        return "Name " + name + "\n" +
+                "Files:\n  " + Joiner.on("  \n").join(files) + "\n" +
+                "Args: " + Joiner.on(' ').join(cmdLineArguments) + "\n";
     }
 }

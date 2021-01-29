@@ -44,48 +44,56 @@ public class GradleProjectScanner extends ProjectScanner {
     }
 
     private Path getSrcDirFromTaskname(CorpusProject project, String taskName) {
-        List<String> taskParts = Arrays.asList(taskName.split(":"));
+        // taskName will be of form :target1:...:targetK:compileJava or :target1:...:targetK:compileTestJava
+        // :target1:...:targetK:compileJava -----> target1/.../targetK/src/main
+        // :target1:...:targetK:compileTestJava ------> target1/.../targetK/src/test
+        List<String> taskParts = Arrays.asList(taskName.substring(1).split(":"));
 
-        String projRelativePath = Joiner.on('/').join(taskParts.subList(0, taskParts.size()-1));
+        String projRelativePath = Joiner.on('/').join(taskParts.subList(0, taskParts.size() - 1));
         String filesDir = Iterables.getLast(taskParts).equals("compileJava") ? "src/main" : "src/test";
 
-        Path absPathToSrc = project.getRoot().resolve(projRelativePath).resolve(filesDir);
-        if (!absPathToSrc.toFile().exists()) {
-            throw new IllegalArgumentException("couldn't find src for " + taskName + " in " + project.getRoot().toString());
-        }
-
-        return absPathToSrc;
+        return project.getRoot().resolve(projRelativePath).resolve(filesDir);
     }
 
-    private List<ProjectFile> getFilesFromTaskName(CorpusProject project, String taskName) {
+    private Optional<List<ProjectFile>> getFilesFromTaskName(CorpusProject project, String taskName) {
         Path projectSrcDir = getSrcDirFromTaskname(project, taskName);
 
-        return FileUtils.findFilesMatchingGlob(projectSrcDir, "**/*.java").stream()
+        if (!projectSrcDir.toFile().exists()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(FileUtils.findFilesMatchingGlob(projectSrcDir, "**/*.java").stream()
                 .filter(project::shouldScanFile)
                 .map(file -> new ProjectFile(project, file))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
-    @Override
-    public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
+    private void updateDiagnosticsFromScript(CorpusProject project) throws IOException, InterruptedException {
         String scriptOutput = ShellUtils.runCommand(project.getRoot().toFile(), "/usr/bin/python3.8",
                 "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_gradle_cmdargs.py",
                 project.getRoot().toString());
 
-        if (!scriptOutput.trim().isEmpty()) {
-            String[] scriptOutputLines = scriptOutput.split("\n");
-            for (int i = 0; i < scriptOutputLines.length; i += 2) {
-                String scanName = scriptOutputLines[i];
-                List<String> cmdLineArguments = filterCmdLineArgs(scriptOutputLines[i + 1]);
-                List<ProjectFile> filesToParse = getFilesFromTaskName(project, scanName);
-
-                scans.put(scanName, new DiagnosticsScan(
-                        scanName,
-                        filesToParse,
-                        cmdLineArguments));
-            }
+        if (scriptOutput.trim().isEmpty()) {
+            return;
         }
 
+        String[] scriptOutputLines = scriptOutput.split("\n");
+        for (int i = 0; i < scriptOutputLines.length; i += 2) {
+            String scanName = scriptOutputLines[i];
+
+            Optional<List<ProjectFile>> filesToParse = getFilesFromTaskName(project, scanName);
+            if (filesToParse.isPresent()) {
+                scans.put(scanName, new DiagnosticsScan(
+                        scanName,
+                        filesToParse.get(),
+                        filterCmdLineArgs(scriptOutputLines[i + 1])));
+            }
+        }
+    }
+
+    @Override
+    public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
+        updateDiagnosticsFromScript(project);
         removeNonExistentFiles();
 
         // Deep copy to ensure any changes don't mutate our internal copies.

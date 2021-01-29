@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.projects;
 
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import java.util.Collection;
-import java.util.Optional;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public interface BugComparer {
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 
-    boolean areSame(DatasetDiagnostic olderDiagnostic,
-                    DatasetDiagnostic newerDiagnostic);
+public class GuiceProject implements CorpusProject {
+    @Override
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/java-corpus/guice");
+    }
 
+    @Override
+    public boolean shouldScanFile(Path file) {
+        return isJavaFile(file) && !ShouldScanUtils.underDirectory(file, "target");
+    }
 
-    Optional<DatasetDiagnostic> breakTies(DatasetDiagnostic oldDiagnostic,
-                                          Collection<DatasetDiagnostic> newDiagnostics);
-
-
+    @Override
+    public BuildSystem getBuildSystem() {
+        return BuildSystem.Maven;
+    }
 }

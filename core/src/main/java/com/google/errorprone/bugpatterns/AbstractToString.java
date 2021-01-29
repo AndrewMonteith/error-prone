@@ -30,6 +30,7 @@ import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.bugpatterns.BugChecker.BinaryTreeMatcher;
 import com.google.errorprone.bugpatterns.BugChecker.CompoundAssignmentTreeMatcher;
 import com.google.errorprone.bugpatterns.BugChecker.MethodInvocationTreeMatcher;
+import com.google.errorprone.bugtrack.signatures.TreeSignature;
 import com.google.errorprone.fixes.Fix;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
@@ -200,6 +201,9 @@ public abstract class AbstractToString extends BugChecker
 
   private void handleStringifiedTree(
       Tree parent, ExpressionTree tree, ToStringKind toStringKind, VisitorState state) {
+
+    //NOTE(AndrewMonteith): VisitorState contains the path travelled to get to the expression
+
     Type type = type(tree);
     if (type.getKind() == TypeKind.NULL
         || !typePredicate().apply(type, state)
@@ -235,6 +239,7 @@ public abstract class AbstractToString extends BugChecker
   private Description maybeFix(Tree tree, VisitorState state, Type matchedType, Optional<Fix> fix) {
     Description.Builder description = buildDescription(tree);
     fix.ifPresent(description::addFix);
+    description.setSignature(new TreeSignature(state));
     descriptionMessageForDefaultMatch(matchedType, state).ifPresent(description::setMessage);
     return description.build();
   }

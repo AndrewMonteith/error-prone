@@ -261,6 +261,8 @@ public class VisitorState {
   }
 
   public void reportMatch(Description description) {
+    //NOTE(AndrewMonteith) When we find a description.
+
     checkNotNull(description, "Use Description.NO_MATCH to denote an absent finding.");
     if (description == Description.NO_MATCH) {
       return;

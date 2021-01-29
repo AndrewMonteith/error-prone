@@ -19,12 +19,15 @@ package com.google.errorprone.matchers;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.errorprone.BugPattern.SeverityLevel.SUGGESTION;
+import static com.google.errorprone.bugtrack.signatures.NoSignature.NO_SIGNATURE;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.bugtrack.signatures.DiagnosticSignature;
+import com.google.errorprone.bugtrack.signatures.NoSignature;
 import com.google.errorprone.fixes.Fix;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.tree.JCTree;
@@ -53,6 +56,8 @@ public class Description {
 
   /** The raw message, not including the check name or the link. */
   private final String rawMessage;
+
+  private DiagnosticSignature diagnosticSignature;
 
   /** The raw link URL for the check. May be null if there is no link. */
   @Nullable private final String linkUrl;
@@ -85,6 +90,8 @@ public class Description {
     return rawMessage;
   }
 
+  public DiagnosticSignature getDiagnosticSignature() { return diagnosticSignature; }
+
   /** Returns the message, not including the check name but including the link. */
   public String getMessageWithoutCheckName() {
     return linkUrl != null
@@ -105,12 +112,26 @@ public class Description {
     this.linkUrl = linkUrl;
     this.fixes = ImmutableList.copyOf(fixes);
     this.severity = severity;
+    this.diagnosticSignature = NO_SIGNATURE;
+  }
+
+
+  private Description(
+          DiagnosticPosition position,
+          String checkName,
+          String rawMessage,
+          @Nullable String linkUrl,
+          List<Fix> fixes,
+          SeverityLevel severity,
+          DiagnosticSignature diagnosticSignature) {
+    this(position, checkName, rawMessage, linkUrl, fixes, severity);
+    this.diagnosticSignature = diagnosticSignature;
   }
 
   /** Internal-only. Has no effect if applied to a Description within a BugChecker. */
   @CheckReturnValue
   public Description applySeverityOverride(SeverityLevel severity) {
-    return new Description(position, checkName, rawMessage, linkUrl, fixes, severity);
+    return new Description(position, checkName, rawMessage, linkUrl, fixes, severity, diagnosticSignature);
   }
 
   /**
@@ -152,6 +173,8 @@ public class Description {
     private final SeverityLevel severity;
     private final ImmutableList.Builder<Fix> fixListBuilder = ImmutableList.builder();
     private String rawMessage;
+
+    private DiagnosticSignature diagnosticSignature;
 
     private Builder(
         DiagnosticPosition position,
@@ -220,6 +243,12 @@ public class Description {
       return this;
     }
 
+    public Builder setDiagnosticSignature(DiagnosticSignature diagnosticSignature) {
+      checkNotNull(this.diagnosticSignature, "not null mate");
+      this.diagnosticSignature = diagnosticSignature;
+      return this;
+    }
+
     /**
      * Set a custom link URL. The custom URL will be used instead of the default one which forms
      * part of the {@code @}BugPattern.
@@ -230,8 +259,13 @@ public class Description {
       return this;
     }
 
+    public Builder setSignature(DiagnosticSignature diagnosticSignature) {
+      this.diagnosticSignature = diagnosticSignature;
+      return this;
+    }
+
     public Description build() {
-      return new Description(position, name, rawMessage, linkUrl, fixListBuilder.build(), severity);
+      return new Description(position, name, rawMessage, linkUrl, fixListBuilder.build(), severity, diagnosticSignature);
     }
   }
 }

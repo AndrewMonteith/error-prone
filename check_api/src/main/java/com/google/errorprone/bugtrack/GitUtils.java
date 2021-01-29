@@ -114,4 +114,12 @@ public class GitUtils {
         }
     }
 
+    public static void checkoutRepo(Repository repo, String commitId) {
+        try {
+            new Git(repo).checkout().setName(commitId).call();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

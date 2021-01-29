@@ -16,6 +16,8 @@
 
 package com.google.errorprone.bugtrack.harness;
 
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.util.HashMap;
@@ -42,12 +44,22 @@ public final class DiagnosticsDistribution {
         return distribution;
     }
 
+    public DiagnosticsDistribution(Iterable<DatasetDiagnostic> diagnostics) {
+        this();
+
+        diagnostics.forEach(this::addDiagnostic);
+    }
+
     private void addDiagnostic(Diagnostic<? extends JavaFileObject> diagnostic) {
         addDiagnostic(extractDiagnosticType(diagnostic));
     }
 
     private void addDiagnostic(String diagnosticKind) {
         diagnosticCounts.put(diagnosticKind, diagnosticCounts.getOrDefault(diagnosticKind, 0) + 1);
+    }
+
+    private void addDiagnostic(DatasetDiagnostic diagnostic) {
+        addDiagnostic(extractDiagnosticType(diagnostic));
     }
 
     public int getDiagnosticKindCount(String diagnosticKind) {
@@ -68,5 +80,17 @@ public final class DiagnosticsDistribution {
                 .allMatch(diagnosticKind ->
                         getDiagnosticKindCount(diagnosticKind) == that.getDiagnosticKindCount(diagnosticKind));
 
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        result.append("Distribution on ").append(diagnosticCounts.values().stream().mapToInt(i -> i).sum()).append(":\n");
+
+        diagnosticCounts.forEach((diagnosticType, frequency) -> {
+            result.append(diagnosticType).append(" ").append(frequency).append("\n");
+        });
+
+        return result.toString();
     }
 }

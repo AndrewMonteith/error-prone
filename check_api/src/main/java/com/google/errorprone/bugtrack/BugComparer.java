@@ -28,7 +28,7 @@ public interface BugComparer {
 
 
     Optional<DatasetDiagnostic> breakTies(DatasetDiagnostic oldDiagnostic,
-                                          Collection<DatasetDiagnostic> newDiagnostics);
+                                          Iterable<DatasetDiagnostic> newDiagnostics);
 
 
 }

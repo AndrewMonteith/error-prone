@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.scanning;
 
 
 import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.bugtrack.harness.utils.FileUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 

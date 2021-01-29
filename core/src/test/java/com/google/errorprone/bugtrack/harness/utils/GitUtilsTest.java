@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.utils;
 
 import com.google.errorprone.bugtrack.CommitRange;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.GitUtils;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import com.google.errorprone.bugtrack.projects.TestProject;
@@ -34,7 +35,7 @@ import java.util.List;
 @RunWith(JUnit4.class)
 public class GitUtilsTest {
     @Test
-    public void canExpandValidCommitRange() throws IOException, GitAPIException {
+    public void canExpandValidCommitRange() throws GitAPIException {
         // GIVEN:
         Repository project = new JSoupProject().loadRepo();
         CommitRange range = new CommitRange("3c37bffe", "690d6019");
@@ -43,14 +44,14 @@ public class GitUtilsTest {
         List<RevCommit> expandedRange = GitUtils.expandCommitRange(project, range);
 
         // EXPECT:
-        final String[] expectedHashes = new String[] {"3c37bffe", "afd73606", "724b2c5b", "690d6019"};
+        final String[] expectedHashes = new String[]{"3c37bffe", "afd73606", "724b2c5b", "690d6019"};
         for (int i = 0; i < expectedHashes.length; ++i) {
             Assert.assertTrue(expandedRange.get(i).getName().startsWith(expectedHashes[i]));
         }
     }
 
     @Test
-    public void canLoadObjectsFromCommits() throws IOException, GitAPIException {
+    public void canLoadObjectsFromCommits() throws IOException {
         // GIVEN:
         Repository project = new TestProject().loadRepo();
         RevCommit commit = GitUtils.parseCommit(project, "e4ffa7f74f461ca3e36fb89987f77e991ed8d998");
@@ -63,5 +64,19 @@ public class GitUtilsTest {
         // THEN:
         Assert.assertEquals(6, file1Lines.size());
         Assert.assertEquals(5, file2Lines.size());
+    }
+
+    @Test
+    public void canLoadLineFromDiagnostic() throws IOException {
+        // GIVEN:
+        Repository repo = new JSoupProject().loadRepo();
+        RevCommit commit = GitUtils.parseCommit(repo, "b61a3e6b340b878b30c518e35c6066f559b5102e");
+        DatasetDiagnostic diag = new DatasetDiagnostic("src/test/java/org/jsoup/nodes/DocumentTest.java", 44, 0, "test");
+
+        // WHEN:
+        String line = GitUtils.loadJavaLine(repo, commit, diag).trim();
+
+        // THEN:
+        Assert.assertEquals("Document noTitle = Jsoup.parse(\"<p>Hello</p>\");", line);
     }
 }

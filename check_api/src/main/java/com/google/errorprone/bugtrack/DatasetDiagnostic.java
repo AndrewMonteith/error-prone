@@ -66,6 +66,10 @@ public class DatasetDiagnostic {
                 SignatureBucket.DIAGNOSTIC_SIGNATURES.getOrDefault(diagnostic, null));
     }
 
+    public boolean isSameType(DatasetDiagnostic other) {
+        return DiagnosticUtils.extractDiagnosticType(this).equals(DiagnosticUtils.extractDiagnosticType(other));
+    }
+
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();

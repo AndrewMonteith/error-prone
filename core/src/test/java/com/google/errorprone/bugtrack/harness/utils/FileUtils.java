@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.utils;
 
 import java.io.IOException;
 import java.nio.file.*;

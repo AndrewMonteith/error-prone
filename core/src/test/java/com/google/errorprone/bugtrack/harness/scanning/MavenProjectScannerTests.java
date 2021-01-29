@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.scanning;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.GitUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.projects.GuiceProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -34,10 +31,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;

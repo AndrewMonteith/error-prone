@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.scanning;
 
 import com.google.common.base.Joiner;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class DiagnosticsScan {

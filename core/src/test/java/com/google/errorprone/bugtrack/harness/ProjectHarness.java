@@ -18,6 +18,10 @@ package com.google.errorprone.bugtrack.harness;
 
 import com.google.common.collect.*;
 import com.google.errorprone.bugtrack.*;
+import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
+import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
+import com.google.errorprone.bugtrack.harness.scanning.GradleProjectScanner;
+import com.google.errorprone.bugtrack.harness.scanning.MavenProjectScanner;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -147,13 +151,12 @@ public final class ProjectHarness {
         Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = new HashMap<>();
 
         oldDiagnostics.forEach(oldDiagnostic -> {
-            Collection<DatasetDiagnostic> matching = CollectionUtil.filter(
-                    newDiagnostics, newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) &&
-                            comparer.areSame(oldDiagnostic, newDiagnostic));
+            Iterable<DatasetDiagnostic> matching = Iterables.filter(newDiagnostics,
+                    newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) && comparer.areSame(oldDiagnostic, newDiagnostic));
 
-            if (matching.size() == 1) {
+            if (Iterables.size(matching) == 1) {
                 matchedDiagnostics.put(oldDiagnostic, Iterables.getOnlyElement(matching));
-            } else if (matching.size() > 1) {
+            } else if (Iterables.size(matching) > 1) {
                 comparer.breakTies(oldDiagnostic, matching)
                         .ifPresent(matchingDiagnostic -> matchedDiagnostics.put(oldDiagnostic, matchingDiagnostic));
             }

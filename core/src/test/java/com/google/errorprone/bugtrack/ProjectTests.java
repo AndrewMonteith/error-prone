@@ -188,11 +188,6 @@ public class ProjectTests {
     }
 
     @Test
-    public void example_DetectingNewBugWithLogs() throws IOException {
-
-    }
-
-    @Test
     public void example_CompareLogFiles() throws IOException, GitAPIException {
         // GIVEN:
         CorpusProject project = new GuiceProject();

@@ -16,8 +16,9 @@
 
 package com.google.errorprone.bugtrack.harness;
 
+import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
+import com.google.errorprone.bugtrack.harness.scanning.ProjectScanner;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.projects.RootAlternatingProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
 

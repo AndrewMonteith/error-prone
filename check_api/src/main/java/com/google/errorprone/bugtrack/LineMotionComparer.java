@@ -104,24 +104,21 @@ public class LineMotionComparer implements BugComparer {
 
     @Override
     public Optional<DatasetDiagnostic> breakTies(DatasetDiagnostic oldDiagnostic,
-                                                 Collection<DatasetDiagnostic> matchingNewDiagnostics) {
+                                                 Iterable<DatasetDiagnostic> matchingNewDiagnostics) {
         // Break tie by choosing same diagnostic type
-        final String oldDiagnosticType = extractDiagnosticType(oldDiagnostic);
+        Iterable<DatasetDiagnostic> sameTypeNewDiagnostics = Iterables.filter(matchingNewDiagnostics, oldDiagnostic::isSameType);
 
-        Collection<DatasetDiagnostic> sameTypeNewDiagnostics = CollectionUtil.filter(
-                matchingNewDiagnostics, diagnostic -> extractDiagnosticType(diagnostic).equals(oldDiagnosticType));
-
-        if (sameTypeNewDiagnostics.size() == 0) {
+        if (Iterables.isEmpty(sameTypeNewDiagnostics))
             return Optional.empty();
-        } else if (sameTypeNewDiagnostics.size() == 1) {
+        else if (Iterables.size(sameTypeNewDiagnostics) == 1) {
             return Optional.of(Iterables.getOnlyElement(sameTypeNewDiagnostics));
         }
 
         // Then break type by choosing same diagnostic type and column number
-        Collection<DatasetDiagnostic> sameColumnDiagnostics = sameTypeNewDiagnostics.stream()
-                .filter(diag -> diag.getColumnNumber() == oldDiagnostic.getColumnNumber()).collect(Collectors.toList());
+        Iterable<DatasetDiagnostic> sameColumnDiagnostics = Iterables.filter(sameTypeNewDiagnostics,
+                diag -> diag.getColumnNumber() == oldDiagnostic.getColumnNumber());
 
-        if (!sameColumnDiagnostics.isEmpty()) {
+        if (!Iterables.isEmpty(sameColumnDiagnostics)) {
             return Optional.of(Iterables.getLast(sameColumnDiagnostics));
         }
 

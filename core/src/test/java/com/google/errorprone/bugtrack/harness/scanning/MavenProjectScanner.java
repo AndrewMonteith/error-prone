@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.scanning;
 
+import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,7 +65,7 @@ public class MavenProjectScanner extends ProjectScanner {
     public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
         String buildOutput = ShellUtils.runCommand(project.getRoot().toFile(),
                 "/usr/bin/python3.8",
-                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/get_maven_cmdargs.py",
+                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/scanning/get_maven_cmdargs.py",
                 project.getRoot().toString());
 
         return parseScansOutput(project, buildOutput);

@@ -102,6 +102,10 @@ public class GitUtils {
         }
     }
 
+    public static String loadJavaLine(Repository repo, RevCommit commit, DatasetDiagnostic diag) throws IOException {
+        return loadSrcFile(repo, commit, DiagnosticUtils.getProjectRelativePath(diag)).get((int)diag.getLineNumber()-1);
+    }
+
     public static List<DiffEntry> computeDiffs(Git git, RevCommit olderCommit, RevCommit newerCommit) throws GitAPIException, IOException {
         return computeDiffs(git.getRepository(), olderCommit, newerCommit);
     }

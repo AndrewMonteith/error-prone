@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.scanning;
 
 import com.google.common.collect.Iterables;
 import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.scanner.BuiltInCheckerSuppliers;
-import com.google.errorprone.scanner.ScannerSupplier;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;

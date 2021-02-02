@@ -87,7 +87,7 @@ public class LineMotionComparer implements BugComparer {
     @Override
     public boolean areSame(DatasetDiagnostic oldDiagnostic,
                            DatasetDiagnostic newDiagnostic) {
-        if (!inSameFile(oldDiagnostic, newDiagnostic)) {
+        if (!(inSameFile(oldDiagnostic, newDiagnostic) && oldDiagnostic.isSameType(newDiagnostic))) {
             return false;
         }
 
@@ -96,33 +96,12 @@ public class LineMotionComparer implements BugComparer {
 
             Optional<Long> newLine = lineTracker.getNewLine(oldDiagnostic.getLineNumber());
 
-            return newLine.isPresent() && newLine.get() == newDiagnostic.getLineNumber();
+            boolean inSameLine = newLine.isPresent() && newLine.get() == newDiagnostic.getLineNumber();
+            boolean inSameColumn = oldDiagnostic.getColumnNumber() == newDiagnostic.getColumnNumber();
+
+            return inSameLine && inSameColumn;
         } catch (IOException | DiffException e) {
             return false;
         }
     }
-
-    @Override
-    public Optional<DatasetDiagnostic> breakTies(DatasetDiagnostic oldDiagnostic,
-                                                 Iterable<DatasetDiagnostic> matchingNewDiagnostics) {
-        // Break tie by choosing same diagnostic type
-        Iterable<DatasetDiagnostic> sameTypeNewDiagnostics = Iterables.filter(matchingNewDiagnostics, oldDiagnostic::isSameType);
-
-        if (Iterables.isEmpty(sameTypeNewDiagnostics))
-            return Optional.empty();
-        else if (Iterables.size(sameTypeNewDiagnostics) == 1) {
-            return Optional.of(Iterables.getOnlyElement(sameTypeNewDiagnostics));
-        }
-
-        // Then break type by choosing same diagnostic type and column number
-        Iterable<DatasetDiagnostic> sameColumnDiagnostics = Iterables.filter(sameTypeNewDiagnostics,
-                diag -> diag.getColumnNumber() == oldDiagnostic.getColumnNumber());
-
-        if (!Iterables.isEmpty(sameColumnDiagnostics)) {
-            return Optional.of(Iterables.getLast(sameColumnDiagnostics));
-        }
-
-        return Optional.empty();
-    }
-
 }

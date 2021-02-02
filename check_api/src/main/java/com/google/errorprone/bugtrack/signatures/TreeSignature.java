@@ -17,15 +17,29 @@
 package com.google.errorprone.bugtrack.signatures;
 
 import com.google.errorprone.VisitorState;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TreeSignature implements DiagnosticSignature {
-    private final TreePath path;
-        // Not sure if keeping a reference to this will keep some very expensive AST data structures alive.
-        // But I guess we'll find out.  If so we can just store a hash instead of the entire path.
+    private List<Tree.Kind> getKindsFromNodeToRoot(TreePath path) {
+        List<Tree.Kind> kindPath = new ArrayList<>();
+
+        while (path != null) {
+            kindPath.add(path.getLeaf().getKind());
+            System.out.println(path.getLeaf().getKind() + " " + path.getLeaf());
+            path = path.getParentPath();
+        }
+
+        return kindPath;
+    }
 
     public TreeSignature(VisitorState state) {
-        this.path = state.getPath();
+        List<Tree.Kind> kinds = getKindsFromNodeToRoot(state.getPath());
+
+        kinds.forEach(System.out::println);
     }
 
     @Override

@@ -16,12 +16,15 @@
 
 package com.google.errorprone.bugtrack.harness;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.errorprone.bugtrack.*;
+import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
+import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
-import com.google.errorprone.bugtrack.harness.scanning.GradleProjectScanner;
-import com.google.errorprone.bugtrack.harness.scanning.MavenProjectScanner;
+import com.google.errorprone.bugtrack.harness.scanning.ScanWalker;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -33,94 +36,54 @@ import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public final class ProjectHarness {
     private final CorpusProject project;
-    private boolean verbose = false;
+    private Verbosity verbose = Verbosity.SILENT;
 
     public ProjectHarness(CorpusProject project) {
         this.project = project;
     }
 
-    public ProjectHarness(CorpusProject project, boolean verbose) {
+    public ProjectHarness(CorpusProject project, Verbosity verbose) {
         this.project = project;
         this.verbose = verbose;
     }
 
-    public Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(String commitHash) throws IOException {
-        return collectDiagnostics(GitUtils.parseCommit(project.loadRepo(), commitHash));
-    }
-
-    public Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(RevCommit commit) throws IOException {
-        Collection<DiagnosticsScan> diagnosticScans = Iterables.getLast(loadScanWalker(ImmutableList.of(commit)));
-        return DiagnosticsCollector.collectDiagnostics(diagnosticScans, verbose);
-    }
-
-    private Iterable<Collection<DiagnosticsScan>> loadScanWalker(Iterable<RevCommit> commits) throws IOException {
-        switch (project.getBuildSystem()) {
-            case Maven:
-                return new CommitWalker(project, commits, new MavenProjectScanner());
-            case Gradle:
-                return new CommitWalker(project, commits, new GradleProjectScanner());
-            default:
-                throw new IllegalArgumentException("not yet supporting build system of project " + project.getRoot());
-        }
-    }
-
-    public void walkCommitRange(CommitRange range) throws IOException, GitAPIException {
-        List<RevCommit> commits = GitUtils.expandCommitRange(project.loadRepo(), range);
-        System.out.printf("Going to scan %d commits\n", commits.size());
-
-        final List<DiagnosticsDistribution> distributions = new ArrayList<>();
-
-        forEachCommitWithDiagnostics(commits, (commit, diagnostics) -> {
-            System.out.printf("Commit %s had %d alerts\n", commit.getName(), diagnostics.size());
-
-            DiagnosticsDistribution distribution = DiagnosticsDistribution.fromDiagnostics(diagnostics);
-            if (!distributions.isEmpty() && !Iterables.getLast(distributions).equals(distribution)) {
-                // The distribution has changed, let's tell them
-                System.out.println("Diagnostics distribution has changed since last!");
-            }
-            distributions.add(distribution);
-        });
-    }
-
-    public void forEachCommitWithDiagnostics(Iterable<RevCommit> commits,
+    private void forEachCommitWithDiagnostics(Iterable<RevCommit> commits,
                                              BiConsumer<RevCommit, Collection<Diagnostic<? extends JavaFileObject>>> consumer) throws IOException {
-        Iterable<Collection<DiagnosticsScan>> scanWalker = loadScanWalker(commits);
-
-        if (verbose) {
+        if (verbose == Verbosity.VERBOSE) {
             System.out.println("Loading diagnostic scan information");
         }
 
-        Streams.zip(Streams.stream(commits), Streams.stream(scanWalker), Pair::of).forEach(commitToScan -> {
+        commits.forEach(commit -> {
             Collection<Diagnostic<? extends JavaFileObject>> diagnostics = new ArrayList<>();
 
             try {
-                diagnostics.addAll(DiagnosticsCollector.collectDiagnostics(commitToScan.snd, verbose));
-            } catch (AssertionError e) {
-                System.out.println("Failed to collect diagnostics for commit " + commitToScan.fst.getName());
+                diagnostics.addAll(DiagnosticsCollector.collectEPDiagnostics(project, commit, verbose));
+            } catch (Exception e) {
+                System.out.println("Failed to collect diagnostics for commit " + commit.getName());
             }
 
-            consumer.accept(commitToScan.fst, diagnostics);
+            consumer.accept(commit, diagnostics);
         });
     }
 
-    public void forEachCommitIdWithDiagnostics(Iterable<String> commits,
+    public void forEachCommitIdWithDiagnostics(Iterable<String> commitHashes,
                                                BiConsumer<RevCommit, Collection<Diagnostic<? extends JavaFileObject>>> consumer) throws IOException {
-        forEachCommitWithDiagnostics(Streams.stream(commits)
-                .map(commitId -> {
-                    try {
-                        return GitUtils.parseCommit(project.loadRepo(), commitId);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                }).collect(Collectors.toList()), consumer);
+        Iterable<RevCommit> commits = Iterables.transform(commitHashes, commitId -> {
+            try {
+                return GitUtils.parseCommit(project.loadRepo(), commitId);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+
+        forEachCommitWithDiagnostics(commits, consumer);
     }
 
     public void compareTwoCommits(String oldCommitId, String newCommitId, BugComparer comparer) throws IOException {
@@ -142,57 +105,28 @@ public final class ProjectHarness {
             Iterables.transform(diagnostics, DatasetDiagnostic::new).forEach(sink::add);
         });
 
-        System.out.println(computeMatches(oldDiagnostics, newDiagnostics, comparer));
+        System.out.println(new DiagnosticsMatcher(oldDiagnostics, newDiagnostics, comparer));
     }
 
-    public MatchResults computeMatches(Collection<DatasetDiagnostic> oldDiagnostics,
-                                       Collection<DatasetDiagnostic> newDiagnostics,
-                                       BugComparer comparer) {
-        Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = new HashMap<>();
+    public void serialiseCommit(RevCommit commit, Path output) throws IOException {
+        Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
+                DiagnosticsCollector.collectEPDiagnostics(project, commit);
 
-        oldDiagnostics.forEach(oldDiagnostic -> {
-            Iterable<DatasetDiagnostic> matching = Iterables.filter(newDiagnostics,
-                    newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) && comparer.areSame(oldDiagnostic, newDiagnostic));
-
-            if (Iterables.size(matching) == 1) {
-                matchedDiagnostics.put(oldDiagnostic, Iterables.getOnlyElement(matching));
-            } else if (Iterables.size(matching) > 1) {
-                comparer.breakTies(oldDiagnostic, matching)
-                        .ifPresent(matchingDiagnostic -> matchedDiagnostics.put(oldDiagnostic, matchingDiagnostic));
-            }
-        });
-
-        return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
+        DatasetDiagnosticsFile.save(output, commit, diagnostics);
     }
 
-    public void serialiseCommit(String commit, String output) throws IOException {
-        serialiseCommit(GitUtils.parseCommit(project.loadRepo(), commit), output);
-    }
-
-    public void serialiseCommit(RevCommit commit, String output) throws IOException {
-        Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(commit);
-
-        System.out.println(diagnostics.size());
-
-        StringBuilder fileOutput = new StringBuilder();
-        fileOutput.append(commit.getName()).append(" ").append(diagnostics.size()).append("\n");
-        diagnostics.forEach(diagnostic -> fileOutput.append(new DatasetDiagnostic(diagnostic)));
-
-        Files.write(Paths.get(output), fileOutput.toString().getBytes());
-    }
-
-    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, String output) throws GitAPIException, IOException {
-        List<RevCommit> commits = filter.filterCommits(GitUtils.expandCommitRange(project.loadRepo(), range));
-        Path outputDir = Paths.get(output);
-        if (!outputDir.toFile().isDirectory()) {
+    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output) throws GitAPIException, IOException {
+        if (!output.toFile().isDirectory()) {
             throw new RuntimeException(output + " is not a directory.");
         }
 
+        List<RevCommit> commits = filter.filterCommits(GitUtils.expandCommitRange(project.loadRepo(), range));
+
         int commitNum = 0;
         for (RevCommit commit : commits) {
-            Path diagnosticsOutput = outputDir.resolve(commitNum + " " + commit.getName());
+            Path diagnosticsOutput = output.resolve(commitNum + " " + commit.getName());
             try {
-                serialiseCommit(commit, diagnosticsOutput.toString());
+                serialiseCommit(commit, diagnosticsOutput);
             } catch (Exception e) {
                 try {
                     Files.write(diagnosticsOutput, Arrays.asList("failed to write", Arrays.toString(e.getStackTrace())));
@@ -203,9 +137,5 @@ public final class ProjectHarness {
 
             ++commitNum;
         }
-    }
-
-    public void compareDiagnosticsFile(DatasetDiagnosticsFile oldDiagnostics, DatasetDiagnosticsFile newDiagnostics, BugComparer comparer) {
-        System.out.println(computeMatches(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer));
     }
 }

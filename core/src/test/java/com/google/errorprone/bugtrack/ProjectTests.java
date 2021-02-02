@@ -20,9 +20,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.harness.DiagnosticsDistribution;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
+import com.google.errorprone.bugtrack.harness.Verbosity;
+import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
+import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.projects.*;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,8 +48,10 @@ public class ProjectTests {
     private void assertFindsDiagnostics(CorpusProject project, String commitHash) throws IOException {
         // WHEN:
         GitUtils.checkoutMaster(project.loadRepo());
+//        Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
+//                new ProjectHarness(project, true).collectDiagnostics(commitHash);
         Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
-                new ProjectHarness(project, true).collectDiagnostics(commitHash);
+                DiagnosticsCollector.collectEPDiagnostics(project, commitHash);
 
         // THEN:
         System.out.println(diagnostics.size());
@@ -86,11 +92,11 @@ public class ProjectTests {
     public void canSerialiseDiagnostics() throws IOException {
         // GIVEN:
         CorpusProject jsoup = new JSoupProject();
-        String commitHash = "468c5369b52ca45de3c7e54a3d2ddae352495851";
+        RevCommit commit = GitUtils.parseCommit(jsoup.loadRepo(), "468c5369b52ca45de3c7e54a3d2ddae352495851");
         Path output = Paths.get("/home/monty/IdeaProjects/java-corpus/jsoup_output");
 
         // WHEN:
-        new ProjectHarness(jsoup, true).serialiseCommit(commitHash, output.toString());
+        new ProjectHarness(jsoup, Verbosity.VERBOSE).serialiseCommit(commit, output);
 
         // THEN:
         Assert.assertEquals(376, DatasetDiagnosticsFile.loadFromFile(output).diagnostics.size());
@@ -103,7 +109,7 @@ public class ProjectTests {
 
         new ProjectHarness(project).serialiseCommits(range,
                 new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice");
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice"));
 
     }
 
@@ -141,6 +147,8 @@ public class ProjectTests {
 
     @Test
     public void detectsChangesInDiagnosticsInMavenProject() throws IOException {
+        // Test will only pass if scanning with default diagnostic checkers
+
         // GIVEN:
         CorpusProject project = new JSoupProject();
         List<String> commits = ImmutableList.of(
@@ -152,7 +160,7 @@ public class ProjectTests {
 
         // WHEN:
         List<Integer> numberOfDiagnostics = new ArrayList<>();
-        new ProjectHarness(project, true).forEachCommitIdWithDiagnostics(
+        new ProjectHarness(project, Verbosity.VERBOSE).forEachCommitIdWithDiagnostics(
                 commits, (commit, diagnostics) -> numberOfDiagnostics.add(diagnostics.size()));
 
         // THEN:
@@ -165,15 +173,6 @@ public class ProjectTests {
 
 
     @Test
-    public void canWalkCommits() throws IOException, GitAPIException {
-        // GIVEN:
-        CorpusProject project = new JSoupProject();
-        CommitRange range = new CommitRange("3c37bffe", "690d6019");
-        // THEN:
-        new ProjectHarness(project, true).walkCommitRange(range);
-    }
-
-    @Test
     public void example_DetectingNewBugWithScanning() throws IOException, GitAPIException {
         // GIVEN:
         CorpusProject project = new JSoupProject();
@@ -184,7 +183,7 @@ public class ProjectTests {
         BugComparer comparer = new LineMotionComparer(project.loadRepo(), oldCommit, newCommit);
 
         // THEN:
-        new ProjectHarness(project, true).compareTwoCommits(oldCommit, newCommit, comparer);
+        new ProjectHarness(project, Verbosity.VERBOSE).compareTwoCommits(oldCommit, newCommit, comparer);
     }
 
     @Test
@@ -270,6 +269,6 @@ public class ProjectTests {
          */
 
         // THEN:
-        new ProjectHarness(project).compareDiagnosticsFile(oldDiagnostics, newDiagnostics, comparer);
+        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToStdout();
     }
 }

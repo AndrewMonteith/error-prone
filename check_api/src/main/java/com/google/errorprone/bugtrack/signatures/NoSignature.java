@@ -21,6 +21,6 @@ public final class NoSignature implements DiagnosticSignature {
 
     @Override
     public boolean areSame(DiagnosticSignature other) {
-        return true;
+        return other == NO_SIGNATURE;
     }
 }

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.scanning;
 
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
+import com.google.errorprone.bugtrack.harness.scanning.GradleProjectScanner;
+import com.google.errorprone.bugtrack.harness.scanning.MavenProjectScanner;
 import com.google.errorprone.bugtrack.harness.scanning.ProjectScanner;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.Git;
@@ -26,15 +28,31 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 
-public final class CommitWalker implements Iterable<Collection<DiagnosticsScan>>, Iterator<Collection<DiagnosticsScan>> {
+public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, Iterator<Collection<DiagnosticsScan>> {
     private final CorpusProject project;
     private final Iterator<RevCommit> commits;
     private final ProjectScanner projectScanner;
 
-    public CommitWalker(CorpusProject project, Iterable<RevCommit> commits, ProjectScanner scanner) {
+    public ScanWalker(CorpusProject project, Iterable<RevCommit> commits, ProjectScanner scanner) {
         this.project = project;
         this.commits = commits.iterator();
         this.projectScanner = scanner;
+    }
+
+    public ScanWalker(CorpusProject project, Iterable<RevCommit> commits) {
+        this.project = project;
+        this.commits = commits.iterator();
+
+        switch(project.getBuildSystem()) {
+            case Maven:
+                this.projectScanner = new MavenProjectScanner();
+                break;
+            case Gradle:
+                this.projectScanner = new GradleProjectScanner();
+                break;
+            default:
+                throw new IllegalArgumentException("not yet supporting build system of project " + project.getRoot());
+        }
     }
 
     private void cleanProject() {

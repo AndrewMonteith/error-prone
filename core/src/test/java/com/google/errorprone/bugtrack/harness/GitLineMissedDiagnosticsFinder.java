@@ -20,6 +20,8 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.DatasetDiagnosticsFile;
 import com.google.errorprone.bugtrack.GitUtils;
 import com.google.errorprone.bugtrack.LineMotionComparer;
+import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
+import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.GuiceProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -98,19 +100,15 @@ public final class GitLineMissedDiagnosticsFinder {
 
     @Test
     public void example_FindingCandidates() throws IOException, GitAPIException {
+        // GIVEN:
         CorpusProject project = new GuiceProject();
         RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
         RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "9b371d3663db9db230417f3cc394e72b705d7d7f");
 
-        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
-
-        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"));
-
-        MatchResults results = new ProjectHarness(project).computeMatches(
-                oldDiagnostics.diagnostics, newDiagnostics.diagnostics,
-                new LineMotionComparer(project.loadRepo(), oldDiagnostics.commitId, newDiagnostics.commitId));
+        MatchResults results = DiagnosticsMatcher.fromFiles(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"),
+                new LineMotionComparer(project.loadRepo(), oldCommit, newCommit)).getResults();
 
         proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);
@@ -120,17 +118,12 @@ public final class GitLineMissedDiagnosticsFinder {
     public void example_FindingCandidates2() throws IOException, GitAPIException {
         CorpusProject project = new GuiceProject();
         RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
-        RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "d071802d48a50dffd89b0cfc61eff251251e637a");
+        RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "9b371d3663db9db230417f3cc394e72b705d7d7f");
 
-        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
-
-        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/30 d071802d48a50dffd89b0cfc61eff251251e637a"));
-
-        MatchResults results = new ProjectHarness(project).computeMatches(
-                oldDiagnostics.diagnostics, newDiagnostics.diagnostics,
-                new LineMotionComparer(project.loadRepo(), oldDiagnostics.commitId, newDiagnostics.commitId));
+        MatchResults results = DiagnosticsMatcher.fromFiles(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"),
+                new LineMotionComparer(project.loadRepo(), oldCommit, newCommit)).getResults();
 
         proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);

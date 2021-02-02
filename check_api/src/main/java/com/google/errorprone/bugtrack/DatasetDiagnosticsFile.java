@@ -19,10 +19,15 @@ package com.google.errorprone.bugtrack;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import org.eclipse.jgit.revwalk.RevCommit;
 
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -78,5 +83,18 @@ public class DatasetDiagnosticsFile {
         }
 
         return new DatasetDiagnosticsFile(commitId, ImmutableList.copyOf(diagnostics));
+    }
+
+    public static void save(String output, RevCommit commit,
+                            Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) throws IOException {
+        save(Paths.get(output), commit, diagnostics);
+    }
+
+    public static void save(Path output, RevCommit commit,
+                            Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) throws IOException {
+        StringBuilder fileOutput = new StringBuilder();
+        fileOutput.append(commit.getName()).append(" ").append(Iterables.size(diagnostics)).append("\n");
+        diagnostics.forEach(diag -> fileOutput.append(new DatasetDiagnostic(diag)));
+        Files.write(output, fileOutput.toString().getBytes());
     }
 }

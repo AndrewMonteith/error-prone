@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.matching;
 
 import com.google.common.collect.Sets;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;

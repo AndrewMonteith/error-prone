@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.harness;
 
-@FunctionalInterface
-public interface BugComparer {
-
-    boolean areSame(DatasetDiagnostic olderDiagnostic,
-                    DatasetDiagnostic newerDiagnostic);
-
+public enum Verbosity {
+    VERBOSE,
+    SILENT
 }

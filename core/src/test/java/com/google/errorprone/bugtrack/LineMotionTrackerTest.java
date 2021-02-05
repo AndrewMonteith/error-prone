@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
+import com.google.errorprone.bugtrack.motion.LineMotionTracker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +42,7 @@ public class LineMotionTrackerTest {
         List<String> oldFile = loadTestFile("foo_1");
         List<String> newFile = loadTestFile("foo_2");
 
-        LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(5L), lineMotionTracker.getNewLine(4));
     }
@@ -51,7 +52,7 @@ public class LineMotionTrackerTest {
         List<String> oldFile = loadTestFile("foo_2");
         List<String> newFile = loadTestFile("foo_4");
 
-        LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(1L), lineMotionTracker.getNewLine(1));
         Assert.assertEquals(Optional.of(7L), lineMotionTracker.getNewLine(3));
@@ -65,7 +66,7 @@ public class LineMotionTrackerTest {
         List<String> oldFile = loadTestFile("Tag");
         List<String> newFile = loadTestFile("Tag_Newer");
 
-        LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(20L), lineMotionTracker.getNewLine(18));
         Assert.assertEquals(Optional.of(17L), lineMotionTracker.getNewLine(16));
@@ -77,7 +78,7 @@ public class LineMotionTrackerTest {
         List<String> oldFile = loadTestFile("Tag");
         List<String> newFile = loadTestFile("Tag_Newer");
 
-        LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(20L), lineMotionTracker.getNewLine(18));
         Assert.assertEquals(Optional.empty(), lineMotionTracker.getNewLine(19));
@@ -90,7 +91,7 @@ public class LineMotionTrackerTest {
         List<String> oldFile = loadTestFile("Tag");
         List<String> newFile = loadTestFile("Tag_Newer");
 
-        LineMotionTracker lineMotionTracker = new LineMotionTracker(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(232L), lineMotionTracker.getNewLine(221));
         Assert.assertEquals(Optional.of(221L), lineMotionTracker.getNewLine(219));

@@ -23,10 +23,13 @@ import com.google.errorprone.bugtrack.DatasetDiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public final class DiagnosticsMatcher {
     private final Collection<DatasetDiagnostic> oldDiagnostics;
@@ -86,5 +89,38 @@ public final class DiagnosticsMatcher {
 
     public void writeToStdout() {
         System.out.println(getResults());
+    }
+
+    @Override
+    public String toString() {
+        return getResults().toString();
+    }
+
+    private void writeLogFile(Path file, Consumer<StringBuilder> buildString) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        buildString.accept(sb);
+        Files.write(file, sb.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public void writeToFile(Path outputDir) throws IOException {
+        if (!outputDir.toFile().isDirectory()) {
+            throw new RuntimeException("can only dump matches into directories");
+        }
+
+        final MatchResults results = getResults();
+
+        writeLogFile(outputDir.resolve("unmatched_old"), fileContents ->
+                results.getUnmatchedOldDiagnostics().forEach(fileContents::append));
+
+        writeLogFile(outputDir.resolve("unmatched_new"), fileContents ->
+                results.getUnmatchedNewDiagnostics().forEach(fileContents::append));
+
+        final Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = results.getMatchedDiagnostics();
+        writeLogFile(outputDir.resolve("matched_old"), fileContents ->
+                matchedDiagnostics.keySet().forEach(fileContents::append));
+
+        writeLogFile(outputDir.resolve("matched_new"), fileContents ->
+                matchedDiagnostics.keySet().forEach(key -> fileContents.append(matchedDiagnostics.get(key))));
+
     }
 }

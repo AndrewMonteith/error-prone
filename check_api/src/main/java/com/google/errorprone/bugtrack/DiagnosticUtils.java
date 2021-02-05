@@ -20,36 +20,6 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 public final class DiagnosticUtils {
-    public static final String CORPUS_ROOT = "/home/monty/IdeaProjects/java-corpus";
-
-    private static int ordinalIndexOf(String text, char needle, int n) {
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == needle) {
-                n--;
-                if (n == 0) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    private static String getProjectRelativePath(String absolutePath) {
-        if (absolutePath.startsWith(CORPUS_ROOT)) {
-            return absolutePath.substring(ordinalIndexOf(absolutePath, '/', 6) + 1);
-        } else {
-            return absolutePath;
-        }
-    }
-
-    public static String getProjectRelativePath(Diagnostic<? extends JavaFileObject> diagnostic) {
-        return getProjectRelativePath(diagnostic.getSource().getName());
-    }
-
-    public static String getProjectRelativePath(DatasetDiagnostic diagnostic) {
-        return getProjectRelativePath(diagnostic.getFileName());
-    }
-
     private static String getDiagnosticType(String message) {
         return message.substring(1, message.indexOf(']'));
     }

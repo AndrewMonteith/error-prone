@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Error Prone Authors.
+ * Copyright 2021 The Error Prone Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.motion;
 
 import com.github.difflib.algorithm.DiffException;
-import com.google.common.collect.Iterables;
+import com.google.errorprone.bugtrack.BugComparer;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.DiagnosticUtils;
+import com.google.errorprone.bugtrack.GitUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import static com.google.errorprone.bugtrack.DiagnosticUtils.extractDiagnosticType;
-
-public class LineMotionComparer implements BugComparer {
+public class LineColumnMotionComparer implements BugComparer {
     private final Repository repo;
     private final RevCommit oldCommit;
     private final RevCommit newCommit;
 
-    private final Map<String, LineMotionTracker> lineTrackers;
+    private final Map<String, LineMotionTracker<String>> lineTrackers;
     private final List<DiffEntry> diffs;
 
-    public LineMotionComparer(Repository repo, RevCommit oldCommit, RevCommit newCommit) throws GitAPIException, IOException {
+    public LineColumnMotionComparer(Repository repo, RevCommit oldCommit, RevCommit newCommit) throws GitAPIException, IOException {
         this.repo = repo;
         this.oldCommit = oldCommit;
         this.newCommit = newCommit;
@@ -47,7 +48,7 @@ public class LineMotionComparer implements BugComparer {
         this.diffs = GitUtils.computeDiffs(repo, oldCommit, newCommit);
     }
 
-    public LineMotionComparer(Repository repo, String oldCommitHash, String newCommitHash) throws IOException, GitAPIException {
+    public LineColumnMotionComparer(Repository repo, String oldCommitHash, String newCommitHash) throws IOException, GitAPIException {
         this(repo,
                 GitUtils.parseCommit(repo, oldCommitHash),
                 GitUtils.parseCommit(repo, newCommitHash));
@@ -55,28 +56,29 @@ public class LineMotionComparer implements BugComparer {
 
     private boolean inSameFile(DatasetDiagnostic oldDiagnostic,
                                DatasetDiagnostic newDiagnostic) {
-        String oldPath = DiagnosticUtils.getProjectRelativePath(oldDiagnostic);
-        String newPath = DiagnosticUtils.getProjectRelativePath(newDiagnostic);
+        String oldPath = oldDiagnostic.getFileName();
+        String newPath = newDiagnostic.getFileName();
 
         if (oldPath.equals(newPath)) {
             return true;
         }
 
-        return diffs.stream().filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
+        return diffs.stream()
+                .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
                 .anyMatch(diff -> diff.getOldPath().equals(oldPath) && diff.getNewPath().equals(newPath));
     }
 
-    private LineMotionTracker createLineMotionTracker(DatasetDiagnostic oldDiagnostic,
+    private LineMotionTracker<String> createLineMotionTracker(DatasetDiagnostic oldDiagnostic,
                                                       DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
-        List<String> oldText = GitUtils.loadSrcFile(repo, oldCommit, DiagnosticUtils.getProjectRelativePath(oldDiagnostic));
-        List<String> newText = GitUtils.loadSrcFile(repo, newCommit, DiagnosticUtils.getProjectRelativePath(newDiagnostic));
+        List<String> oldText = GitUtils.loadSrcFile(repo, oldCommit, oldDiagnostic.getFileName());
+        List<String> newText = GitUtils.loadSrcFile(repo, newCommit, newDiagnostic.getFileName());
 
-        return new LineMotionTracker(oldText, newText);
+        return new LineMotionTracker<>(oldText, newText);
     }
 
-    private LineMotionTracker getLineMotionTracker(DatasetDiagnostic oldDiagnostic,
+    private LineMotionTracker<String> getLineMotionTracker(DatasetDiagnostic oldDiagnostic,
                                                    DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
-        String oldFile = DiagnosticUtils.getProjectRelativePath(oldDiagnostic);
+        String oldFile = oldDiagnostic.getFileName();
         if (!lineTrackers.containsKey(oldFile)) {
             lineTrackers.put(oldFile, createLineMotionTracker(oldDiagnostic, newDiagnostic));
         }
@@ -92,7 +94,7 @@ public class LineMotionComparer implements BugComparer {
         }
 
         try {
-            LineMotionTracker lineTracker = getLineMotionTracker(oldDiagnostic, newDiagnostic);
+            LineMotionTracker<String> lineTracker = getLineMotionTracker(oldDiagnostic, newDiagnostic);
 
             Optional<Long> newLine = lineTracker.getNewLine(oldDiagnostic.getLineNumber());
 

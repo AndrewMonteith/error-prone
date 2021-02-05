@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.utils;
 
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.DatasetDiagnosticsFile;
 import com.google.errorprone.bugtrack.GitUtils;
-import com.google.errorprone.bugtrack.LineMotionComparer;
+import com.google.errorprone.bugtrack.motion.LineColumnMotionComparer;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
@@ -108,7 +107,7 @@ public final class GitLineMissedDiagnosticsFinder {
         MatchResults results = DiagnosticsMatcher.fromFiles(
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"),
-                new LineMotionComparer(project.loadRepo(), oldCommit, newCommit)).getResults();
+                new LineColumnMotionComparer(project.loadRepo(), oldCommit, newCommit)).getResults();
 
         proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);
@@ -123,7 +122,7 @@ public final class GitLineMissedDiagnosticsFinder {
         MatchResults results = DiagnosticsMatcher.fromFiles(
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"),
-                new LineMotionComparer(project.loadRepo(), oldCommit, newCommit)).getResults();
+                new LineColumnMotionComparer(project.loadRepo(), oldCommit, newCommit)).getResults();
 
         proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);

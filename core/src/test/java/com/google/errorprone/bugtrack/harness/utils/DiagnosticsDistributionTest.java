@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness;
+package com.google.errorprone.bugtrack.harness.utils;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Assert;

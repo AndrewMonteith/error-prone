@@ -63,7 +63,7 @@ public class DatasetDiagnostic {
                 diagnostic.getLineNumber(),
                 diagnostic.getColumnNumber(),
                 diagnostic.getMessage(null),
-                SignatureBucket.DIAGNOSTIC_SIGNATURES.getOrDefault(diagnostic, null));
+                SignatureBucket.getSignature(diagnostic));
     }
 
     public boolean isSameType(DatasetDiagnostic other) {

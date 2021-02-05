@@ -16,6 +16,9 @@
 
 package com.google.errorprone.bugtrack.signatures;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.errorprone.VisitorState;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
@@ -24,26 +27,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TreeSignature implements DiagnosticSignature {
+    private final ImmutableList<Tree.Kind> pathFromNodeToRoot;
+
     private List<Tree.Kind> getKindsFromNodeToRoot(TreePath path) {
         List<Tree.Kind> kindPath = new ArrayList<>();
 
         while (path != null) {
             kindPath.add(path.getLeaf().getKind());
-            System.out.println(path.getLeaf().getKind() + " " + path.getLeaf());
             path = path.getParentPath();
         }
 
         return kindPath;
     }
 
-    public TreeSignature(VisitorState state) {
-        List<Tree.Kind> kinds = getKindsFromNodeToRoot(state.getPath());
+    public TreeSignature(StateBucket state) {
+        this.pathFromNodeToRoot = state.path;
+    }
 
-        kinds.forEach(System.out::println);
+    public TreeSignature(Iterable<Integer> treeKindOrdinals) {
+        this.pathFromNodeToRoot = ImmutableList.copyOf(
+                Iterables.transform(treeKindOrdinals, ordinal -> Tree.Kind.values()[ordinal]));
     }
 
     @Override
     public boolean areSame(DiagnosticSignature other) {
-        return true;
+       if (!(other instanceof TreeSignature)) {
+           return false;
+       }
+
+       return Iterables.elementsEqual(pathFromNodeToRoot, ((TreeSignature) other).pathFromNodeToRoot);
+    }
+
+    @Override
+    public String toString() {
+        return "TreeSignature:" + Joiner.on(',').join(Iterables.transform(pathFromNodeToRoot, Enum::ordinal));
     }
 }

@@ -110,7 +110,7 @@ public final class ProjectHarness {
 
     public void serialiseCommit(RevCommit commit, Path output) throws IOException {
         Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
-                DiagnosticsCollector.collectEPDiagnostics(project, commit);
+                DiagnosticsCollector.collectEPDiagnostics(project, commit, verbose);
 
         DatasetDiagnosticsFile.save(output, commit, diagnostics);
     }
@@ -130,8 +130,8 @@ public final class ProjectHarness {
             } catch (Exception e) {
                 try {
                     Files.write(diagnosticsOutput, Arrays.asList("failed to write", Arrays.toString(e.getStackTrace())));
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                } catch (IOException e2) {
+                    e2.printStackTrace();
                 }
             }
 

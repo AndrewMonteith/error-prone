@@ -25,6 +25,7 @@ import com.google.errorprone.SuppressionInfo;
 import com.google.errorprone.SuppressionInfo.SuppressedState;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.bugtrack.signatures.SignatureBucket;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Suppressible;
 import com.google.errorprone.util.ASTHelpers;
@@ -124,6 +125,13 @@ public class Scanner extends TreePathScanner<Void, VisitorState> {
 
   protected void reportMatch(Description description, VisitorState state) {
     checkNotNull(description, "Use Description.NO_MATCH to denote an absent finding.");
+
+    //NOTE(AndrewMonteith) This seems to be lowest place we have description and state.
+    // Any state placed here should be removed once the signature is created.
+    if (description != Description.NO_MATCH) {
+        SignatureBucket.putState(description, state);
+    }
+
     state.reportMatch(description);
   }
 

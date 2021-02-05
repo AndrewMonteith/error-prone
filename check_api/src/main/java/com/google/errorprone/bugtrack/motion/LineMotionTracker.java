@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Error Prone Authors.
+ * Copyright 2021 The Error Prone Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.motion;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.algorithm.DiffException;
@@ -22,34 +22,46 @@ import com.github.difflib.algorithm.jgit.HistogramDiff;
 import com.github.difflib.patch.AbstractDelta;
 import com.github.difflib.patch.Chunk;
 import com.github.difflib.patch.Patch;
-import com.google.common.collect.Iterables;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public final class LineMotionTracker {
-    private final List<String> oldText;
-    private final List<String> newText;
+/*
+    Tracks source code lines moving from one file to another.
+    File A                              File A'
+    ------                              ------
+    1. class Foo {                | 1.  class Foo {
+    2.  public int i;             | 2.    public String s;
+    3.  public void foo() {}      | 3.    public int i;
+    4. }                          | 4.    public void foo() {
+                                  | 5.    }
+                                  | 6.  }
 
-    private final Patch<String> filePatch;
+    We are able to track lines 1->1, 2->3, 4->6 but fail to track 3->4.
+    Classes of transformations that break matching:
 
-    public LineMotionTracker(List<String> oldText, List<String> newText) throws DiffException {
-        this.oldText = oldText;
-        this.newText = newText;
-        this.filePatch = DiffUtils.diff(oldText, newText, new HistogramDiff<>());
+    This failure is because the source characters of line 3 are not present in A', since the brace
+    is on a new line. Furthmore, had any of the lines been indented differently in A' then we would
+    also fail to match them
+ */
+public final class LineMotionTracker<T> {
+    private final List<T> oldSrc;
+    private final List<T> newSrc;
+
+    private final Patch<T> filePatch;
+
+    public LineMotionTracker(List<T> oldSrc, List<T> newSrc) throws DiffException {
+        this.oldSrc = oldSrc;
+        this.newSrc = newSrc;
+        this.filePatch = DiffUtils.diff(oldSrc, newSrc, new HistogramDiff<>());
     }
 
-    public LineMotionTracker(String oldText, String newText) throws DiffException {
-        this(Arrays.asList(oldText.split("\n").clone()),
-                Arrays.asList(newText.split("\n").clone()));
-    }
-
-    private static boolean isLineInChunk(Chunk<String> chunk, final long line) {
+    private boolean isLineInChunk(Chunk<T> chunk, final long line) {
         return chunk.getPosition() <= line && line < (chunk.getPosition() + chunk.getLines().size());
     }
 
-    private Optional<AbstractDelta<String>> findSourcePatchAffectingLine(final long line) {
+    private Optional<AbstractDelta<T>> findSourcePatchAffectingLine(final long line) {
         return filePatch.getDeltas().stream()
                 .filter(delta -> isLineInChunk(delta.getSource(), line))
                 .findFirst();
@@ -75,19 +87,21 @@ public final class LineMotionTracker {
     public Optional<Long> getNewLine(final long line) throws RuntimeException {
         final long internalLine = line - 1;
 
-        Optional<AbstractDelta<String>> patch = findSourcePatchAffectingLine(internalLine);
+        Optional<AbstractDelta<T>> patch = findSourcePatchAffectingLine(internalLine);
 
         if (patch.isPresent()) {
-            Chunk<String> target = patch.get().getTarget();
+            Chunk<T> target = patch.get().getTarget();
             switch (patch.get().getType()) {
                 case EQUAL:
                     throw new RuntimeException("unsure when i'd encounter this");
                 case INSERT:
                     return Optional.of((long) target.getPosition() + target.size());
                 case CHANGE:
-                    int offsetInChange = target.getLines().indexOf(oldText.get((int) internalLine));
+                    int offsetInChange = target.getLines().indexOf(oldSrc.get((int) internalLine));
                     return offsetInChange == -1 ? Optional.empty() : Optional.of((long) target.getPosition() + offsetInChange);
                 default: // case DELETE:
+                    // If the line is deemed "deleted" from the old source file, then logically it's not in the other
+                    // file. Sadly this can be misleading, see (Classes of source code transformations).
                     return Optional.empty();
             }
         } else {

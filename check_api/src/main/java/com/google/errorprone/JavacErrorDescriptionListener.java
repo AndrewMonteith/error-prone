@@ -167,7 +167,7 @@ public class JavacErrorDescriptionListener implements DescriptionListener {
                     type = JCDiagnostic.DiagnosticType.NOTE;
                     break;
             }
-            //NOTE(AndrewMonteith) I think this is where the descriptions are created.
+            //NOTE(AndrewMonteith) I think this is where the diagnostics are created.
 
             JCDiagnostic diagnostic = factory.create(
                     type,
@@ -178,8 +178,7 @@ public class JavacErrorDescriptionListener implements DescriptionListener {
                     MESSAGE_BUNDLE_KEY,
                     message);
 
-            // I cannot express how hacky this is. But it is certainly is the simplest approach.
-//            SignatureBucket.DIAGNOSTIC_SIGNATURES.put(diagnostic, description.getDiagnosticSignature());
+            SignatureBucket.recordSignature(diagnostic, description);
 
             log.report(diagnostic);
         } finally {

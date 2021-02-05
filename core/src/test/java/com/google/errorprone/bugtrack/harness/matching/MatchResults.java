@@ -19,6 +19,7 @@ package com.google.errorprone.bugtrack.harness.matching;
 import com.google.common.collect.Sets;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
+import javax.xml.crypto.Data;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -42,6 +43,10 @@ public final class MatchResults {
 
     public Collection<DatasetDiagnostic> getNewDiagnostics() {
         return Sets.union(unmatchedNew, Sets.newHashSet(matchedDiagnostics.values()));
+    }
+
+    public Map<DatasetDiagnostic, DatasetDiagnostic> getMatchedDiagnostics() {
+        return matchedDiagnostics;
     }
 
     public Collection<DatasetDiagnostic> getUnmatchedOldDiagnostics() {

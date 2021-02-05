@@ -44,16 +44,14 @@ public final class DiagnosticsCollector {
             return Collections.emptyList();
         }
 
-        System.out.println("did a scan");
-
         Iterable<BugCheckerInfo> allChecksButVarChecker = Iterables.filter(Iterables.concat(
                 BuiltInCheckerSuppliers.ENABLED_ERRORS,
                 BuiltInCheckerSuppliers.ENABLED_WARNINGS,
                 BuiltInCheckerSuppliers.DISABLED_CHECKS),
             check -> !check.canonicalName().equals("Var"));
 
-        CompilationTestHelper helper = CompilationTestHelper.newInstance(ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker), DiagnosticsCollector.class);
-//        CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
+//        CompilationTestHelper helper = CompilationTestHelper.newInstance(ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker), DiagnosticsCollector.class);
+        CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
 
         Collection<ProjectFile> files = scan.files.stream()
                 .filter(ProjectFile::exists)

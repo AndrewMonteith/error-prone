@@ -21,6 +21,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
+import org.eclipse.jgit.diff.HistogramDiff;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -103,7 +104,7 @@ public class GitUtils {
     }
 
     public static String loadJavaLine(Repository repo, RevCommit commit, DatasetDiagnostic diag) throws IOException {
-        return loadSrcFile(repo, commit, DiagnosticUtils.getProjectRelativePath(diag)).get((int)diag.getLineNumber()-1);
+        return loadSrcFile(repo, commit, diag.getFileName()).get((int)diag.getLineNumber()-1);
     }
 
     public static List<DiffEntry> computeDiffs(Git git, RevCommit olderCommit, RevCommit newerCommit) throws GitAPIException, IOException {

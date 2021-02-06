@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Error Prone Authors.
+ * Copyright 2021 The Error Prone Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.bugtrack.motion.LineMotionTracker;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,8 +27,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
-@RunWith(JUnit4.class)
-public class LineMotionTrackerTest {
+public final class CharacterLineMotionTrackerTest {
     private static final String TEST_REPO = "src/test/java/com/google/errorprone/bugtrack/testdata/";
 
     private List<String> loadTestFile(String file) throws IOException {
@@ -39,34 +36,33 @@ public class LineMotionTrackerTest {
 
     @Test
     public void canTrackSingleLineMove() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("foo_1");
-        List<String> newFile = loadTestFile("foo_2");
+        List<String> oldFile = loadTestFile("foo_1.java");
+        List<String> newFile = loadTestFile("foo_2.java");
 
-        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = LineMotionTracker.newLineCharsTracker(oldFile, newFile);
 
-        Assert.assertEquals(Optional.of(5L), lineMotionTracker.getNewLine(4));
+        Assert.assertEquals(Optional.of(4L), lineMotionTracker.getNewLine(3));
     }
 
     @Test
     public void canTrackLargerFileChange() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("foo_2");
-        List<String> newFile = loadTestFile("foo_4");
+        List<String> oldFile = loadTestFile("foo_2.java");
+        List<String> newFile = loadTestFile("foo_4.java");
 
-        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = LineMotionTracker.newLineCharsTracker(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(1L), lineMotionTracker.getNewLine(1));
-        Assert.assertEquals(Optional.of(7L), lineMotionTracker.getNewLine(3));
-        Assert.assertEquals(Optional.empty(), lineMotionTracker.getNewLine(4));
-        Assert.assertEquals(Optional.empty(), lineMotionTracker.getNewLine(5));
+        Assert.assertEquals(Optional.of(6L), lineMotionTracker.getNewLine(2));
+        Assert.assertEquals(Optional.empty(), lineMotionTracker.getNewLine(3));
         Assert.assertEquals(Optional.of(12L), lineMotionTracker.getNewLine(6));
     }
 
     @Test
     public void canTrackRealLifeDiffChange() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("Tag");
-        List<String> newFile = loadTestFile("Tag_Newer");
+        List<String> oldFile = loadTestFile("Tag.java");
+        List<String> newFile = loadTestFile("Tag_Newer.java");
 
-        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = LineMotionTracker.newLineCharsTracker(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(20L), lineMotionTracker.getNewLine(18));
         Assert.assertEquals(Optional.of(17L), lineMotionTracker.getNewLine(16));
@@ -75,10 +71,10 @@ public class LineMotionTrackerTest {
 
     @Test
     public void canTrackLinesAroundADeletion() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("Tag");
-        List<String> newFile = loadTestFile("Tag_Newer");
+        List<String> oldFile = loadTestFile("Tag.java");
+        List<String> newFile = loadTestFile("Tag_Newer.java");
 
-        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = LineMotionTracker.newLineCharsTracker(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(20L), lineMotionTracker.getNewLine(18));
         Assert.assertEquals(Optional.empty(), lineMotionTracker.getNewLine(19));
@@ -88,10 +84,10 @@ public class LineMotionTrackerTest {
 
     @Test
     public void canTrackLinesAroundAnInsertion() throws IOException, DiffException {
-        List<String> oldFile = loadTestFile("Tag");
-        List<String> newFile = loadTestFile("Tag_Newer");
+        List<String> oldFile = loadTestFile("Tag.java");
+        List<String> newFile = loadTestFile("Tag_Newer.java");
 
-        LineMotionTracker<String> lineMotionTracker = new LineMotionTracker<>(oldFile, newFile);
+        LineMotionTracker<String> lineMotionTracker = LineMotionTracker.newLineCharsTracker(oldFile, newFile);
 
         Assert.assertEquals(Optional.of(232L), lineMotionTracker.getNewLine(221));
         Assert.assertEquals(Optional.of(221L), lineMotionTracker.getNewLine(219));

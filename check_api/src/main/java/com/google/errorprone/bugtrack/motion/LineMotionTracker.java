@@ -22,39 +22,44 @@ import com.github.difflib.algorithm.jgit.HistogramDiff;
 import com.github.difflib.patch.AbstractDelta;
 import com.github.difflib.patch.Chunk;
 import com.github.difflib.patch.Patch;
+import com.sun.tools.javac.util.Context;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-/*
-    Tracks source code lines moving from one file to another.
-    File A                              File A'
-    ------                              ------
-    1. class Foo {                | 1.  class Foo {
-    2.  public int i;             | 2.    public String s;
-    3.  public void foo() {}      | 3.    public int i;
-    4. }                          | 4.    public void foo() {
-                                  | 5.    }
-                                  | 6.  }
-
-    We are able to track lines 1->1, 2->3, 4->6 but fail to track 3->4.
-    Classes of transformations that break matching:
-
-    This failure is because the source characters of line 3 are not present in A', since the brace
-    is on a new line. Furthmore, had any of the lines been indented differently in A' then we would
-    also fail to match them
- */
 public final class LineMotionTracker<T> {
-    private final List<T> oldSrc;
-    private final List<T> newSrc;
-
+    private final List<String> oldSrc;
+    private final List<String> newSrc;
     private final Patch<T> filePatch;
 
-    public LineMotionTracker(List<T> oldSrc, List<T> newSrc) throws DiffException {
+    private LineMotionTracker(List<String> oldSrc, List<String> newSrc, Patch<T> filePatch) throws DiffException {
         this.oldSrc = oldSrc;
         this.newSrc = newSrc;
-        this.filePatch = DiffUtils.diff(oldSrc, newSrc, new HistogramDiff<>());
+        this.filePatch = filePatch;
+//        this.filePatch = DiffUtils.diff(oldSrcMapped, newSrcMapped, new HistogramDiff<>());
+//
+//        List<T> oldSrcMapped = oldSrc.stream().map(lineMapper).collect(Collectors.toList());
+//        List<T> newSrcMapped = newSrc.stream().map(lineMapper).collect(Collectors.toList());
+    }
+
+    public static LineMotionTracker<String> newLineCharsTracker(List<String> oldSrc,
+                                                                List<String> newSrc) throws DiffException {
+        return new LineMotionTracker<>(
+                oldSrc, newSrc, DiffUtils.diff(oldSrc, newSrc, new HistogramDiff<>()));
+    }
+
+    public static LineMotionTracker<TokenizedLine> newLineTokenTracker(List<String> oldSrc,
+                                                                       Context oldSrcContext,
+                                                                       List<String> newSrc,
+                                                                       Context newSrcContext) throws DiffException {
+        List<TokenizedLine> oldSrcTokenized = oldSrc.stream().map(line -> new TokenizedLine(line, oldSrcContext)).collect(Collectors.toList());
+        List<TokenizedLine> newSrcTokenized = newSrc.stream().map(line -> new TokenizedLine(line, newSrcContext)).collect(Collectors.toList());
+
+        Patch<TokenizedLine> tokenizedLines = DiffUtils.diff(oldSrcTokenized, newSrcTokenized, new HistogramDiff<>());
+
+        return new LineMotionTracker<>(oldSrc, newSrc, tokenizedLines);
     }
 
     private boolean isLineInChunk(Chunk<T> chunk, final long line) {

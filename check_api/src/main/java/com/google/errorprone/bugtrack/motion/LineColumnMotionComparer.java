@@ -73,7 +73,7 @@ public class LineColumnMotionComparer implements BugComparer {
         List<String> oldText = GitUtils.loadSrcFile(repo, oldCommit, oldDiagnostic.getFileName());
         List<String> newText = GitUtils.loadSrcFile(repo, newCommit, newDiagnostic.getFileName());
 
-        return new LineMotionTracker<>(oldText, newText);
+        return LineMotionTracker.newLineCharsTracker(oldText, newText);
     }
 
     private LineMotionTracker<String> getLineMotionTracker(DatasetDiagnostic oldDiagnostic,

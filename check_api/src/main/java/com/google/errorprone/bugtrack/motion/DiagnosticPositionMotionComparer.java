@@ -87,7 +87,7 @@ public class DiagnosticPositionMotionComparer implements BugComparer {
     }
 
     private DiagnosticPositionTracker getLineMotionTracker(DatasetDiagnostic oldDiagnostic,
-                                                              DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
+                                                           DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
         String oldFile = oldDiagnostic.getFileName();
         if (!positionTrackers.containsKey(oldFile)) {
             positionTrackers.put(oldFile, createLineMotionTracker(oldDiagnostic, newDiagnostic));

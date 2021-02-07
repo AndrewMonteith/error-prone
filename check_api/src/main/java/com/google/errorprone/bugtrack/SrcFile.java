@@ -16,14 +16,21 @@
 
 package com.google.errorprone.bugtrack;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+
 import java.util.List;
 
 public class SrcFile {
     public final String name;
-    public final List<String> src;
+    public final ImmutableList<String> src;
+
+    private static String expandTabsInLine(String line) {
+        return line.replace("\t", "    ");
+    }
 
     public SrcFile(String fileName, List<String> src) {
         this.name = fileName;
-        this.src = src;
+        this.src = ImmutableList.copyOf(Iterables.transform(src, SrcFile::expandTabsInLine));
     }
 }

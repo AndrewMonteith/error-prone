@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack;
 
-import java.util.Optional;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 
-@FunctionalInterface
-public interface DiagnosticPositionTracker {
-    Optional<DiagnosticPosition> getNewPosition(final long line, final long column);
+public final class TestFileUtil {
+    private static final String TEST_REPO = "src/test/java/com/google/errorprone/bugtrack/testdata/";
 
-    default Optional<DiagnosticPosition> getNewPosition(DiagnosticPosition position) {
-        return getNewPosition(position.line, position.column);
+    public static List<String> readTestFile(String file) throws IOException {
+        return Files.readAllLines(Paths.get(TEST_REPO, file));
     }
+
+    public static SrcFile readTestSrcFile(String file) throws IOException {
+        return new SrcFile(file, readTestFile(file));
+    }
+
 }

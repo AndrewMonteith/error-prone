@@ -62,7 +62,7 @@ public final class DiagnosticsCollector {
         }
 
         files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
-        helper.setArgs(scan.cmdLineArguments);
+        helper.setArgs(ImmutableList.copyOf(Iterables.concat(scan.cmdLineArguments, ImmutableList.of("-Xjcov"))));
 
         return helper.collectDiagnostics();
     }

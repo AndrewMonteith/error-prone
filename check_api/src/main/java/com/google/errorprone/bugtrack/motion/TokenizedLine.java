@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 public final class TokenizedLine {
     private final ImmutableList<ErrorProneToken> tokens;
+    private final ErrorProneTokens errorProneTokens;
     private final String srcLine;
     private final int hash;
 
@@ -48,12 +49,7 @@ public final class TokenizedLine {
             return "";
         }
 
-//        try {
-            return srcLine.substring(token.pos(), token.endPos());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return "";
-//        }
+        return srcLine.substring(token.pos(), token.endPos());
     }
 
     public int getTokenIndexForColumn(final long column) {
@@ -72,6 +68,7 @@ public final class TokenizedLine {
 
     public TokenizedLine(String srcLine, Context context) {
         this.srcLine = srcLine;
+        this.errorProneTokens = new ErrorProneTokens(srcLine, context);
         this.tokens = ErrorProneTokens.getTokens(srcLine, context);
         this.hash = Arrays.hashCode(tokens.stream().map(this::readTokenSrc).toArray());
     }

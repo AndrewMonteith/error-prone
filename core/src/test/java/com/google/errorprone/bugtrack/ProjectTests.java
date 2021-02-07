@@ -46,13 +46,17 @@ import static com.google.errorprone.bugtrack.motion.DPTrackerConstructorFactory.
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
-
     private void assertFindsDiagnostics(CorpusProject project, String commitHash) throws IOException {
         // WHEN:
         GitUtils.checkoutMaster(project.loadRepo());
 
         Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
                 DiagnosticsCollector.collectEPDiagnostics(project, commitHash);
+
+//        diagnostics.forEach(d -> {
+//            System.out.println(d);
+//            System.out.println(d.getStartPosition() + " " + d.getEndPosition());
+//        });
 
         // THEN:
         System.out.println(diagnostics.size());
@@ -210,20 +214,25 @@ public class ProjectTests {
     @Test
     public void example_CompareLogFiles() throws IOException, GitAPIException {
         // GIVEN:
-        CorpusProject project = new GuiceProject();
+        CorpusProject project = new JSoupProject();
 
-        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
+        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));
 
-        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/30 d071802d48a50dffd89b0cfc61eff251251e637a"));
+        DatasetDiagnosticsFile newFile = DatasetDiagnosticsFile.loadFromFile(
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/1 a0b87bf10a9a520b49748c619c868caed8d7a109"));
+//        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/30 d071802d48a50dffd89b0cfc61eff251251e637a"));
+//
+//        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/80 690e189a7d6830fb61c10fdc46a8985eac0a7d3a"));
 
 
         BugComparer comparer = new DiagnosticPositionMotionComparer(project.loadRepo(),
-                oldDiagnostics.commitId, newDiagnostics.commitId, newTokenizedLineTracker());
+                oldFile.commitId, newFile.commitId, newTokenizedLineTracker());
 
         // THEN:
-        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToStdout();
+        new DiagnosticsMatcher(oldFile.diagnostics, newFile.diagnostics, comparer).writeToStdout();
 //        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics"));
     }

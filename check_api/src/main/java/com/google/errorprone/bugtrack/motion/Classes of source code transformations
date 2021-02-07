@@ -1,11 +1,21 @@
 Project diff links:
   https://github.com/google/guice/compare/<diff-link>
 
-First technique used was using git to track line movement. We match an old and new diagnsotic iff they are the same
-kind, the new diagnostic is on the tracked old line and they are on the same column position. This worked well however
-it will break if the line containing the diagnostic changes in any way syntatically. Some examples we found in the wild:
+Technique 1. Character line tracking
+Description: Use diff information to track the source lines between two versions, matching two diagnostics if they
+             occur in the same position. DIFF-INFORMATION-POS-MAPPER(oldPosition) == newPosition.
+
+Technique 2. Tokenized line tracking
+Description: Use diff information track tokenized source lines between two versions, matching diagnostics based on same
+             principle as Character line tracking. This techinque is slightly more expensive because we have to parse
+             the AST of the source file.
+
+Technique 3. Subexpression matching
+Description:
+Ways in which tracking can be broken: (Currently all syntatical)
 
 Case 1: The line get's put over multiple lines.
+Breaks: Character Line Tracking, Single tokenized line tracking
 [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
   guice 875868e7263491291d4f8bdc1332bfea746ad673..9b371d3663db9db230417f3cc394e72b705d7d7f
   /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/util/Modules.java 240 38
@@ -16,6 +26,7 @@ Case 1: The line get's put over multiple lines.
     282:     .add(binding.getSource());
 
 Case 2: The line itself get's changed a bit, but the detected expression remains unchanged
+Breaks: Character Line Tracking, Single tokenized line tracking
 [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
   guice 875868e7263491291d4f8bdc1332bfea746ad673..9b371d3663db9db230417f3cc394e72b705d7d7f
   /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/internal/WeakKeySet.java 95 42
@@ -24,15 +35,18 @@ Case 2: The line itself get's changed a bit, but the detected expression remains
     88. backingMap.computeIfAbsent(key, k -> LinkedHashMultiset.create()).add(convertedSource);
 
 Case 3: Indentation changes.
+Breaks: Character Line Tracking
+Doesn't break: Tokenized line tracking
 [BooleanParameter] Use parameter comments to document ambiguous literals
   guice 875868e7263491291d4f8bdc1332bfea746ad673..d071802d48a50dffd89b0cfc61eff251251e637a
-  /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Elements.java 340 75
+  /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Elements.java 340 75   [Detected by TokenizedLineTracker]
     340.           binder.modules.put(module, new ModuleInfo(binder, moduleSource, false));
   /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Elements.java 351 73
     351.         binder.modules.put(module, new ModuleInfo(binder, moduleSource, false));
 
 
 Case 4:  Line is incorrectly(imho) deemed as "deleted" from the source file
+Breaks: All so far
 [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: <init>(String message, Throwable cause, List<Object> sources)
   guice 875868e7263491291d4f8bdc1332bfea746ad673..d071802d48a50dffd89b0cfc61eff251251e637a
   /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Message.java 50 10
@@ -43,6 +57,3 @@ Case 4:  Line is incorrectly(imho) deemed as "deleted" from the source file
     d071 Message.java 52. public Message(ErrorId errorId, List<Object> sources, String message, Throwable cause) {
  The above introduced line since it's similar to 8758 line 50 confuses the diff algorithm
 
-Going to attempt to solve cases 1,2 and 3. Try and track the expression that generated the diagnostic rather than
-the line the diagnostic was on. We can then do a character comparison and check whether the two diagnostics refer
-to the same expressions.

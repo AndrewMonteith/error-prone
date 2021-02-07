@@ -18,25 +18,17 @@ package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.bugtrack.motion.CharacterLineTracker;
-import com.google.errorprone.bugtrack.motion.DiagnosticPosition;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionTracker;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
+
+import static com.google.errorprone.bugtrack.TestFileUtil.readTestFile;
 
 public final class CharacterLineTrackerTest {
-    private static final String TEST_REPO = "src/test/java/com/google/errorprone/bugtrack/testdata/";
-
-    private List<String> loadTestFile(String file) throws IOException {
-        return Files.readAllLines(Paths.get(TEST_REPO + file));
-    }
-
     private void assertLineIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, Optional<Long> expectedNewLine) {
         Optional<Long> newLine = lineMotionTracker.getNewPosition(oldLine, 1).map(position -> position.line);
 
@@ -45,8 +37,8 @@ public final class CharacterLineTrackerTest {
 
     @Test
     public void canTrackSingleLineMove() throws IOException, DiffException {
-        List<String> oldSrc = loadTestFile("foo_1.java");
-        List<String> newSrc = loadTestFile("foo_2.java");
+        List<String> oldSrc = readTestFile("foo_1.java");
+        List<String> newSrc = readTestFile("foo_2.java");
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
@@ -55,8 +47,8 @@ public final class CharacterLineTrackerTest {
 
     @Test
     public void canTrackLargerFileChange() throws IOException, DiffException {
-        List<String> oldSrc = loadTestFile("foo_2.java");
-        List<String> newSrc = loadTestFile("foo_4.java");
+        List<String> oldSrc = readTestFile("foo_2.java");
+        List<String> newSrc = readTestFile("foo_4.java");
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
@@ -68,8 +60,8 @@ public final class CharacterLineTrackerTest {
 
     @Test
     public void canTrackRealLifeDiffChange() throws IOException, DiffException {
-        List<String> oldSrc = loadTestFile("Tag.java");
-        List<String> newSrc = loadTestFile("Tag_Newer.java");
+        List<String> oldSrc = readTestFile("Tag.java");
+        List<String> newSrc = readTestFile("Tag_Newer.java");
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
@@ -80,8 +72,8 @@ public final class CharacterLineTrackerTest {
 
     @Test
     public void canTrackLinesAroundADeletion() throws IOException, DiffException {
-        List<String> oldSrc = loadTestFile("Tag.java");
-        List<String> newSrc = loadTestFile("Tag_Newer.java");
+        List<String> oldSrc = readTestFile("Tag.java");
+        List<String> newSrc = readTestFile("Tag_Newer.java");
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
@@ -93,8 +85,8 @@ public final class CharacterLineTrackerTest {
 
     @Test
     public void canTrackLinesAroundAnInsertion() throws IOException, DiffException {
-        List<String> oldSrc = loadTestFile("Tag.java");
-        List<String> newSrc = loadTestFile("Tag_Newer.java");
+        List<String> oldSrc = readTestFile("Tag.java");
+        List<String> newSrc = readTestFile("Tag_Newer.java");
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 

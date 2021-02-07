@@ -19,8 +19,6 @@ package com.google.errorprone.bugtrack.motion;
 import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.bugtrack.SrcFile;
 
-import java.util.List;
-
 public interface DiagnosticPositionTrackerConstructor {
     DiagnosticPositionTracker create(SrcFile oldFile, SrcFile newFile) throws DiffException;
 }

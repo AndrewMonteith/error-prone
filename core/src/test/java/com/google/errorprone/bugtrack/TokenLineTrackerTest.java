@@ -17,60 +17,25 @@
 package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
-import com.google.common.collect.ImmutableList;
 import com.google.errorprone.ErrorProneInMemoryFileManager;
-import com.google.errorprone.bugtrack.motion.*;
-import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.util.Context;
+import com.google.errorprone.bugtrack.motion.DPTrackerConstructorFactory;
+import com.google.errorprone.bugtrack.motion.DiagnosticPosition;
+import com.google.errorprone.bugtrack.motion.DiagnosticPositionTracker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import javax.tools.JavaCompiler;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.errorprone.bugtrack.TestFileUtil.readTestFile;
 
 @RunWith(JUnit4.class)
 public class TokenLineTrackerTest {
-    private static final String TEST_REPO = "src/test/java/com/google/errorprone/bugtrack/testdata/";
-
-    private static List<String> readTestFile(String file) throws IOException {
-        return Files.readAllLines(Paths.get(TEST_REPO + file));
-    }
-
     private final ErrorProneInMemoryFileManager fileManager = new ErrorProneInMemoryFileManager();
-
-    private Context getContextForFile(String testFile) {
-        JavaCompiler javaCompiler = JavacTool.create();
-        JavacTaskImpl task =
-                (JavacTaskImpl)
-                        javaCompiler.getTask(
-                                new PrintWriter(
-                                        new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
-                                fileManager,
-                                null,
-                                Collections.emptyList(),
-                                null,
-                                ImmutableList.of(fileManager.getJavaFileObject(Paths.get(TEST_REPO, testFile))));
-
-        task.parse();
-//       Not necessary?:
-//        task.analyze();
-
-        return task.getContext();
-    }
 
     private void assertLineNumberIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, Optional<Long> expectedNewLine) {
         Optional<Long> newLine = lineMotionTracker.getNewPosition(oldLine, 1).map(position -> position.line);
@@ -81,9 +46,6 @@ public class TokenLineTrackerTest {
     private void performTest(String oldFile, String newFile, Consumer<DiagnosticPositionTracker> test) throws IOException, DiffException {
         List<String> oldFileSrc = readTestFile(oldFile);
         List<String> newFileSrc = readTestFile(newFile);
-
-//        Context oldFileContext = getContextForFile(oldFile);
-//        Context newFileContext = getContextForFile(newFile);
 
         DiagnosticPositionTracker positionTracker = DPTrackerConstructorFactory
                 .newTokenizedLineTracker().create(new SrcFile(oldFile, oldFileSrc), new SrcFile(newFile, newFileSrc));

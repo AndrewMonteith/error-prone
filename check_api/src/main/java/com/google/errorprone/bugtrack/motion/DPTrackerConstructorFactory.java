@@ -20,6 +20,7 @@ import com.github.difflib.algorithm.DiffException;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.ErrorProneInMemoryFileManagerForCheckApi;
 import com.google.errorprone.bugtrack.SrcFile;
+import com.google.errorprone.matchers.method.MethodInvocationMatcher;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.Context;
@@ -28,7 +29,6 @@ import javax.tools.JavaCompiler;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,19 +44,28 @@ public final class DPTrackerConstructorFactory {
     }
 
     public static DiagnosticPositionTrackerConstructor newTokenizedLineTracker() {
-        return new TokenizedLineTrackerConstructor();
+        final JavacFileContextManager contextManager = new JavacFileContextManager();
+
+        return (oldFile, newFile) -> {
+            Context oldFileContext = contextManager.getFileContext(oldFile.name + "_old.java", oldFile.src);
+            Context newFileContext = contextManager.getFileContext(newFile.name + "_new.java", newFile.src);
+
+            return new TokenizedLineTracker(
+                    TokenizedLine.tokenizeSrc(oldFile.src, oldFileContext),
+                    TokenizedLine.tokenizeSrc(newFile.src, newFileContext));
+        };
     }
 
-    private static class TokenizedLineTrackerConstructor implements DiagnosticPositionTrackerConstructor {
+    private static class JavacFileContextManager {
         private final ErrorProneInMemoryFileManagerForCheckApi fileManager = new ErrorProneInMemoryFileManagerForCheckApi();
 
         private final Map<String, Context> contexts;
 
-        public TokenizedLineTrackerConstructor() {
+        public JavacFileContextManager() {
             this.contexts = new HashMap<>();
         }
 
-        private Context getFileContext(String file, List<String> fileSrc) {
+        public Context getFileContext(String file, List<String> fileSrc) {
             if (contexts.containsKey(file)) {
                 return contexts.get(file);
             }
@@ -79,16 +88,6 @@ public final class DPTrackerConstructorFactory {
             contexts.put(file, task.getContext());
 
             return task.getContext();
-        }
-
-        @Override
-        public DiagnosticPositionTracker create(SrcFile oldFile, SrcFile newFile) throws DiffException {
-            Context oldFileContext = getFileContext(oldFile.name + "_old.java", oldFile.src);
-            Context newFileContext = getFileContext(oldFile.name + "_new.java", newFile.src);
-
-            return new TokenizedLineTracker(
-                    TokenizedLine.tokenizeSrc(oldFile.src, oldFileContext),
-                    TokenizedLine.tokenizeSrc(newFile.src, newFileContext));
         }
     }
 }

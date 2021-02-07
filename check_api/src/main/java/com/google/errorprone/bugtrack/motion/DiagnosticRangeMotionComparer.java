@@ -16,13 +16,16 @@
 
 package com.google.errorprone.bugtrack.motion;
 
-import java.util.Optional;
+import com.github.difflib.algorithm.DiffException;
 
-@FunctionalInterface
-public interface DiagnosticPositionTracker {
-    Optional<DiagnosticPosition> getNewPosition(final long line, final long column);
+import java.util.List;
 
-    default Optional<DiagnosticPosition> getNewPosition(DiagnosticPosition position) {
-        return getNewPosition(position.line, position.column);
+public class DiagnosticRangeMotionComparer {
+    private DiagnosticPositionTracker positionTracker;
+
+    public DiagnosticRangeMotionComparer(List<TokenizedLine> oldTokens, List<TokenizedLine> newTokens) throws DiffException {
+        this.positionTracker = new TokenizedLineTracker(oldTokens, newTokens);
     }
+
+
 }

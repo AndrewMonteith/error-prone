@@ -36,12 +36,6 @@ public class CharacterLineTracker implements DiagnosticPositionTracker {
         return srcTracker.getNewLineNumber(line).map(lineNumber -> new DiagnosticPosition(lineNumber, column));
     }
 
-    @Override
-    public Optional<DiagnosticPosition> getNewPosition(DiagnosticPosition position) {
-        return getNewPosition(position.line, position.column);
-    }
-
-
 //    protected final List<T> oldSrc;
 //    protected final List<T> newSrc;
 //    protected final Patch<T> filePatch;

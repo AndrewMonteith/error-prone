@@ -46,9 +46,4 @@ public class TokenizedLineTracker implements DiagnosticPositionTracker {
         return srcTracker.getNewLineNumber(line).map(newLine ->
                 new DiagnosticPosition(newLine, getNewColumn(line, column, newLine)));
     }
-
-    @Override
-    public Optional<DiagnosticPosition> getNewPosition(DiagnosticPosition position) {
-        return getNewPosition(position.line, position.column);
-    }
 }

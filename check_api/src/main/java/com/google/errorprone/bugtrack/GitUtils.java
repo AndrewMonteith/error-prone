@@ -79,32 +79,32 @@ public class GitUtils {
         return path.startsWith(pathToProject) ? path.replaceFirst(pathToProject, "") : path;
     }
 
-    public static List<String> loadSrcFile(Repository repo, RevCommit commit, String path) throws IOException {
+    public static SrcFile loadSrcFile(Repository repo, RevCommit commit, String path) throws IOException {
         RevTree tree = commit.getTree();
 
-        path = makePathRelativeToRepo(repo, path);
+        String relativePath = makePathRelativeToRepo(repo, path);
 
         try (TreeWalk treeWalk = new TreeWalk(repo)) {
             treeWalk.addTree(tree);
             treeWalk.setRecursive(true);
-            treeWalk.setFilter(PathFilter.create(path));
+            treeWalk.setFilter(PathFilter.create(relativePath));
 
             treeWalk.next();
             ObjectId oId = treeWalk.getObjectId(0);
 
             if (oId == ObjectId.zeroId()) {
-                throw new IOException("could not find " + path + " inside the commit " + commit.getName());
+                throw new IOException("could not find " + relativePath + " inside the commit " + commit.getName());
             }
 
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             repo.open(oId).copyTo(stream);
 
-            return Splitter.on('\n').splitToList(stream.toString());
+            return new SrcFile(path, Splitter.on('\n').splitToList(stream.toString()));
         }
     }
 
     public static String loadJavaLine(Repository repo, RevCommit commit, DatasetDiagnostic diag) throws IOException {
-        return loadSrcFile(repo, commit, diag.getFileName()).get((int)diag.getLineNumber()-1);
+        return loadSrcFile(repo, commit, diag.getFileName()).src.get((int)diag.getLineNumber()-1);
     }
 
     public static List<DiffEntry> computeDiffs(Git git, RevCommit olderCommit, RevCommit newerCommit) throws GitAPIException, IOException {

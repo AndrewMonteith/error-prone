@@ -22,44 +22,23 @@ import com.github.difflib.algorithm.jgit.HistogramDiff;
 import com.github.difflib.patch.AbstractDelta;
 import com.github.difflib.patch.Chunk;
 import com.github.difflib.patch.Patch;
-import com.sun.tools.javac.util.Context;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public final class LineMotionTracker<T> {
-    private final List<String> oldSrc;
-    private final List<String> newSrc;
-    private final Patch<T> filePatch;
+/*
+    Tracks source lines between two versions of the software.
+    T is the datatype represents a single line of code, currently String or TokenizedLine is used.
+ */
+class SrcLineTracker<T> {
+    private final List<T> oldSrc;
+    private final List<T> newSrc;
+    private final Patch<T> patch;
 
-    private LineMotionTracker(List<String> oldSrc, List<String> newSrc, Patch<T> filePatch) throws DiffException {
+    public SrcLineTracker(List<T> oldSrc, List<T> newSrc) throws DiffException {
         this.oldSrc = oldSrc;
         this.newSrc = newSrc;
-        this.filePatch = filePatch;
-//        this.filePatch = DiffUtils.diff(oldSrcMapped, newSrcMapped, new HistogramDiff<>());
-//
-//        List<T> oldSrcMapped = oldSrc.stream().map(lineMapper).collect(Collectors.toList());
-//        List<T> newSrcMapped = newSrc.stream().map(lineMapper).collect(Collectors.toList());
-    }
-
-    public static LineMotionTracker<String> newLineCharsTracker(List<String> oldSrc,
-                                                                List<String> newSrc) throws DiffException {
-        return new LineMotionTracker<>(
-                oldSrc, newSrc, DiffUtils.diff(oldSrc, newSrc, new HistogramDiff<>()));
-    }
-
-    public static LineMotionTracker<TokenizedLine> newLineTokenTracker(List<String> oldSrc,
-                                                                       Context oldSrcContext,
-                                                                       List<String> newSrc,
-                                                                       Context newSrcContext) throws DiffException {
-        List<TokenizedLine> oldSrcTokenized = oldSrc.stream().map(line -> new TokenizedLine(line, oldSrcContext)).collect(Collectors.toList());
-        List<TokenizedLine> newSrcTokenized = newSrc.stream().map(line -> new TokenizedLine(line, newSrcContext)).collect(Collectors.toList());
-
-        Patch<TokenizedLine> tokenizedLines = DiffUtils.diff(oldSrcTokenized, newSrcTokenized, new HistogramDiff<>());
-
-        return new LineMotionTracker<>(oldSrc, newSrc, tokenizedLines);
+        this.patch = DiffUtils.diff(oldSrc, newSrc, new HistogramDiff<>());
     }
 
     private boolean isLineInChunk(Chunk<T> chunk, final long line) {
@@ -67,13 +46,13 @@ public final class LineMotionTracker<T> {
     }
 
     private Optional<AbstractDelta<T>> findSourcePatchAffectingLine(final long line) {
-        return filePatch.getDeltas().stream()
+        return patch.getDeltas().stream()
                 .filter(delta -> isLineInChunk(delta.getSource(), line))
                 .findFirst();
     }
 
     private int getShiftCausedByPatchesAboveLine(final long line) {
-        return filePatch.getDeltas().stream()
+        return patch.getDeltas().stream()
                 .filter(delta -> delta.getSource().getPosition() + delta.getSource().size() <= line)
                 .mapToInt(delta -> {
                     switch (delta.getType()) {
@@ -89,7 +68,7 @@ public final class LineMotionTracker<T> {
                 }).sum();
     }
 
-    public Optional<Long> getNewLine(final long line) throws RuntimeException {
+    public Optional<Long> getNewLineNumber(final long line) {
         final long internalLine = line - 1;
 
         Optional<AbstractDelta<T>> patch = findSourcePatchAffectingLine(internalLine);
@@ -112,5 +91,13 @@ public final class LineMotionTracker<T> {
         } else {
             return Optional.of(line + getShiftCausedByPatchesAboveLine(internalLine));
         }
+    }
+
+    public T getOldLine(final long lineNumber) {
+        return oldSrc.get((int) (lineNumber-1));
+    }
+
+    public T getNewLine(final long lineNumber) {
+        return newSrc.get((int) (lineNumber-1));
     }
 }

@@ -22,6 +22,8 @@ import com.google.errorprone.util.ErrorProneTokens;
 import com.sun.tools.javac.util.Context;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public final class TokenizedLine {
     private final ImmutableList<ErrorProneToken> tokens;
@@ -41,17 +43,40 @@ public final class TokenizedLine {
         return hash;
     }
 
-    private String readToken(ErrorProneToken token) {
-        if (token.pos() == token.endPos()) {
+    private String readTokenSrc(ErrorProneToken token) {
+        if (token.pos() >= token.endPos()) {
             return "";
         }
 
-        return srcLine.substring(token.pos(), token.endPos());
+//        try {
+            return srcLine.substring(token.pos(), token.endPos());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "";
+//        }
+    }
+
+    public int getTokenIndexForColumn(final long column) {
+        for (int i = 0; i < tokens.size(); ++i) {
+            if (column <= tokens.get(i).pos()) {
+                return i;
+            }
+        }
+
+        throw new IllegalArgumentException("column was outside tokens");
+    }
+
+    public ErrorProneToken getToken(final int index) {
+        return tokens.get(index);
     }
 
     public TokenizedLine(String srcLine, Context context) {
         this.srcLine = srcLine;
         this.tokens = ErrorProneTokens.getTokens(srcLine, context);
-        this.hash = Arrays.hashCode(tokens.stream().map(this::readToken).toArray());
+        this.hash = Arrays.hashCode(tokens.stream().map(this::readTokenSrc).toArray());
+    }
+
+    public static List<TokenizedLine> tokenizeSrc(List<String> src, Context context) {
+        return src.stream().map(line -> new TokenizedLine(line, context)).collect(Collectors.toList());
     }
 }

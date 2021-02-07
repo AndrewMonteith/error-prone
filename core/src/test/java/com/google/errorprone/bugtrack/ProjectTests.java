@@ -22,7 +22,7 @@ import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
-import com.google.errorprone.bugtrack.motion.LineColumnMotionComparer;
+import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.projects.*;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -41,14 +41,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.google.errorprone.bugtrack.motion.DPTrackerConstructorFactory.newCharacterLineTracker;
+import static com.google.errorprone.bugtrack.motion.DPTrackerConstructorFactory.newTokenizedLineTracker;
+
 @RunWith(JUnit4.class)
 public class ProjectTests {
 
     private void assertFindsDiagnostics(CorpusProject project, String commitHash) throws IOException {
         // WHEN:
         GitUtils.checkoutMaster(project.loadRepo());
-//        Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
-//                new ProjectHarness(project, true).collectDiagnostics(commitHash);
+
         Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
                 DiagnosticsCollector.collectEPDiagnostics(project, commitHash);
 
@@ -179,7 +181,7 @@ public class ProjectTests {
         String oldCommit = "468c5369b52ca45de3c7e54a3d2ddae352495851";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
-        BugComparer comparer = new LineColumnMotionComparer(project.loadRepo(), oldCommit, newCommit);
+        BugComparer comparer = new DiagnosticPositionMotionComparer(project.loadRepo(), oldCommit, newCommit, newCharacterLineTracker());
 
         // THEN:
         new ProjectHarness(project, Verbosity.VERBOSE).compareTwoCommits(oldCommit, newCommit, comparer);
@@ -214,13 +216,15 @@ public class ProjectTests {
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
 
         DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"));
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/30 d071802d48a50dffd89b0cfc61eff251251e637a"));
 
 
-        BugComparer comparer = new LineColumnMotionComparer(project.loadRepo(), oldDiagnostics.commitId, newDiagnostics.commitId);
+        BugComparer comparer = new DiagnosticPositionMotionComparer(project.loadRepo(),
+                oldDiagnostics.commitId, newDiagnostics.commitId, newTokenizedLineTracker());
 
         // THEN:
-        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics"));
+        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToStdout();
+//        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToFile(
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics"));
     }
 }

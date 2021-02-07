@@ -18,18 +18,13 @@ package com.google.errorprone.bugtrack.harness;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
-import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
-import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
-import com.google.errorprone.bugtrack.harness.scanning.ScanWalker;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.openjdk.tools.javac.util.Pair;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -38,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 public final class ProjectHarness {
     private final CorpusProject project;

@@ -19,6 +19,7 @@ package com.google.errorprone.bugtrack.harness.utils;
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.GitUtils;
+import com.google.errorprone.bugtrack.SrcFile;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import com.google.errorprone.bugtrack.projects.TestProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -58,12 +59,12 @@ public class GitUtilsTest {
         String file1 = "hi3.cpp", file2 = "foo/hi.txt";
 
         // WHEN:
-        List<String> file1Lines = GitUtils.loadSrcFile(project, commit, file1);
-        List<String> file2Lines = GitUtils.loadSrcFile(project, commit, file2);
+        SrcFile file1Lines = GitUtils.loadSrcFile(project, commit, file1);
+        SrcFile file2Lines = GitUtils.loadSrcFile(project, commit, file2);
 
         // THEN:
-        Assert.assertEquals(6, file1Lines.size());
-        Assert.assertEquals(5, file2Lines.size());
+        Assert.assertEquals(6, file1Lines.src.size());
+        Assert.assertEquals(5, file2Lines.src.size());
     }
 
     @Test

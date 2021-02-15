@@ -25,12 +25,15 @@ public final class ProjectFile {
     private final Path projPath;
 
     public ProjectFile(CorpusProject project, Path path) {
-        if (!path.startsWith(project.getRoot())) {
-            throw new IllegalArgumentException(path.toString() + " not in " + project.getRoot());
-        }
-
         this.project = project;
-        this.projPath = project.getRoot().relativize(path);
+
+        if (path.startsWith(project.getRoot())) {
+            this.projPath = project.getRoot().relativize(path);
+        } else if (project.getRoot().resolve(path).toFile().exists()) {
+            this.projPath = project.getRoot().resolve(path);
+        } else {
+            throw new IllegalArgumentException("could not find " + path + " in " + project.getRoot());
+        }
     }
 
     public boolean exists() {

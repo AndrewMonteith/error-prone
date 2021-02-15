@@ -73,6 +73,8 @@ public class DatasetDiagnosticsFile {
                     locationDetails[0],
                     Long.parseLong(locationDetails[1]),
                     Long.parseLong(locationDetails[2]),
+                    Long.parseLong(locationDetails[3]),
+                    Long.parseLong(locationDetails[4]),
                     message);
 
             if (!acceptDiagnostic.test(diagnostic)) {

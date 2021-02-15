@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.motion.trackers;
 
-import com.github.difflib.algorithm.DiffException;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.ErrorProneInMemoryFileManagerForCheckApi;
-import com.google.errorprone.bugtrack.SrcFile;
-import com.google.errorprone.matchers.method.MethodInvocationMatcher;
+import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.Context;
@@ -29,9 +27,7 @@ import javax.tools.JavaCompiler;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -40,19 +36,43 @@ public final class DPTrackerConstructorFactory {
     }
 
     public static DiagnosticPositionTrackerConstructor newCharacterLineTracker() {
-        return (oldFile, newFile) -> new CharacterLineTracker(oldFile.src, newFile.src);
+        return srcFilePair -> new CharacterLineTracker(srcFilePair.oldFile.getLines(), srcFilePair.newFile.getLines());
     }
 
     public static DiagnosticPositionTrackerConstructor newTokenizedLineTracker() {
         final JavacFileContextManager contextManager = new JavacFileContextManager();
 
-        return (oldFile, newFile) -> {
-            Context oldFileContext = contextManager.getFileContext(oldFile.name + "_old.java", oldFile.src);
-            Context newFileContext = contextManager.getFileContext(newFile.name + "_new.java", newFile.src);
+        return srcFilePair -> {
+            Context oldFileContext = contextManager.getFileContext(srcFilePair.oldFile.getName() + "_old.java", srcFilePair.oldFile.getLines());
+            Context newFileContext = contextManager.getFileContext(srcFilePair.newFile.getName() + "_new.java", srcFilePair.newFile.getLines());
 
             return new TokenizedLineTracker(
-                    TokenizedLine.tokenizeSrc(oldFile.src, oldFileContext),
-                    TokenizedLine.tokenizeSrc(newFile.src, newFileContext));
+                    TokenizedLine.tokenizeSrc(srcFilePair.oldFile.getLines(), oldFileContext),
+                    TokenizedLine.tokenizeSrc(srcFilePair.newFile.getLines(), newFileContext));
+        };
+    }
+
+    public static DiagnosticPositionTrackerConstructor newIJMAstNodeTracker() {
+        return IJMAstNodeTracker::new;
+    }
+
+    public static DiagnosticPositionTrackerConstructor pipeline(DiagnosticPositionTrackerConstructor... trackerCtors) {
+        return srcFilePair -> {
+            List<DiagnosticPositionTracker> trackers = new ArrayList<>();
+            for (DiagnosticPositionTrackerConstructor trackerCtor : trackerCtors) {
+                trackers.add(trackerCtor.create(srcFilePair));
+            }
+
+            return diagnostic -> {
+                for (DiagnosticPositionTracker tracker : trackers) {
+                    Optional<DiagPosEqualityOracle> posEqOracle = tracker.track(diagnostic);
+                    if (posEqOracle.isPresent()) {
+                        return posEqOracle;
+                    }
+                }
+
+                return Optional.empty();
+            };
         };
     }
 

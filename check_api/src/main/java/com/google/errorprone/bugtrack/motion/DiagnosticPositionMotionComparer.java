@@ -19,99 +19,53 @@ package com.google.errorprone.bugtrack.motion;
 import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.GitUtils;
-import com.google.errorprone.bugtrack.SrcFile;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevCommit;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
+import com.google.errorprone.bugtrack.utils.MemoMap;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class DiagnosticPositionMotionComparer implements BugComparer {
-    private final Repository repo;
-    private final RevCommit oldCommit;
-    private final RevCommit newCommit;
-
-    private final Map<String, DiagnosticPositionTracker> positionTrackers;
+    private final DiagnosticsDeltaManager diagnosticsDeltaManager;
     private final DiagnosticPositionTrackerConstructor trackerConstructor;
-    private final List<DiffEntry> diffs;
 
-    public DiagnosticPositionMotionComparer(Repository repo,
-                                            RevCommit oldCommit,
-                                            RevCommit newCommit,
-                                            DiagnosticPositionTrackerConstructor trackerConstructor) throws GitAPIException, IOException {
-        this.repo = repo;
-        this.oldCommit = oldCommit;
-        this.newCommit = newCommit;
+    private final MemoMap<String, DiagnosticPositionTracker> positionTrackers;
+
+    public DiagnosticPositionMotionComparer(DiagnosticsDeltaManager diagnosticsDeltaManager,
+                                            DiagnosticPositionTrackerConstructor trackerConstructor) {
+        this.diagnosticsDeltaManager = diagnosticsDeltaManager;
         this.trackerConstructor = trackerConstructor;
-        this.positionTrackers = new HashMap<>();
-        this.diffs = GitUtils.computeDiffs(repo, oldCommit, newCommit);
+        this.positionTrackers = new MemoMap<>();
     }
 
-    public DiagnosticPositionMotionComparer(Repository repo,
-                                            String oldCommitHash,
-                                            String newCommitHash,
-                                            DiagnosticPositionTrackerConstructor trackerConstructor) throws IOException, GitAPIException {
-        this(repo,
-                GitUtils.parseCommit(repo, oldCommitHash),
-                GitUtils.parseCommit(repo, newCommitHash),
-                trackerConstructor);
+    private DiagnosticPositionTracker createDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
+                                                                      DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
+        return trackerConstructor.create(
+                diagnosticsDeltaManager.loadFilesBetweenDiagnostics(oldDiagnostic, newDiagnostic));
     }
 
-    private boolean inSameFile(DatasetDiagnostic oldDiagnostic,
-                               DatasetDiagnostic newDiagnostic) {
-        String oldPath = oldDiagnostic.getFileName();
-        String newPath = newDiagnostic.getFileName();
-
-        if (oldPath.equals(newPath)) {
-            return true;
-        }
-
-        return diffs.stream()
-                .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
-                .anyMatch(diff -> diff.getOldPath().equals(oldPath) && diff.getNewPath().equals(newPath));
-    }
-
-    private DiagnosticPositionTracker createLineMotionTracker(DatasetDiagnostic oldDiagnostic,
-                                                              DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
-
-        SrcFile oldSrcFile = GitUtils.loadSrcFile(repo, oldCommit, oldDiagnostic.getFileName());
-        SrcFile newSrcFile = GitUtils.loadSrcFile(repo, newCommit, newDiagnostic.getFileName());
-
-        return trackerConstructor.create(oldSrcFile, newSrcFile);
-    }
-
-    private DiagnosticPositionTracker getLineMotionTracker(DatasetDiagnostic oldDiagnostic,
-                                                           DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
-        String oldFile = oldDiagnostic.getFileName();
-        if (!positionTrackers.containsKey(oldFile)) {
-            positionTrackers.put(oldFile, createLineMotionTracker(oldDiagnostic, newDiagnostic));
-        }
-
-        return positionTrackers.get(oldFile);
+    private DiagnosticPositionTracker getDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
+                                                                   DatasetDiagnostic newDiagnostic) throws Exception {
+        return positionTrackers.getOrInsertThatCouldThrow(oldDiagnostic.getFileName(),
+                () -> createDiagnosticPositionTracker(oldDiagnostic, newDiagnostic));
     }
 
     @Override
     public boolean areSame(DatasetDiagnostic oldDiagnostic,
                            DatasetDiagnostic newDiagnostic) {
-        if (!(inSameFile(oldDiagnostic, newDiagnostic) && oldDiagnostic.isSameType(newDiagnostic))) {
+        if (!(diagnosticsDeltaManager.inSameFile(oldDiagnostic, newDiagnostic) && oldDiagnostic.isSameType(newDiagnostic))) {
             return false;
         }
 
         try {
-            DiagnosticPositionTracker posTracker = getLineMotionTracker(oldDiagnostic, newDiagnostic);
+            DiagnosticPositionTracker posTracker = getDiagnosticPositionTracker(oldDiagnostic, newDiagnostic);
 
-            Optional<DiagnosticPosition> newDiagnosticPosition = posTracker.getNewPosition(
-                    oldDiagnostic.getLineNumber(), oldDiagnostic.getColumnNumber());
+            Optional<DiagPosEqualityOracle> posEqOracle = posTracker.track(oldDiagnostic);
 
-            return newDiagnosticPosition.isPresent()
-                    && newDiagnosticPosition.get().equals(new DiagnosticPosition(newDiagnostic));
-        } catch (IOException | DiffException e) {
+            return posEqOracle.isPresent() && posEqOracle.get().hasSamePosition(newDiagnostic);
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }

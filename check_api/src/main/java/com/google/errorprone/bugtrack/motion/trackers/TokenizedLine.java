@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.util.ErrorProneToken;

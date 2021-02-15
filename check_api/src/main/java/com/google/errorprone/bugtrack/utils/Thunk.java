@@ -14,11 +14,26 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.utils;
 
-import com.github.difflib.algorithm.DiffException;
-import com.google.errorprone.bugtrack.SrcFile;
+import java.util.function.Supplier;
 
-public interface DiagnosticPositionTrackerConstructor {
-    DiagnosticPositionTracker create(SrcFile oldFile, SrcFile newFile) throws DiffException;
+public final class Thunk<T> {
+    private T val;
+    private Supplier<T> thunk;
+    private boolean ran = false;
+
+    public Thunk(Supplier<T> thunk) {
+        this.thunk = thunk;
+    }
+
+    public T get() {
+        if (ran) {
+            return val;
+        }
+
+        ran = true;
+        this.val = thunk.get();
+        return this.val;
+    }
 }

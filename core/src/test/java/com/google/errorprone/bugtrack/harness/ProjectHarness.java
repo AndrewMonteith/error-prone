@@ -22,6 +22,7 @@ import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;

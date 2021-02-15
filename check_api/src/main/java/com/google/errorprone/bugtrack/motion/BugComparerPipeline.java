@@ -16,16 +16,24 @@
 
 package com.google.errorprone.bugtrack.motion;
 
-import com.github.difflib.algorithm.DiffException;
+import com.google.errorprone.bugtrack.BugComparer;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
-import java.util.List;
+public final class BugComparerPipeline implements BugComparer {
+    private final BugComparer[] comparers;
 
-public class DiagnosticRangeMotionComparer {
-    private DiagnosticPositionTracker positionTracker;
-
-    public DiagnosticRangeMotionComparer(List<TokenizedLine> oldTokens, List<TokenizedLine> newTokens) throws DiffException {
-        this.positionTracker = new TokenizedLineTracker(oldTokens, newTokens);
+    public BugComparerPipeline(BugComparer... comparers) {
+        this.comparers = comparers;
     }
 
+    @Override
+    public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
+        for (BugComparer comparer : comparers) {
+            if (comparer.areSame(oldDiagnostic, newDiagnostic)) {
+                return true;
+            }
+        }
 
+        return false;
+    }
 }

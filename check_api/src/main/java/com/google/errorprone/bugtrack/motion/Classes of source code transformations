@@ -10,9 +10,6 @@ Description: Use diff information track tokenized source lines between two versi
              principle as Character line tracking. This techinque is slightly more expensive because we have to parse
              the AST of the source file.
 
-Technique 3. Subexpression matching
-Description:
-Ways in which tracking can be broken: (Currently all syntatical)
 
 Case 1: The line get's put over multiple lines.
 Breaks: Character Line Tracking, Single tokenized line tracking
@@ -57,3 +54,6 @@ Breaks: All so far
     d071 Message.java 52. public Message(ErrorId errorId, List<Object> sources, String message, Throwable cause) {
  The above introduced line since it's similar to 8758 line 50 confuses the diff algorithm
 
+Case 5: The error is not bound to specific source code
+Breaks: All so far
+Example: [DefaultPackage] (not found in example in wild, but is a case to consider?)

@@ -17,22 +17,29 @@
 package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
-import com.google.errorprone.bugtrack.motion.CharacterLineTracker;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionTracker;
+import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.trackers.CharacterLineTracker;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import org.junit.Assert;
 import org.junit.Test;
+import org.openjdk.tools.javac.util.JCDiagnostic;
 
+import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import static com.google.errorprone.bugtrack.TestFileUtil.readTestFile;
+import static com.google.errorprone.bugtrack.TestUtils.readTestFile;
 
 public final class CharacterLineTrackerTest {
-    private void assertLineIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, Optional<Long> expectedNewLine) {
-        Optional<Long> newLine = lineMotionTracker.getNewPosition(oldLine, 1).map(position -> position.line);
+    private void assertLineIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, final long newLine) {
+        DatasetDiagnostic mockOldDiag = new DatasetDiagnostic("", oldLine, 1, "");
+        Assert.assertEquals(newLine, lineMotionTracker.track(mockOldDiag).get().getLine());
+    }
 
-        Assert.assertEquals(expectedNewLine, newLine);
+    private void assertLineIsNotTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine) {
+        DatasetDiagnostic mockOldDiag = new DatasetDiagnostic("", oldLine, 1, "");
+        Assert.assertEquals(Optional.empty(), lineMotionTracker.track(mockOldDiag));
     }
 
     @Test
@@ -42,7 +49,7 @@ public final class CharacterLineTrackerTest {
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
-        assertLineIsTracked(positionTracker, 3, Optional.of(4L));
+        assertLineIsTracked(positionTracker, 3, 4);
     }
 
     @Test
@@ -52,10 +59,10 @@ public final class CharacterLineTrackerTest {
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
-        assertLineIsTracked(positionTracker, 1, Optional.of(1L));
-        assertLineIsTracked(positionTracker, 2, Optional.of(6L));
-        assertLineIsTracked(positionTracker, 3, Optional.empty());
-        assertLineIsTracked(positionTracker, 6, Optional.of(12L));
+        assertLineIsTracked(positionTracker, 1, 1);
+        assertLineIsTracked(positionTracker, 2, 6);
+        assertLineIsNotTracked(positionTracker, 3);
+        assertLineIsTracked(positionTracker, 6, 12);
     }
 
     @Test
@@ -65,9 +72,9 @@ public final class CharacterLineTrackerTest {
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
-        assertLineIsTracked(positionTracker, 18, Optional.of(20L));
-        assertLineIsTracked(positionTracker, 16, Optional.of(17L));
-        assertLineIsTracked(positionTracker, 29, Optional.of(30L));
+        assertLineIsTracked(positionTracker, 18, 20);
+        assertLineIsTracked(positionTracker, 16, 17);
+        assertLineIsTracked(positionTracker, 29, 30);
     }
 
     @Test
@@ -77,10 +84,10 @@ public final class CharacterLineTrackerTest {
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
-        assertLineIsTracked(positionTracker, 18, Optional.of(20L));
-        assertLineIsTracked(positionTracker, 19, Optional.empty());
-        assertLineIsTracked(positionTracker, 20, Optional.empty());
-        assertLineIsTracked(positionTracker, 21, Optional.of(21L));
+        assertLineIsTracked(positionTracker, 18, 20);
+        assertLineIsNotTracked(positionTracker, 19);
+        assertLineIsNotTracked(positionTracker, 20);
+        assertLineIsTracked(positionTracker, 21, 21);
     }
 
     @Test
@@ -90,8 +97,8 @@ public final class CharacterLineTrackerTest {
 
         DiagnosticPositionTracker positionTracker = new CharacterLineTracker(oldSrc, newSrc);
 
-        assertLineIsTracked(positionTracker, 221, Optional.of(232L));
-        assertLineIsTracked(positionTracker, 219, Optional.of(221L));
-        assertLineIsTracked(positionTracker, 220, Optional.of(222L));
+        assertLineIsTracked(positionTracker, 221, 232);
+        assertLineIsTracked(positionTracker, 219, 221);
+        assertLineIsTracked(positionTracker, 220, 222);
     }
 }

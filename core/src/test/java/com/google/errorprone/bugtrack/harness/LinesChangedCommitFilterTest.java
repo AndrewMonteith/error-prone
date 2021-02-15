@@ -17,7 +17,7 @@
 package com.google.errorprone.bugtrack.harness;
 
 import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.GitUtils;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;

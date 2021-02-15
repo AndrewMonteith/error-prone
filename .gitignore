@@ -5,6 +5,8 @@
 **/.gitignore
 *.iml
 .java-version
+core/src/test/java/com/google/errorprone/bugtrack/testdata/gradle_test_repo/
+core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo/
 
 # intellij
 .idea/workspace.xml

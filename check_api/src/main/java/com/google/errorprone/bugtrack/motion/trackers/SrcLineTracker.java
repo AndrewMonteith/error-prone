@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.algorithm.DiffException;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 /*
-    Tracks source lines between two versions of the software.
+    Tracks source lines between two versions of the code in the same file.
     T is the datatype represents a single line of code, currently String or TokenizedLine is used.
  */
 class SrcLineTracker<T> {

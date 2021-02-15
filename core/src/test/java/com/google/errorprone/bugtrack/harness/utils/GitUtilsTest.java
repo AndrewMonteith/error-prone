@@ -18,8 +18,8 @@ package com.google.errorprone.bugtrack.harness.utils;
 
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.GitUtils;
-import com.google.errorprone.bugtrack.SrcFile;
+import com.google.errorprone.bugtrack.utils.GitUtils;
+import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import com.google.errorprone.bugtrack.projects.TestProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -63,8 +63,8 @@ public class GitUtilsTest {
         SrcFile file2Lines = GitUtils.loadSrcFile(project, commit, file2);
 
         // THEN:
-        Assert.assertEquals(6, file1Lines.src.size());
-        Assert.assertEquals(5, file2Lines.src.size());
+        Assert.assertEquals(6, file1Lines.getLines().size());
+        Assert.assertEquals(5, file2Lines.getLines().size());
     }
 
     @Test

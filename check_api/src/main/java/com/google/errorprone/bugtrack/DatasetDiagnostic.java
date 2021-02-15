@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack;
 
 import com.google.errorprone.bugtrack.signatures.DiagnosticSignature;
 import com.google.errorprone.bugtrack.signatures.SignatureBucket;
+import com.google.errorprone.bugtrack.utils.DiagnosticUtils;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -27,19 +28,38 @@ public class DatasetDiagnostic {
     private final long lineNumber;
     private final long columnNumber;
 
+    private final long startPos;
+    private final long endPos;
+
     private final String message;
     private final DiagnosticSignature signature;
 
-    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, String message, DiagnosticSignature signature) {
+    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long endPos, String message, DiagnosticSignature signature) {
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
+        this.startPos = startPos;
+        this.endPos = endPos;
         this.message = message;
         this.signature = signature;
     }
 
     public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, String message) {
-        this(fileName, lineNumber, columnNumber, message, null);
+        this(fileName, lineNumber, columnNumber, -1, -1, message, null);
+    }
+
+    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long endPos, String message) {
+        this(fileName, lineNumber, columnNumber, startPos, endPos, message, null);
+    }
+
+    public DatasetDiagnostic(Diagnostic<? extends JavaFileObject> diagnostic) {
+        this(diagnostic.getSource().getName(),
+                diagnostic.getLineNumber(),
+                diagnostic.getColumnNumber(),
+                diagnostic.getStartPosition(),
+                diagnostic.getEndPosition(),
+                diagnostic.getMessage(null),
+                SignatureBucket.getSignature(diagnostic));
     }
 
     public long getLineNumber() {
@@ -58,14 +78,6 @@ public class DatasetDiagnostic {
         return message;
     }
 
-    public DatasetDiagnostic(Diagnostic<? extends JavaFileObject> diagnostic) {
-        this(diagnostic.getSource().getName(),
-                diagnostic.getLineNumber(),
-                diagnostic.getColumnNumber(),
-                diagnostic.getMessage(null),
-                SignatureBucket.getSignature(diagnostic));
-    }
-
     public boolean isSameType(DatasetDiagnostic other) {
         return DiagnosticUtils.extractDiagnosticType(this).equals(DiagnosticUtils.extractDiagnosticType(other));
     }
@@ -75,7 +87,7 @@ public class DatasetDiagnostic {
         StringBuilder result = new StringBuilder();
 
         result.append("----DIAGNOSTIC\n");
-        result.append(fileName).append(" ").append(lineNumber).append(" ").append(columnNumber).append("\n");
+        result.append(fileName).append(" ").append(lineNumber).append(" ").append(columnNumber).append(" ").append(startPos).append(" ").append(endPos).append("\n");
         result.append(message).append("\n");
 
         if (signature != null) {
@@ -85,4 +97,11 @@ public class DatasetDiagnostic {
         return result.toString();
     }
 
+    public long getStartPos() {
+        return startPos;
+    }
+
+    public long getEndPos() {
+        return endPos;
+    }
 }

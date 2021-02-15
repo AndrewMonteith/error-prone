@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.difflib.algorithm.DiffException;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 import com.google.errorprone.util.ErrorProneToken;
 
 import java.util.List;
@@ -42,8 +44,11 @@ public class TokenizedLineTracker implements DiagnosticPositionTracker {
     }
 
     @Override
-    public Optional<DiagnosticPosition> getNewPosition(final long line, final long column) {
-        return srcTracker.getNewLineNumber(line).map(newLine ->
-                new DiagnosticPosition(newLine, getNewColumn(line, column, newLine)));
+    public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic diag) {
+        final long lineNum = diag.getLineNumber();
+        final long col = diag.getColumnNumber();
+
+        return srcTracker.getNewLineNumber(lineNum).map(newLineNum ->
+                DiagPosEqualityOracle.byLineCol(newLineNum, getNewColumn( lineNum, col, newLineNum)));
     }
 }

@@ -18,9 +18,11 @@ package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.ErrorProneInMemoryFileManager;
-import com.google.errorprone.bugtrack.motion.DPTrackerConstructorFactory;
-import com.google.errorprone.bugtrack.motion.DiagnosticPosition;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionTracker;
+import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagnosticsDeltaManager;
+import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,16 +33,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.google.errorprone.bugtrack.TestFileUtil.readTestFile;
+import static com.google.errorprone.bugtrack.TestUtils.readTestFile;
 
 @RunWith(JUnit4.class)
 public class TokenLineTrackerTest {
     private final ErrorProneInMemoryFileManager fileManager = new ErrorProneInMemoryFileManager();
 
-    private void assertLineNumberIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, Optional<Long> expectedNewLine) {
-        Optional<Long> newLine = lineMotionTracker.getNewPosition(oldLine, 1).map(position -> position.line);
+    private void assertLineIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, final long newLine) {
+        DatasetDiagnostic mockOldDiag = new DatasetDiagnostic("", oldLine, 1, "");
+        Assert.assertEquals(newLine, lineMotionTracker.track(mockOldDiag).get().getLine());
+    }
 
-        Assert.assertEquals(expectedNewLine, newLine);
+    private void assertLineIsNotTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine) {
+        DatasetDiagnostic mockOldDiag = new DatasetDiagnostic("", oldLine, 1, "");
+        Assert.assertEquals(Optional.empty(), lineMotionTracker.track(mockOldDiag));
     }
 
     private void performTest(String oldFile, String newFile, Consumer<DiagnosticPositionTracker> test) throws IOException, DiffException {
@@ -48,7 +54,8 @@ public class TokenLineTrackerTest {
         List<String> newFileSrc = readTestFile(newFile);
 
         DiagnosticPositionTracker positionTracker = DPTrackerConstructorFactory
-                .newTokenizedLineTracker().create(new SrcFile(oldFile, oldFileSrc), new SrcFile(newFile, newFileSrc));
+                .newTokenizedLineTracker().create(
+                        new DiagnosticsDeltaManager.SrcFilePair(new SrcFile(oldFile, oldFileSrc), new SrcFile(newFile, newFileSrc)));
 
         test.accept(positionTracker);
     }
@@ -56,48 +63,48 @@ public class TokenLineTrackerTest {
     @Test
     public void canTrackSingleLineMove() throws IOException, DiffException {
         performTest("foo_1.java", "foo_2.java", lineMotionTracker -> {
-            assertLineNumberIsTracked(lineMotionTracker, 3, Optional.of(4L));
+            assertLineIsTracked(lineMotionTracker, 3, 4);
         });
     }
 
     @Test
     public void canTrackLargerFileChanges() throws IOException, DiffException {
         performTest("foo_2.java", "foo_4.java", lineMotionTracker -> {
-            assertLineNumberIsTracked(lineMotionTracker, 1, Optional.of(1L));
-            assertLineNumberIsTracked(lineMotionTracker, 2, Optional.of(6L));
-            assertLineNumberIsTracked(lineMotionTracker, 3, Optional.empty());
-            assertLineNumberIsTracked(lineMotionTracker, 5, Optional.of(11L));
+            assertLineIsTracked(lineMotionTracker, 1, 1);
+            assertLineIsTracked(lineMotionTracker, 2, 6);
+            assertLineIsNotTracked(lineMotionTracker, 3);
+            assertLineIsTracked(lineMotionTracker, 5, 11);
         });
     }
 
     @Test
     public void canTrackLinesAroundADeletion() throws IOException, DiffException {
         performTest("Tag.java", "Tag_Newer.java", lineMotionTracker -> {
-            assertLineNumberIsTracked(lineMotionTracker, 18, Optional.of(20L));
-            assertLineNumberIsTracked(lineMotionTracker, 19, Optional.empty());
-            assertLineNumberIsTracked(lineMotionTracker, 20, Optional.empty());
-            assertLineNumberIsTracked(lineMotionTracker, 21, Optional.of(21L));
+            assertLineIsTracked(lineMotionTracker, 18,20);
+            assertLineIsNotTracked(lineMotionTracker, 19);
+            assertLineIsNotTracked(lineMotionTracker, 20);
+            assertLineIsTracked(lineMotionTracker, 21,21);
         });
     }
 
     @Test
     public void canTrackLinesAroundAnInsertion() throws IOException, DiffException {
         performTest("Tag.java", "Tag_Newer.java", lineMotionTracker -> {
-            assertLineNumberIsTracked(lineMotionTracker, 18, Optional.of(20L));
-            assertLineNumberIsTracked(lineMotionTracker, 19, Optional.empty());
-            assertLineNumberIsTracked(lineMotionTracker, 20, Optional.empty());
-            assertLineNumberIsTracked(lineMotionTracker, 21, Optional.of(21L));
+            assertLineIsTracked(lineMotionTracker, 18,20);
+            assertLineIsNotTracked(lineMotionTracker, 19);
+            assertLineIsNotTracked(lineMotionTracker, 20);
+            assertLineIsTracked(lineMotionTracker, 21,21);
         });
     }
 
     @Test
     public void isInsensitiveToWhitespace() throws IOException, DiffException {
         performTest("foo_2.java", "foo_4_indented.java", lineMotionTracker -> {
-            assertLineNumberIsTracked(lineMotionTracker, 1, Optional.of(1L));
-            assertLineNumberIsTracked(lineMotionTracker, 2, Optional.of(6L));
-            assertLineNumberIsTracked(lineMotionTracker, 3, Optional.empty());
-            assertLineNumberIsTracked(lineMotionTracker, 5, Optional.of(11L));
-            assertLineNumberIsTracked(lineMotionTracker, 4, Optional.of(7L));
+            assertLineIsTracked(lineMotionTracker, 1, 1);
+            assertLineIsTracked(lineMotionTracker, 2, 6);
+            assertLineIsNotTracked(lineMotionTracker, 3);
+            assertLineIsTracked(lineMotionTracker, 5, 11);
+            assertLineIsTracked(lineMotionTracker, 4, 7);
         });
     }
 
@@ -105,13 +112,13 @@ public class TokenLineTrackerTest {
     public void canTrackIndentation() throws IOException, DiffException {
         performTest("foo_2.java", "foo_4_indented.java", lineMotionTracker -> {
             // GIVEN:
-            DiagnosticPosition oldPos = new DiagnosticPosition(1, 1);
+            DatasetDiagnostic mockDiag = new DatasetDiagnostic("", 1, 1, null);
 
             // WHEN:
-            Optional<DiagnosticPosition> newPos = lineMotionTracker.getNewPosition(oldPos);
+            Optional<DiagPosEqualityOracle> newPos = lineMotionTracker.track(mockDiag);
 
             // THEN:
-            Assert.assertEquals(Optional.of(new DiagnosticPosition(1, 5)), newPos);
+            Assert.assertEquals(Optional.of(DiagPosEqualityOracle.byLineCol(1, 5)), newPos);
         });
     }
 }

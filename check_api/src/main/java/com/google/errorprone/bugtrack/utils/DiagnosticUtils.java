@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.utils;
+
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;

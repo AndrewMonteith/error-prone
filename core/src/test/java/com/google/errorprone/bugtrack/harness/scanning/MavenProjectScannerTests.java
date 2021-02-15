@@ -19,7 +19,7 @@ package com.google.errorprone.bugtrack.harness.scanning;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.GitUtils;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;

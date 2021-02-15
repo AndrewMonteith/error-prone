@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public final class DiagnosticsMatcher {
     private final Collection<DatasetDiagnostic> oldDiagnostics;
@@ -68,12 +69,13 @@ public final class DiagnosticsMatcher {
         Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = new HashMap<>();
 
         oldDiagnostics.forEach(oldDiagnostic -> {
-            Iterable<DatasetDiagnostic> matching = Iterables.filter(newDiagnostics,
-                    newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) && comparer.areSame(oldDiagnostic, newDiagnostic));
+            Collection<DatasetDiagnostic> matching = newDiagnostics.stream()
+                    .filter(newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) && comparer.areSame(oldDiagnostic, newDiagnostic))
+                    .collect(Collectors.toList());
 
-            if (Iterables.size(matching) == 1) {
+            if (matching.size() == 1) {
                 matchedDiagnostics.put(oldDiagnostic, Iterables.getOnlyElement(matching));
-            } else if (Iterables.size(matching) > 1) {
+            } else if (matching.size() > 1) {
                 if (verbose == Verbosity.VERBOSE) {
                     System.out.println("A diagnostic matched with multiple diagnostics");
                     System.out.println("Old diagnostic:");

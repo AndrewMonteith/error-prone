@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.utils;
 
 import com.google.common.base.Splitter;
+import com.google.errorprone.bugtrack.CommitRange;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.motion.SrcFile;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.diff.HistogramDiff;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -104,7 +106,7 @@ public class GitUtils {
     }
 
     public static String loadJavaLine(Repository repo, RevCommit commit, DatasetDiagnostic diag) throws IOException {
-        return loadSrcFile(repo, commit, diag.getFileName()).src.get((int)diag.getLineNumber()-1);
+        return loadSrcFile(repo, commit, diag.getFileName()).getLines().get((int)diag.getLineNumber()-1);
     }
 
     public static List<DiffEntry> computeDiffs(Git git, RevCommit olderCommit, RevCommit newerCommit) throws GitAPIException, IOException {

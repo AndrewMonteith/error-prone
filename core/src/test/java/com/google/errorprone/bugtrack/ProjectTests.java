@@ -21,9 +21,11 @@ import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
+import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
+import com.google.errorprone.bugtrack.motion.*;
 import com.google.errorprone.bugtrack.projects.*;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -41,8 +43,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.google.errorprone.bugtrack.motion.DPTrackerConstructorFactory.newCharacterLineTracker;
-import static com.google.errorprone.bugtrack.motion.DPTrackerConstructorFactory.newTokenizedLineTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -185,7 +186,8 @@ public class ProjectTests {
         String oldCommit = "468c5369b52ca45de3c7e54a3d2ddae352495851";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
-        BugComparer comparer = new DiagnosticPositionMotionComparer(project.loadRepo(), oldCommit, newCommit, newCharacterLineTracker());
+        BugComparer comparer = new DiagnosticPositionMotionComparer(
+                new GitDiagnosticDeltaManager(project.loadRepo(), oldCommit, newCommit), newCharacterLineTracker());
 
         // THEN:
         new ProjectHarness(project, Verbosity.VERBOSE).compareTwoCommits(oldCommit, newCommit, comparer);
@@ -194,13 +196,13 @@ public class ProjectTests {
     @Test
     public void foo() throws IOException {
         // GIVEN:
-        CorpusProject project = new JSoupProject();
-        String oldCommit = "468c5369b52ca45de3c7e54a3d2ddae352495851";
+        CorpusProject project = new GuiceProject();
+        String oldCommit = "9b371d3663db9db230417f3cc394e72b705d7d7f";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
         new ProjectHarness(project, Verbosity.VERBOSE)
                 .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
-                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/new_with_pos"));
 
 //        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));
@@ -214,26 +216,43 @@ public class ProjectTests {
     @Test
     public void example_CompareLogFiles() throws IOException, GitAPIException {
         // GIVEN:
-        CorpusProject project = new JSoupProject();
+        CorpusProject project = new GuiceProject();
 
+//        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));
+//
+//        DatasetDiagnosticsFile newFile = DatasetDiagnosticsFile.loadFromFile(
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/1 a0b87bf10a9a520b49748c619c868caed8d7a109"));
         DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
 
         DatasetDiagnosticsFile newFile = DatasetDiagnosticsFile.loadFromFile(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/1 a0b87bf10a9a520b49748c619c868caed8d7a109"));
-//        DatasetDiagnosticsFile oldDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/30 d071802d48a50dffd89b0cfc61eff251251e637a"));
-//
-//        DatasetDiagnosticsFile newDiagnostics = DatasetDiagnosticsFile.loadFromFile(
-//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/80 690e189a7d6830fb61c10fdc46a8985eac0a7d3a"));
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"));
 
 
-        BugComparer comparer = new DiagnosticPositionMotionComparer(project.loadRepo(),
-                oldFile.commitId, newFile.commitId, newTokenizedLineTracker());
+        DiagnosticsDeltaManager deltaManager = new GitDiagnosticDeltaManager(project.loadRepo(), oldFile.commitId, newFile.commitId);
+
+        BugComparer comparer = new DiagnosticPositionMotionComparer(deltaManager, pipeline(newTokenizedLineTracker(), newIJMAstNodeTracker()));
 
         // THEN:
         new DiagnosticsMatcher(oldFile.diagnostics, newFile.diagnostics, comparer).writeToStdout();
 //        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics"));
+    }
+
+    @Test
+    public void IJMTest() {
+        TestUtils.DiagnosticsPair pair = TestUtils.compareDiagnostics(
+                "breaking_changes/sub_expr_changes_old.java",
+                "breaking_changes/sub_expr_changes_new.java");
+
+        BugComparer comparer = new DiagnosticPositionMotionComparer(
+                new TestDiagnosticsDeltaManager(),
+                newIJMAstNodeTracker()
+        );
+
+        MatchResults results = new DiagnosticsMatcher(pair.oldDiagnostics, pair.newDiagnostics, comparer).getResults();
+
+        System.out.println(results);
     }
 }

@@ -20,8 +20,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
-import com.google.errorprone.bugpatterns.UnnecessarilyFullyQualified;
-import com.google.errorprone.bugtrack.GitUtils;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
@@ -50,8 +50,8 @@ public final class DiagnosticsCollector {
                 BuiltInCheckerSuppliers.DISABLED_CHECKS),
             check -> !check.canonicalName().equals("Var"));
 
-//        CompilationTestHelper helper = CompilationTestHelper.newInstance(ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker), DiagnosticsCollector.class);
-        CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
+        CompilationTestHelper helper = CompilationTestHelper.newInstance(ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker), DiagnosticsCollector.class);
+//        CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
 
         Collection<ProjectFile> files = scan.files.stream()
                 .filter(ProjectFile::exists)
@@ -133,5 +133,11 @@ public final class DiagnosticsCollector {
                                                                                         RevCommit commit,
                                                                                         Verbosity verbose) throws IOException {
         return collectDiagnostics(Iterables.getLast(loadScanWalker(project, ImmutableList.of(commit))), verbose );
+    }
+
+    public static Collection<DatasetDiagnostic> collectDatasetDiagnosics(DiagnosticsScan scan) {
+        return collectDiagnostics(scan).stream()
+                .map(DatasetDiagnostic::new)
+                .collect(Collectors.toList());
     }
 }

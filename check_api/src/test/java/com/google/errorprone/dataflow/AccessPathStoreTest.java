@@ -23,6 +23,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.File;
+import java.util.List;
+
 /** @author bennostein@google.com (Benno Stein) */
 @RunWith(JUnit4.class)
 public class AccessPathStoreTest {
@@ -32,6 +35,22 @@ public class AccessPathStoreTest {
     assertThat(newStore().leastUpperBound(newStore())).isEqualTo(newStore());
   }
 
+//  @Test
+//  public void foo() {
+//    FileDistiller distiller = ChangeDistiller.createFileDistiller(ChangeDistiller.Language.JAVA);
+//    File oldFile = new File("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/foo_4.java");
+//    File newFile = new File("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/foo_5.java");
+//
+//    distiller.extractClassifiedSourceCodeChanges(oldFile, "1.8", newFile, "1.8");
+//    List<SourceCodeChange> changes = distiller.getSourceCodeChanges();
+//    if(changes != null) {
+//      for(SourceCodeChange change : changes) {
+//        System.out.println(change);
+//        // see Javadocs for more information
+//      }
+//    }
+//  }
+//
   @Test
   public void buildAndGet() {
     AccessPathStore.Builder<Nullness> builder = newStore().toBuilder();

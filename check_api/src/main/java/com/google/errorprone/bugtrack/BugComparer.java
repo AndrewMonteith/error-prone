@@ -19,7 +19,7 @@ package com.google.errorprone.bugtrack;
 @FunctionalInterface
 public interface BugComparer {
 
-    boolean areSame(DatasetDiagnostic olderDiagnostic,
-                    DatasetDiagnostic newerDiagnostic);
+    boolean areSame(DatasetDiagnostic oldDiagnostic,
+                    DatasetDiagnostic newDiagnostic);
 
 }

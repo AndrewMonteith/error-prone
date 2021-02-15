@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.motion.trackers;
+
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 
 import java.util.Optional;
 
+/**
+ * @param <T> Position type we're tracking. Currently either DiagnosticPosition or long
+ */
 @FunctionalInterface
 public interface DiagnosticPositionTracker {
-    Optional<DiagnosticPosition> getNewPosition(final long line, final long column);
-
-    default Optional<DiagnosticPosition> getNewPosition(DiagnosticPosition position) {
-        return getNewPosition(position.line, position.column);
-    }
+    Optional<DiagPosEqualityOracle> track(DatasetDiagnostic t);
 }

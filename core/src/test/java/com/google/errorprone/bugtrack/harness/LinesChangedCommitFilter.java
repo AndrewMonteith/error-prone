@@ -18,7 +18,7 @@ package com.google.errorprone.bugtrack.harness;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-import com.google.errorprone.bugtrack.GitUtils;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;

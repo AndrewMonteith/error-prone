@@ -308,7 +308,7 @@ public class CompilationTestHelper {
         checkState(!run, "doTest should only be called once");
         this.run = true;
 
-        compile();
+        System.out.println(compile());
 
         Predicate<Diagnostic<? extends JavaFileObject>> isErrorProneDiagnostic =
                 diagnostic -> diagnostic.getMessage(null).startsWith("[");

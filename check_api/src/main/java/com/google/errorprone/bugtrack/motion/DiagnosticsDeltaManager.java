@@ -16,16 +16,22 @@
 
 package com.google.errorprone.bugtrack.motion;
 
-import com.github.difflib.algorithm.DiffException;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
-import java.util.List;
+import java.io.IOException;
 
-public class DiagnosticRangeMotionComparer {
-    private DiagnosticPositionTracker positionTracker;
+public interface DiagnosticsDeltaManager {
+    class SrcFilePair {
+        public final SrcFile oldFile;
+        public final SrcFile newFile;
 
-    public DiagnosticRangeMotionComparer(List<TokenizedLine> oldTokens, List<TokenizedLine> newTokens) throws DiffException {
-        this.positionTracker = new TokenizedLineTracker(oldTokens, newTokens);
+        public SrcFilePair(final SrcFile oldFile, final SrcFile newFile) {
+            this.oldFile = oldFile;
+            this.newFile = newFile;
+        }
     }
 
+    boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
 
+    SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
 }

@@ -23,7 +23,7 @@ import javax.tools.JavaFileObject;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.errorprone.bugtrack.DiagnosticUtils.extractDiagnosticType;
+import static com.google.errorprone.bugtrack.utils.DiagnosticUtils.extractDiagnosticType;
 
 public final class DiagnosticsDistribution {
     private final Map<String, Integer> diagnosticCounts;

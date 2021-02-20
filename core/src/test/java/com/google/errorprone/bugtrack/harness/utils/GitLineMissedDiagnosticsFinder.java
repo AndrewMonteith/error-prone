@@ -17,13 +17,13 @@
 package com.google.errorprone.bugtrack.harness.utils;
 
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.utils.GitUtils;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
+import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.motion.GitDiagnosticDeltaManager;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.GuiceProject;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Test;
@@ -31,11 +31,13 @@ import org.openjdk.tools.javac.util.Pair;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
-import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.newCharacterLineTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
 
 public final class GitLineMissedDiagnosticsFinder {
     private static double computeSimilarityFromString(String oldLine, String newLine) {
@@ -63,19 +65,21 @@ public final class GitLineMissedDiagnosticsFinder {
     private static void findLinkelyMissedDiagnostics(MatchResults results,
                                                      BiFunction<DatasetDiagnostic, DatasetDiagnostic, Double> computeSimilarity) {
         for (DatasetDiagnostic unmatchedOldDiag : results.getUnmatchedOldDiagnostics()) {
-            System.out.println(unmatchedOldDiag);
-
-            results.getUnmatchedNewDiagnostics().stream()
+            Collection<Pair<DatasetDiagnostic, Double>> topMatched
+                    = results.getUnmatchedNewDiagnostics().stream()
                     .filter(unmatchedNewDiag -> unmatchedOldDiag.isSameType(unmatchedNewDiag) && unmatchedOldDiag.getFileName().equals(unmatchedNewDiag.getFileName()))
                     .map(unmatchedNewDiag -> new Pair<>(unmatchedNewDiag, computeSimilarity.apply(unmatchedOldDiag, unmatchedNewDiag)))
                     .sorted((p1, p2) -> p2.snd.compareTo(p1.snd)) // sort in descending order
                     .limit(2)
-                    .forEach(match -> {
-                        System.out.printf("Possibly matching %s %d %d with score %.3f\n",
-                                match.fst.getFileName(), match.fst.getLineNumber(), match.fst.getColumnNumber(), match.snd);
-                    });
+                    .collect(Collectors.toList());
 
-            System.out.print("-----\n\n");
+            if (!topMatched.isEmpty()) {
+                System.out.println(unmatchedOldDiag);
+                topMatched.forEach(match -> System.out.printf("Possibly matching %s %d %d with score %.3f\n",
+                        match.fst.getFileName(), match.fst.getLineNumber(), match.fst.getColumnNumber(), match.snd));
+                System.out.print("-----\n\n");
+            }
+
         }
     }
 
@@ -105,14 +109,14 @@ public final class GitLineMissedDiagnosticsFinder {
         // GIVEN:
         CorpusProject project = new GuiceProject();
         RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
-        RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "9b371d3663db9db230417f3cc394e72b705d7d7f");
+        RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "b7cadc1cfa0623ad377c274eb8db278e3e9a7054");
 
         MatchResults results = DiagnosticsMatcher.fromFiles(
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"),
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/82 b7cadc1cfa0623ad377c274eb8db278e3e9a7054"),
                 new DiagnosticPositionMotionComparer(
                         new GitDiagnosticDeltaManager(project.loadRepo(), oldCommit, newCommit),
-                        newCharacterLineTracker())).getResults();
+                        compose(newTokenizedLineTracker(), newIJMStartPosTracker()))).getResults();
 
         proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);

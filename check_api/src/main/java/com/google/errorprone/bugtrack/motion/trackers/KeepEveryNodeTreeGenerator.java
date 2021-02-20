@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.motion.trackers;
 
-import com.google.errorprone.bugtrack.motion.DiagnosticsDeltaManager;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
+import com.github.gumtreediff.gen.jdt.AbstractJdtTreeGenerator;
+import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
+import com.github.gumtreediff.gen.jdt.JdtVisitor;
+import com.github.gumtreediff.tree.TreeContext;
+import com.google.errorprone.bugtrack.motion.SrcFile;
 
 import java.io.IOException;
 
-public class TestDiagnosticsDeltaManager implements DiagnosticsDeltaManager {
-    @Override
-    public boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
-        return true;
+public class KeepEveryNodeTreeGenerator extends AbstractJdtTreeGenerator {
+    public static TreeContext parseSrc(SrcFile file) throws IOException {
+        return new KeepEveryNodeTreeGenerator().generateFromString(file.getSrc());
     }
 
     @Override
-    public SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException {
-        return TestUtils.readTestSrcFilePair(oldDiagnostic.getFileName(), newDiagnostic.getFileName());
+    protected AbstractJdtVisitor createVisitor() {
+        return new JdtVisitor();
     }
 }

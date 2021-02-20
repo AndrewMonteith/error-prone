@@ -22,6 +22,7 @@ import com.google.errorprone.bugtrack.utils.DiagnosticUtils;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import java.util.Objects;
 
 public class DatasetDiagnostic {
     private final String fileName;
@@ -103,5 +104,22 @@ public class DatasetDiagnostic {
 
     public long getEndPos() {
         return endPos;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DatasetDiagnostic that = (DatasetDiagnostic) o;
+        return lineNumber == that.lineNumber
+                && columnNumber == that.columnNumber
+                && startPos == that.startPos
+                && endPos == that.endPos
+                && Objects.equals(fileName, that.fileName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fileName, lineNumber, columnNumber, startPos, endPos);
     }
 }

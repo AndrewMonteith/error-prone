@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.harness;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import javax.tools.Diagnostic;
@@ -77,7 +78,7 @@ public class DatasetDiagnosticsFile {
                     Long.parseLong(locationDetails[4]),
                     message);
 
-            if (!acceptDiagnostic.test(diagnostic)) {
+            if (!acceptDiagnostic.test(diagnostic) || diagnostics.contains(diagnostic)) {
                 continue;
             }
 

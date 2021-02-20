@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 
 import java.nio.file.Path;
@@ -37,6 +38,10 @@ public final class ShouldScanUtils {
 
     public static boolean underDirectory(Path path, String dir) {
         return path.toString().contains("/" + dir + "/");
+    }
+
+    public static boolean inDirectoryAllowlist(Iterable<String> allowList, Path file) {
+        return Iterables.any(allowList, dir -> underDirectory(file, dir));
     }
 
     public static boolean notInBlockList(Set<String> fileBlockList, Path file) {

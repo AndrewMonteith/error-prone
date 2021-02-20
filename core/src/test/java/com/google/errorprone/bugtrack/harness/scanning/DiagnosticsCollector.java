@@ -21,6 +21,7 @@ import com.google.common.collect.Iterables;
 import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.harness.utils.ListUtils;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
@@ -39,7 +40,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public final class DiagnosticsCollector {
-    private static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(DiagnosticsScan scan) {
+    public static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(DiagnosticsScan scan) {
         if (scan.files.isEmpty()) {
             return Collections.emptyList();
         }
@@ -64,7 +65,7 @@ public final class DiagnosticsCollector {
         files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
         helper.setArgs(ImmutableList.copyOf(Iterables.concat(scan.cmdLineArguments, ImmutableList.of("-Xjcov"))));
 
-        return helper.collectDiagnostics();
+        return ListUtils.distinct(helper.collectDiagnostics());
     }
 
     private static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(Iterable<DiagnosticsScan> scans) {
@@ -79,6 +80,9 @@ public final class DiagnosticsCollector {
         boolean printProgress = verbose == Verbosity.VERBOSE;
 
         int current = 1, numberOfScans = Iterables.size(scans);
+        if (printProgress) {
+            System.out.println("Found " + numberOfScans + " scans");
+        }
         for (DiagnosticsScan scan : scans) {
             if (printProgress) {
                 System.out.printf("Collecting diagnostics for target [%d / %d]\n", current, numberOfScans);
@@ -132,7 +136,7 @@ public final class DiagnosticsCollector {
     public static Collection<Diagnostic<? extends JavaFileObject>> collectEPDiagnostics(CorpusProject project,
                                                                                         RevCommit commit,
                                                                                         Verbosity verbose) throws IOException {
-        return collectDiagnostics(Iterables.getLast(loadScanWalker(project, ImmutableList.of(commit))), verbose );
+        return collectDiagnostics(Iterables.getLast(loadScanWalker(project, ImmutableList.of(commit))), verbose);
     }
 
     public static Collection<DatasetDiagnostic> collectDatasetDiagnosics(DiagnosticsScan scan) {

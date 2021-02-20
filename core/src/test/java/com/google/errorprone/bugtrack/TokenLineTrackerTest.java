@@ -17,12 +17,12 @@
 package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
-import com.google.errorprone.ErrorProneInMemoryFileManager;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
-import com.google.errorprone.bugtrack.motion.DiagnosticsDeltaManager;
 import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
+import com.google.errorprone.bugtrack.motion.trackers.TrackersSharedState;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,8 +37,6 @@ import static com.google.errorprone.bugtrack.TestUtils.readTestFile;
 
 @RunWith(JUnit4.class)
 public class TokenLineTrackerTest {
-    private final ErrorProneInMemoryFileManager fileManager = new ErrorProneInMemoryFileManager();
-
     private void assertLineIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, final long newLine) {
         DatasetDiagnostic mockOldDiag = new DatasetDiagnostic("", oldLine, 1, "");
         Assert.assertEquals(newLine, lineMotionTracker.track(mockOldDiag).get().getLine());
@@ -49,13 +47,17 @@ public class TokenLineTrackerTest {
         Assert.assertEquals(Optional.empty(), lineMotionTracker.track(mockOldDiag));
     }
 
-    private void performTest(String oldFile, String newFile, Consumer<DiagnosticPositionTracker> test) throws IOException, DiffException {
-        List<String> oldFileSrc = readTestFile(oldFile);
-        List<String> newFileSrc = readTestFile(newFile);
+    private void performTest(String oldFileName, String newFileName, Consumer<DiagnosticPositionTracker> test) throws IOException, DiffException {
+        List<String> oldFileSrc = readTestFile(oldFileName);
+        List<String> newFileSrc = readTestFile(newFileName);
+
+        SrcFile oldFile = new SrcFile(oldFileName, oldFileSrc);
+        SrcFile newFile = new SrcFile(newFileName, newFileSrc);
 
         DiagnosticPositionTracker positionTracker = DPTrackerConstructorFactory
                 .newTokenizedLineTracker().create(
-                        new DiagnosticsDeltaManager.SrcFilePair(new SrcFile(oldFile, oldFileSrc), new SrcFile(newFile, newFileSrc)));
+                        new SrcFilePair(oldFile, newFile),
+                        new TrackersSharedState());
 
         test.accept(positionTracker);
     }

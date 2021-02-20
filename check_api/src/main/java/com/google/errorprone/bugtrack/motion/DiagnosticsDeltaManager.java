@@ -21,15 +21,6 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import java.io.IOException;
 
 public interface DiagnosticsDeltaManager {
-    class SrcFilePair {
-        public final SrcFile oldFile;
-        public final SrcFile newFile;
-
-        public SrcFilePair(final SrcFile oldFile, final SrcFile newFile) {
-            this.oldFile = oldFile;
-            this.newFile = newFile;
-        }
-    }
 
     boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
 

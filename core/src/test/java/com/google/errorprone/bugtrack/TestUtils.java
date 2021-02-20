@@ -19,7 +19,9 @@ package com.google.errorprone.bugtrack;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
+import com.google.errorprone.bugtrack.motion.DiagnosticsDeltaManager;
 import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 
@@ -44,6 +46,10 @@ public final class TestUtils {
 
     public static SrcFile readTestSrcFile(String file) throws IOException {
         return new SrcFile(file, readTestFile(file));
+    }
+
+    public static SrcFilePair readTestSrcFilePair(String oldFile, String newFile) throws IOException {
+        return new SrcFilePair(readTestSrcFile(oldFile), readTestSrcFile(newFile));
     }
 
     public static DiagnosticsPair compareDiagnostics(String oldFile, String newFile) {

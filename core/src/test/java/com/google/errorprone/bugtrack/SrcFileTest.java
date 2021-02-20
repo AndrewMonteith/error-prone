@@ -46,4 +46,17 @@ public class SrcFileTest {
         Assert.assertEquals(1, s.getColumnNumber(37));
     }
 
+    @Test
+    public void correctExtractsFragments() throws IOException {
+        // GIVEN:
+        List<String> oldSrc = readTestFile("foo_1.java");
+
+        // WHEN:
+        SrcFile s = new SrcFile("foo_1.java", oldSrc);
+
+        // THEN:
+        Assert.assertEquals("class Foo", s.getSrcExtract(1, 9));
+        Assert.assertEquals("public void main() {", s.getSrcExtract(17, 36));
+    }
+
 }

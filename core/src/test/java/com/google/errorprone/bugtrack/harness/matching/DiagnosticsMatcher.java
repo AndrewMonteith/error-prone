@@ -19,7 +19,7 @@ package com.google.errorprone.bugtrack.harness.matching;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.DatasetDiagnosticsFile;
+import com.google.errorprone.bugtrack.harness.DatasetDiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 
 import java.io.IOException;

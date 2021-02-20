@@ -29,10 +29,12 @@ def print_targets(output):
         print(task_name)
         print(extract_raw_args(compiler_arg))
 
-build_proc = subprocess.run(["./gradlew", "--debug", "--no-build-cache", "classes"],
+gradle_cmd = "./gradlew" if os.path.isfile("./gradlew") else "gradle"
+
+build_proc = subprocess.run([gradle_cmd, "--debug", "--no-build-cache", "classes"],
                             capture_output=True)
 
-test_build_proc = subprocess.run(["./gradlew", "--debug", "--no-build-cache", "testClasses"],
+test_build_proc = subprocess.run([gradle_cmd, "--debug", "--no-build-cache", "testClasses"],
                                   capture_output=True)
 
 print_targets(build_proc.stdout.decode("utf-8"))

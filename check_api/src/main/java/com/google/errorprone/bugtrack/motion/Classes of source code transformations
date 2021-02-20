@@ -7,8 +7,14 @@ Description: Use diff information to track the source lines between two versions
 
 Technique 2. Tokenized line tracking
 Description: Use diff information track tokenized source lines between two versions, matching diagnostics based on same
-             principle as Character line tracking. This techinque is slightly more expensive because we have to parse
+             principle as Character line tracking. This technique is slightly more expensive because we have to parse
              the AST of the source file.
+
+Technique 3. Single AST node tracking
+Description: Use diff information derived from AST difference algorithms (Curently IJM). Match the start position of a
+             diagnostic to a node in the AST of the old source file. Hope the AST matched that node in a new AST. Match
+             the diagnostic if the source buffer position of the newly matched node is the same as the diagnostic start
+             pos.
 
 
 Case 1: The line get's put over multiple lines.
@@ -42,8 +48,8 @@ Doesn't break: Tokenized line tracking
     351.         binder.modules.put(module, new ModuleInfo(binder, moduleSource, false));
 
 
-Case 4:  Line is incorrectly(imho) deemed as "deleted" from the source file
-Breaks: All so far
+Case 4:  Line with diagnostic on is deemed as "deleted" from the source file
+Breaks: Definately Character&Token line tracking, maybe not node tracking
 [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: <init>(String message, Throwable cause, List<Object> sources)
   guice 875868e7263491291d4f8bdc1332bfea746ad673..d071802d48a50dffd89b0cfc61eff251251e637a
   /home/monty/IdeaProjects/java-corpus/guice/core/src/com/google/inject/spi/Message.java 50 10
@@ -57,3 +63,15 @@ Breaks: All so far
 Case 5: The error is not bound to specific source code
 Breaks: All so far
 Example: [DefaultPackage] (not found in example in wild, but is a case to consider?)
+
+Interesting diff point:
+    Case 6: Start pos token changes
+    [ClassNamedLikeTypeParameter] The class's name looks like a Type Parameter
+      guice 875868e7263491291d4f8bdc1332bfea746ad673..b7cadc1cfa0623ad377c274eb8db278e3e9a7054
+      /home/monty/IdeaProjects/java-corpus/guice/core/test/com/google/inject/internal/ProxyFactoryTest.java 159 10 4705 4825
+        159. static class A {
+      /home/monty/IdeaProjects/java-corpus/guice/core/test/com/google/inject/internal/ProxyFactoryTest.java 169 17 4982 5109
+        169. public static class A {
+      Case of problem:
+        Implementation problem since our AST diff algorithm currently uses a different AST representation JDT to javac's JC.
+        To solve this we created the 'JDTtoJCPosMapper'

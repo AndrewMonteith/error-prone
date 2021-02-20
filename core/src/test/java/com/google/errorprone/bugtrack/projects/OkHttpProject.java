@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack;
+package com.google.errorprone.bugtrack.projects;
 
-import com.google.errorprone.bugtrack.motion.DiagnosticsDeltaManager;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import java.io.IOException;
-
-public class TestDiagnosticsDeltaManager implements DiagnosticsDeltaManager {
+public final class OkHttpProject implements CorpusProject {
     @Override
-    public boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
-        return true;
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/java-corpus/okhttp");
     }
 
     @Override
-    public SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException {
-        return TestUtils.readTestSrcFilePair(oldDiagnostic.getFileName(), newDiagnostic.getFileName());
+    public boolean shouldScanFile(Path file) {
+        return ShouldScanUtils.isJavaFile(file);
+    }
+
+    @Override
+    public BuildSystem getBuildSystem() {
+        return BuildSystem.Gradle;
     }
 }

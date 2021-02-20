@@ -32,9 +32,26 @@ public class SrcFile {
     private final char[] charBuf;
     private final Position.LineMap lineMap;
 
+    private static String expandTabs(String line) {
+        if (line.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+
+        int i = 0;
+        while (line.charAt(i) == '\n') {
+            result.append("    ");
+        }
+
+        result.append(line.substring(i));
+
+        return result.toString();
+    }
+
     public SrcFile(String fileName, List<String> src) {
         this.name = fileName;
-        this.src = ImmutableList.copyOf(Iterables.transform(src, line -> line.replace("\t", "    ")));
+        this.src = ImmutableList.copyOf(Iterables.transform(src, SrcFile::expandTabs));
         this.charBuf = Joiner.on('\n').join(this.src).toCharArray();
         this.lineMap = Position.makeLineMap(charBuf, charBuf.length, true);
     }
@@ -63,8 +80,9 @@ public class SrcFile {
         return lineMap.getPosition(line, col);
     }
 
+    // start=1 will get first character
     public String getSrcExtract(final int start, final int end) {
-        String code = String.valueOf(Arrays.copyOfRange(charBuf, start, end));
+        String code = String.valueOf(Arrays.copyOfRange(charBuf, start-1, end));
         if (code.endsWith(";")) { // normalize since some source ranges are [], some [).
             code = code.substring(0, code.length() - 1);
         }

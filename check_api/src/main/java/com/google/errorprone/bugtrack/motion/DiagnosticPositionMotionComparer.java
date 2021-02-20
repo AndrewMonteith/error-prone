@@ -21,6 +21,7 @@ import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
+import com.google.errorprone.bugtrack.motion.trackers.TrackersSharedState;
 import com.google.errorprone.bugtrack.utils.MemoMap;
 
 import java.io.IOException;
@@ -31,18 +32,20 @@ public class DiagnosticPositionMotionComparer implements BugComparer {
     private final DiagnosticPositionTrackerConstructor trackerConstructor;
 
     private final MemoMap<String, DiagnosticPositionTracker> positionTrackers;
+    private final TrackersSharedState sharedState;
 
     public DiagnosticPositionMotionComparer(DiagnosticsDeltaManager diagnosticsDeltaManager,
                                             DiagnosticPositionTrackerConstructor trackerConstructor) {
         this.diagnosticsDeltaManager = diagnosticsDeltaManager;
         this.trackerConstructor = trackerConstructor;
         this.positionTrackers = new MemoMap<>();
+        this.sharedState = new TrackersSharedState();
     }
 
     private DiagnosticPositionTracker createDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
                                                                       DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
         return trackerConstructor.create(
-                diagnosticsDeltaManager.loadFilesBetweenDiagnostics(oldDiagnostic, newDiagnostic));
+                diagnosticsDeltaManager.loadFilesBetweenDiagnostics(oldDiagnostic, newDiagnostic), sharedState);
     }
 
     private DiagnosticPositionTracker getDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,

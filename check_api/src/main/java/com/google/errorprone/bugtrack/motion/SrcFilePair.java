@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion.trackers;
+package com.google.errorprone.bugtrack.motion;
 
-import com.github.difflib.algorithm.DiffException;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
+public class SrcFilePair {
+    public final SrcFile oldFile;
+    public final SrcFile newFile;
 
-import java.io.IOException;
-
-@FunctionalInterface
-public interface DiagnosticPositionTrackerConstructor {
-    DiagnosticPositionTracker create(SrcFilePair files,
-                                     TrackersSharedState sharedState) throws DiffException, IOException;
+    public SrcFilePair(final SrcFile oldFile, final SrcFile newFile) {
+        this.oldFile = oldFile;
+        this.newFile = newFile;
+    }
 }

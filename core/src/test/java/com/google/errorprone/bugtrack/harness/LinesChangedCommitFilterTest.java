@@ -37,7 +37,7 @@ public final class LinesChangedCommitFilterTest {
     public void lineChangeFilterNotTriggeredUnderThreshold() throws IOException, GitAPIException {
         // GIVEN:
         Repository jsoupRepo = new JSoupProject().loadRepo();
-        CommitRange range = new CommitRange("c0b27536", "62f5035b");
+        CommitRange range = new CommitRange("c0b275361ce8409f85de3573d89f6a617f0084d5", "62f5035bc6b466f59231c59a7ed414db8783c0c3");
 
         // WHEN:
         List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(jsoupRepo), 50)
@@ -53,7 +53,7 @@ public final class LinesChangedCommitFilterTest {
     public void lineChangeFilterTriggeredOverThreshold() throws IOException, GitAPIException {
         // GIVEN:
         Repository jsoupRepo = new JSoupProject().loadRepo();
-        CommitRange range = new CommitRange("c0b27536", "f6388656");
+        CommitRange range = new CommitRange("c0b275361ce8409f85de3573d89f6a617f0084d5", "f6388656f6c1ce111bc2dd158bf5a3732bda0605");
 
         // WHEN:
         List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(jsoupRepo), 50)

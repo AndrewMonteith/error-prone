@@ -104,6 +104,8 @@ public final class ProjectHarness {
     }
 
     public void serialiseCommit(RevCommit commit, Path output) throws IOException {
+        GitUtils.checkoutFiles(project.loadRepo());
+
         Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
                 DiagnosticsCollector.collectEPDiagnostics(project, commit, verbose);
 
@@ -119,7 +121,8 @@ public final class ProjectHarness {
 
         int commitNum = 0;
         for (RevCommit commit : commits) {
-            Path diagnosticsOutput = output.resolve(commitNum + " " + commit.getName());
+            System.out.printf("Serialising commit [%d / %d]\n", commitNum+1, commits.size());
+            Path diagnosticsOutput = output.resolve((commitNum+4) + " " + commit.getName());
             try {
                 serialiseCommit(commit, diagnosticsOutput);
             } catch (Exception e) {

@@ -16,12 +16,9 @@
 
 package com.google.errorprone.bugtrack.harness.scanning;
 
-import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
-import com.google.errorprone.bugtrack.harness.scanning.GradleProjectScanner;
-import com.google.errorprone.bugtrack.harness.scanning.MavenProjectScanner;
-import com.google.errorprone.bugtrack.harness.scanning.ProjectScanner;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.util.Collection;
@@ -73,7 +70,9 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
         try {
             cleanProject();
             RevCommit commit = commits.next();
-            new Git(project.loadRepo()).checkout().setName(commit.getName()).call();
+            Repository repo = project.loadRepo();
+            new Git(repo).checkout().setAllPaths(true).call();
+            new Git(repo).checkout().setName(commit.getName()).call();
             return projectScanner.getScans(project);
         } catch (Exception e) {
             e.printStackTrace();

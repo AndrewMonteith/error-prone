@@ -78,6 +78,12 @@ public class ProjectTests {
     }
 
     @Test
+    public void canScanMyBatis3() throws IOException {
+        assertFindsDiagnostics(new MyBatis3Project(),
+                "b2c8a2cc9e8daf43817d0151bbf3826ae884df40");
+    }
+
+    @Test
     public void canSerialiseDiagnostics2() throws IOException {
         assertFindsDiagnostics(new GuiceProject(),
                 "dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a");
@@ -97,6 +103,8 @@ public class ProjectTests {
 
     @Test
     public void canSerialiseDiagnostics() throws IOException {
+        // Will only pass on defaultChecks
+
         // GIVEN:
         CorpusProject jsoup = new JSoupProject();
         RevCommit commit = GitUtils.parseCommit(jsoup.loadRepo(), "468c5369b52ca45de3c7e54a3d2ddae352495851");
@@ -111,12 +119,12 @@ public class ProjectTests {
 
     @Test
     public void serialiseDiagnostics() throws IOException, GitAPIException {
-        CorpusProject project = new OkHttpProject();
-        CommitRange range = new CommitRange("c4894aa038aa12239a88897edca39b09d6c222fc", "2b95176f000ed026666de57e5d6a0f6fda889828");
+        CorpusProject project = new MyBatis3Project();
+        CommitRange range = new CommitRange("1eb11b8889c0af09bb6c88586ceaf64ebdf28d2d", "7cb8acea16378632ca51ee9c0f0790a3742382dc");
 
         new ProjectHarness(project).serialiseCommits(range,
                 new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/okhttp"));
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3"));
 
     }
 
@@ -234,7 +242,7 @@ public class ProjectTests {
     public void foo() throws IOException {
         // GIVEN:
         CorpusProject project = new OkHttpProject();
-        String oldCommit = "4edda8905cb9da8b8193d9704c926188306e9c78";
+        String oldCommit = "987d2848fdc41d101049b9a93717f6205821818d";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
         new ProjectHarness(project, Verbosity.VERBOSE)

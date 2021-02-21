@@ -129,4 +129,11 @@ public class GitUtils {
         }
     }
 
+    public static void checkoutFiles(Repository repo) {
+        try {
+            new Git(repo).checkout().setAllPaths(true).call();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
+    }
 }

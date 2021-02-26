@@ -41,7 +41,7 @@ public final class BugComparerExperiment {
     private DiagnosticsFilePairMapper<BugComparer> bugComparer2;
     private DiagnosticsFilePairMapper<SrcFilePairLoader> srcDiagLoader;
     private DiagnosticsFilePairMapper<PathsComparer> pathsComparerCtor;
-    private final int trials = 100;
+    private int numOfTrials = 100;
     private MissedLikelihoodCalculator likelihoodCalc = MissedLikelihoodCalculatorFactory.zero();
 
     private BugComparerExperiment(CorpusProject project) {
@@ -112,10 +112,15 @@ public final class BugComparerExperiment {
             throw new RuntimeException(output + " does not exist");
         }
 
-        BugComparerEvaluator eval = new BugComparerEvaluator(project, dataLoader, likelihoodCalc, trials);
+        BugComparerEvaluator eval = new BugComparerEvaluator(project, dataLoader, likelihoodCalc, numOfTrials);
         BugComparerEvaluationConfig evaluationConfig =
                 new BugComparerEvaluationConfig(bugComparer1, bugComparer2, srcDiagLoader, pathsComparerCtor);
 
         eval.compareBugComparers(evaluationConfig, Paths.get(output));
+    }
+
+    public BugComparerExperiment trials(int trials) {
+        this.numOfTrials = trials;
+        return this;
     }
 }

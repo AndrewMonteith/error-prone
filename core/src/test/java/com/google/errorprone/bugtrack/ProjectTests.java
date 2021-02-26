@@ -318,6 +318,7 @@ public class ProjectTests {
                 .makeBugComparer1(newTokenizedLineTracker())
                 .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
                 .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
+                .trials(10)
                 .run("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3");
 
 //        BugComparerEvaluator eval = new BugComparerEvaluator(
@@ -338,10 +339,10 @@ public class ProjectTests {
         CorpusProject project = new MyBatis3Project();
 
         DiagnosticsFile oldFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/1 2065ebbfd79ba3a54568d6767963b1d5b31a54ad_filtered");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/old");
 
         DiagnosticsFile newFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/17 a4809f65213a7b66fd2951b06f277273f36907c7_filtered");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/new");
 
         System.out.println(new DiagnosticsDistribution(oldFile.diagnostics));
         System.out.println(new DiagnosticsDistribution(newFile.diagnostics));

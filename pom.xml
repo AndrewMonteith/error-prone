@@ -182,7 +182,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.19.1</version>
         <configuration>
-          <argLine>-Xmx2g --illegal-access=permit</argLine>
+          <argLine>-Xmx4g --illegal-access=permit</argLine>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
@@ -205,7 +205,7 @@
               <forkCount>4</forkCount>
               <reuseForks>true</reuseForks>
                 <!-- put javac.jar on bootclasspath when executing tests -->
-              <argLine>-Xmx2g -Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</argLine>
+              <argLine>-Xmx4g -Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</argLine>
               <trimStackTrace>false</trimStackTrace>
             </configuration>
           </plugin>

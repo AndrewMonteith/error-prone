@@ -199,26 +199,28 @@ public final class BugComparerEvaluator {
             }
             mismatchedPairs.add(oldAndNewDiagFiles);
 
-            MatchResults comparer1Results = DiagnosticsMatcher.fromFiles(
-                    project,
-                    oldAndNewDiagFiles.oldFile,
-                    oldAndNewDiagFiles.newFile,
-                    config.createBugComparer1(oldAndNewDiagFiles)).getResults();
+            {
+                MatchResults comparer1Results = DiagnosticsMatcher.fromFiles(
+                        project,
+                        oldAndNewDiagFiles.oldFile,
+                        oldAndNewDiagFiles.newFile,
+                        config.createBugComparer1(oldAndNewDiagFiles)).getResults();
 
-            MatchResults comparer2Results = DiagnosticsMatcher.fromFiles(
-                    project,
-                    oldAndNewDiagFiles.oldFile,
-                    oldAndNewDiagFiles.newFile,
-                    config.createBugComparer2(oldAndNewDiagFiles)).getResults();
+                MatchResults comparer2Results = DiagnosticsMatcher.fromFiles(
+                        project,
+                        oldAndNewDiagFiles.oldFile,
+                        oldAndNewDiagFiles.newFile,
+                        config.createBugComparer2(oldAndNewDiagFiles)).getResults();
 
-            if (resultsAreDifferent(comparer1Results, comparer2Results)) {
-                writeResults(
-                        outputDir,
-                        oldAndNewDiagFiles,
-                        config.createSrcFilePairLoader(oldAndNewDiagFiles),
-                        config.createPathComparer(oldAndNewDiagFiles),
-                        comparer1Results,
-                        comparer2Results);
+                if (resultsAreDifferent(comparer1Results, comparer2Results)) {
+                    writeResults(
+                            outputDir,
+                            oldAndNewDiagFiles,
+                            config.createSrcFilePairLoader(oldAndNewDiagFiles),
+                            config.createPathComparer(oldAndNewDiagFiles),
+                            comparer1Results,
+                            comparer2Results);
+                }
             }
 
             System.gc();

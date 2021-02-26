@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack;
 
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import java.io.IOException;
+@FunctionalInterface
+public interface PathsComparer {
+    boolean inSameFile(Path path1, Path path2);
 
-public interface DiagnosticsDeltaManager {
-    boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
+    default boolean inSameFile(String path1, String path2) {
+        return inSameFile(Paths.get(path1), Paths.get(path2));
+    }
 
-    SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+    default boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
+        return inSameFile(oldDiagnostic.getFileName(), newDiagnostic.getFileName());
+    }
 }

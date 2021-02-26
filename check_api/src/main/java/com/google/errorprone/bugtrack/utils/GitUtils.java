@@ -76,7 +76,7 @@ public class GitUtils {
     }
 
     private static String makePathRelativeToRepo(Repository repo, String path) {
-        String pathToProject = repo.getDirectory().getParentFile().getAbsolutePath().toString() + "/";
+        String pathToProject = repo.getDirectory().getParentFile().getAbsolutePath() + "/";
 
         return path.startsWith(pathToProject) ? path.replaceFirst(pathToProject, "") : path;
     }

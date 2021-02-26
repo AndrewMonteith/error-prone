@@ -33,23 +33,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class DatasetDiagnosticsFile {
+public class DiagnosticsFile {
+    public final String name;
     public final String commitId;
     public final ImmutableCollection<DatasetDiagnostic> diagnostics;
 
-    private DatasetDiagnosticsFile(String commitId, ImmutableCollection<DatasetDiagnostic> diagnostics) {
+    private DiagnosticsFile(String name, String commitId, ImmutableCollection<DatasetDiagnostic> diagnostics) {
+        this.name = name;
         this.commitId = commitId;
         this.diagnostics = diagnostics;
     }
 
-    public static DatasetDiagnosticsFile loadFromFile(Path file) throws IOException {
-        return loadFromFile(file, diagnostic -> true);
+    public static int getSequenceNumberFromName(String fileName) {
+        return Integer.parseInt(fileName.split(" ")[0]);
     }
 
-    public static DatasetDiagnosticsFile loadFromFile(Path file, Predicate<DatasetDiagnostic> acceptDiagnostic) throws IOException {
+    public static DiagnosticsFile load(Path file) throws IOException {
+        return load(file, diagnostic -> true);
+    }
+
+    public static DiagnosticsFile load(String file) throws IOException {
+        return load(Paths.get(file));
+    }
+
+
+    public static DiagnosticsFile load(Path file, Predicate<DatasetDiagnostic> acceptDiagnostic) throws IOException {
         List<String> lines = Files.readAllLines(file);
 
         String commitId = lines.get(0).split(" ")[0];
+        int expectedNumber = Integer.parseInt(lines.get(0).split(" ")[1]);
 
         List<DatasetDiagnostic> diagnostics = new ArrayList<>();
         for (int i = 1; i < lines.size(); ) {
@@ -85,7 +97,11 @@ public class DatasetDiagnosticsFile {
             diagnostics.add(diagnostic);
         }
 
-        return new DatasetDiagnosticsFile(commitId, ImmutableList.copyOf(diagnostics));
+        if (diagnostics.size() != expectedNumber) {
+            throw new RuntimeException("failed to parse expected number for " + file.toString());
+        }
+
+        return new DiagnosticsFile(file.toFile().getName(), commitId, ImmutableList.copyOf(diagnostics));
     }
 
     public static void save(String output, RevCommit commit,

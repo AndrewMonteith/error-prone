@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
-
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
+package com.google.errorprone.bugtrack.utils;
 
 import java.io.IOException;
 
-public interface DiagnosticsDeltaManager {
-    boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
-
-    SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+public interface IOThrowingFunction<K, V> {
+    V apply(K key) throws IOException;
 }

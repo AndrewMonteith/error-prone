@@ -25,21 +25,30 @@ import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 import java.io.IOException;
 import java.util.Optional;
 
-public final class IJMStartPosTracker extends IJMPosTracker implements DiagnosticPositionTracker {
-    public IJMStartPosTracker(SrcFilePair srcFilePair,
-                              TrackersSharedState sharedState,
-                              IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
+public final class IJMStartAndEndPosTracker extends IJMPosTracker implements DiagnosticPositionTracker {
+    public IJMStartAndEndPosTracker(SrcFilePair srcFilePair,
+                                    TrackersSharedState sharedState,
+                                    IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
         super(srcFilePair, sharedState, jdtVisitorSupplier);
     }
 
-    public IJMStartPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState) throws IOException {
+    public IJMStartAndEndPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState) throws IOException {
         super(srcFilePair, sharedState);
     }
 
     @Override
     public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-        return findClosestMatchingSrcBuffer(oldDiag.getStartPos())
-                .map(srcBufferRange -> DiagPosEqualityOracle.byStartPos(srcBufferRange.start));
+        Optional<SrcBufferRange> mappedStartPos = findClosestMatchingSrcBuffer(oldDiag.getStartPos());
+        Optional<SrcBufferRange> mappedEndPos = findClosestMatchingSrcBuffer(oldDiag.getEndPos());
+
+        if (!mappedStartPos.isPresent()) {
+            return Optional.empty();
+        }
+
+        if (!mappedEndPos.isPresent()) {
+            return mappedStartPos.map(srcBufRange -> DiagPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
+        }
+
+        return Optional.of(DiagPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, mappedEndPos.get().end));
     }
 }
-

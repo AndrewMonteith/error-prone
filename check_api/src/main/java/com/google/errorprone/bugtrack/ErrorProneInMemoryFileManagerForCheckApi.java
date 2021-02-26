@@ -154,10 +154,14 @@ public class ErrorProneInMemoryFileManagerForCheckApi extends JavacFileManager {
     try {
       Files.createDirectories(path.getParent());
       if (Files.exists(path)) {
-        throw new AssertionError(
-            "Refusing to overwrite an existing file (all results from that file would be lost)");
+        return Iterables.getOnlyElement(getJavaFileObjects(path));
+//        if (!Iterables.elementsEqual(Files.readAllLines(path), lines)) {
+//          throw new AssertionError(
+//                  "Refusing to overwrite an existing file (all results from that file would be lost)");
+//        }
+      } else {
+        Files.write(path, Joiner.on('\n').join(lines).getBytes(UTF_8));
       }
-      Files.write(path, Joiner.on('\n').join(lines).getBytes(UTF_8));
     } catch (IOException e) {
       throw new AssertionError(e);
     }

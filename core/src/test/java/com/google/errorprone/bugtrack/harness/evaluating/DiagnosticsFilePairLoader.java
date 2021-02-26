@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.harness.evaluating;
 
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 
 import java.io.IOException;
 
-public interface DiagnosticsDeltaManager {
-    boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
+@FunctionalInterface
+public interface DiagnosticsFilePairLoader {
+    class Pair {
+        public final DiagnosticsFile oldFile;
+        public final DiagnosticsFile newFile;
 
-    SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+        public Pair(final DiagnosticsFile oldFile, final DiagnosticsFile newFile) {
+            this.oldFile = oldFile;
+            this.newFile = newFile;
+        }
+    }
+
+    Pair load() throws IOException;
 }

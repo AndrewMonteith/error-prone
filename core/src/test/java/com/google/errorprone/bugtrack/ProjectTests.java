@@ -17,14 +17,16 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.common.collect.ImmutableList;
-import com.google.errorprone.bugtrack.harness.DatasetDiagnosticsFile;
+import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
+import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
-import com.google.errorprone.bugtrack.motion.*;
+import com.google.errorprone.bugtrack.harness.utils.DiagnosticsDistribution;
+import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.Git;
@@ -44,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
 import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
 
 @RunWith(JUnit4.class)
@@ -114,7 +117,7 @@ public class ProjectTests {
         new ProjectHarness(jsoup, Verbosity.VERBOSE).serialiseCommit(commit, output);
 
         // THEN:
-        Assert.assertEquals(376, DatasetDiagnosticsFile.loadFromFile(output).diagnostics.size());
+        Assert.assertEquals(376, DiagnosticsFile.load(output).diagnostics.size());
     }
 
     @Test
@@ -208,11 +211,14 @@ public class ProjectTests {
         String oldCommit = "468c5369b52ca45de3c7e54a3d2ddae352495851";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
-        BugComparer comparer = new DiagnosticPositionMotionComparer(
-                new GitDiagnosticDeltaManager(project.loadRepo(), oldCommit, newCommit), newCharacterLineTracker());
-
         // THEN:
-        new ProjectHarness(project, Verbosity.VERBOSE).compareTwoCommits(oldCommit, newCommit, comparer);
+        new ProjectHarness(project, Verbosity.VERBOSE).compareTwoCommits(
+                oldCommit,
+                newCommit,
+                new GitPathComparer(project.loadRepo(), oldCommit, newCommit),
+                new DiagnosticPositionMotionComparer(
+                        new GitSrcFilePairLoader(project.loadRepo(), oldCommit, newCommit),
+                        newCharacterLineTracker()));
     }
 
     @Test
@@ -220,18 +226,19 @@ public class ProjectTests {
         // GIVEN:
         CorpusProject project = new GuiceProject();
 
-        DatasetDiagnosticsFile oldDiagFile = DatasetDiagnosticsFile.loadFromFile(
+        DiagnosticsFile oldDiagFile = DiagnosticsFile.load(
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
 
-        DatasetDiagnosticsFile newDiagFile = DatasetDiagnosticsFile.loadFromFile(
+        DiagnosticsFile newDiagFile = DiagnosticsFile.load(
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"));
 
-        DiagnosticsDeltaManager deltaManager = new GitDiagnosticDeltaManager(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId);
-
-        BugComparer comparer = new DiagnosticPositionMotionComparer(deltaManager, compose(newTokenizedLineTracker(), newIJMStartPosTracker()));
+        BugComparer bugComparer = new DiagnosticPositionMotionComparer(
+                new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
+                any(newTokenizedLineTracker(), newIJMStartPosTracker()));
 
         // WHEN:
-        MatchResults results = new DiagnosticsMatcher(oldDiagFile.diagnostics, newDiagFile.diagnostics, comparer).getResults();
+        MatchResults results = DiagnosticsMatcher.fromFiles(
+                project, oldDiagFile, newDiagFile, bugComparer).getResults();
 
         // THEN:
         Assert.assertEquals(6, results.getUnmatchedOldDiagnostics().size());
@@ -241,13 +248,13 @@ public class ProjectTests {
     @Test
     public void foo() throws IOException {
         // GIVEN:
-        CorpusProject project = new OkHttpProject();
-        String oldCommit = "987d2848fdc41d101049b9a93717f6205821818d";
+        CorpusProject project = new MyBatis3Project();
+        String oldCommit = "2065ebbfd79ba3a54568d6767963b1d5b31a54ad";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
         new ProjectHarness(project, Verbosity.VERBOSE)
                 .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
-                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/okhttp/file_older"));
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/1 2065ebbfd79ba3a54568d6767963b1d5b31a54ad"));
 
 //        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));
@@ -263,19 +270,19 @@ public class ProjectTests {
         // GIVEN:
         CorpusProject project = new GuiceProject();
 
-        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
+        DiagnosticsFile oldFile = DiagnosticsFile.load(
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
 
-        DatasetDiagnosticsFile newFile = DatasetDiagnosticsFile.loadFromFile(
+        DiagnosticsFile newFile = DiagnosticsFile.load(
                 Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/82 b7cadc1cfa0623ad377c274eb8db278e3e9a7054"));
 
 
-        DiagnosticsDeltaManager deltaManager = new GitDiagnosticDeltaManager(project.loadRepo(), oldFile.commitId, newFile.commitId);
-
-        BugComparer comparer = new DiagnosticPositionMotionComparer(deltaManager, compose(newTokenizedLineTracker(), newIJMStartPosTracker()));
+        BugComparer comparer = new DiagnosticPositionMotionComparer(
+                new GitSrcFilePairLoader(project.loadRepo(), oldFile.commitId, newFile.commitId),
+                any(newTokenizedLineTracker(), newIJMStartPosTracker()));
 
         // THEN:
-        new DiagnosticsMatcher(oldFile.diagnostics, newFile.diagnostics, comparer).writeToStdout();
+        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, comparer).writeToStdout();
 //        new DiagnosticsMatcher(oldDiagnostics.diagnostics, newDiagnostics.diagnostics, comparer).writeToFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics"));
     }
@@ -287,12 +294,87 @@ public class ProjectTests {
                 "breaking_changes/sub_expr_changes_new.java");
 
         BugComparer comparer = new DiagnosticPositionMotionComparer(
-                new TestDiagnosticsDeltaManager(),
-                compose(newTokenizedLineTracker(), newIJMStartPosTracker())
-        );
+                new TestSrcFilePairLoader(),
+                any(newTokenizedLineTracker(), newIJMStartPosTracker()));
 
-        MatchResults results = new DiagnosticsMatcher(pair.oldDiagnostics, pair.newDiagnostics, comparer).getResults();
+        new DiagnosticsMatcher(
+                pair.oldDiagnostics,
+                pair.newDiagnostics,
+                comparer,
+                (oldPath, newPath) -> true).writeToStdout();
+    }
+
+    @Test
+    public void compareTokenizedWithTokenizedAndIJM() throws Exception {
+        // GIVEN:
+        CorpusProject project = new MyBatis3Project();
+        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3";
+        IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127);
+
+        BugComparerExperiment.forProject(project)
+                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
+                .comparePaths(withGit(project, GitPathComparer::new))
+                .loadDiags(withGit(project, GitSrcFilePairLoader::new))
+                .makeBugComparer1(newTokenizedLineTracker())
+                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+                .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
+                .run("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3");
+
+//        BugComparerEvaluator eval = new BugComparerEvaluator(
+//                project,
+//                LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles),
+//                MissedLikelihoodCalculatorFactory.diagLineOverlap());
+//
+//        eval.compareBugComparers(
+//                oldAndNewFile -> newPosTracker(project, oldAndNewFile, newTokenizedLineTracker()),
+//                oldAndNewFile -> newPosTracker(project, oldAndNewFile, any(newTokenizedLineTracker(), newIJMStartAndEndTracker())),
+//                oldAndNewFile -> newGitSrcLineTracker(project, oldAndNewFile),
+//                oldAndNewFile -> newGitPathsComparer(project, oldAndNewFile),
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3/"));
+    }
+
+    @Test
+    public void computeSinglePair() throws IOException, GitAPIException {
+        CorpusProject project = new MyBatis3Project();
+
+        DiagnosticsFile oldFile = DiagnosticsFile.load(
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/1 2065ebbfd79ba3a54568d6767963b1d5b31a54ad_filtered");
+
+        DiagnosticsFile newFile = DiagnosticsFile.load(
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/17 a4809f65213a7b66fd2951b06f277273f36907c7_filtered");
+
+        System.out.println(new DiagnosticsDistribution(oldFile.diagnostics));
+        System.out.println(new DiagnosticsDistribution(newFile.diagnostics));
+
+        BugComparer bugComparer = new DiagnosticPositionMotionComparer(
+                new GitSrcFilePairLoader(project.loadRepo(), oldFile.commitId, newFile.commitId),
+                any(newTokenizedLineTracker(), newIJMStartAndEndTracker()));
+
+        DiagnosticsMatcher matcher = DiagnosticsMatcher.fromFiles(project, oldFile, newFile, bugComparer);
+
+        MatchResults results = matcher.getResults();
 
         System.out.println(results);
     }
+
+//    @Test
+//    public void compareSinglePair() throws IOException, GitAPIException {
+//        CorpusProject project = new MyBatis3Project();
+//        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.load(Paths.get(
+//                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/52 1385892b6d0034485ac31a4f8a4a438ad2f5ad55"));
+//        DatasetDiagnosticsFile newFile = DatasetDiagnosticsFile.load(Paths.get(
+//                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/54 b3c5ffae3d9d7cb3062ea12f2606909cd4b9e9c8"));
+//
+//        DiagnosticsDeltaManager deltaManager = new GitDiagnosticDeltaManager(project.loadRepo(),
+//                "1385892b6d0034485ac31a4f8a4a438ad2f5ad55", "b3c5ffae3d9d7cb3062ea12f2606909cd4b9e9c8");
+//
+//
+//
+//        BugComparer comparer = new DiagnosticPositionMotionComparer(
+//                new GitSrcFilePairLoader(project.loadRepo(), oldCommit,), newTokenizedLineTracker());
+//
+//        DiagnosticsMatcher matcher = DiagnosticsMatcher.fromFiles(project, oldFile, newFile, comparer);
+//
+//        matcher.getResults();
+//    }
 }

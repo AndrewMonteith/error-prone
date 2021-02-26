@@ -82,7 +82,7 @@ public class SrcFile {
 
     // start=1 will get first character
     public String getSrcExtract(final int start, final int end) {
-        String code = String.valueOf(Arrays.copyOfRange(charBuf, start-1, end));
+        String code = String.valueOf(Arrays.copyOfRange(charBuf, start, end));
         if (code.endsWith(";")) { // normalize since some source ranges are [], some [).
             code = code.substring(0, code.length() - 1);
         }

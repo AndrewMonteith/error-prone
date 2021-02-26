@@ -16,31 +16,35 @@
 
 package com.google.errorprone.bugtrack.utils;
 
-import java.util.HashMap;
+import java.util.Objects;
 import java.util.function.Supplier;
 
-public class MemoMap<K, V> extends HashMap<K, V> {
+public class SingleKeyCell<K, V> {
     @FunctionalInterface
-    public interface SupplierWithException<T> {
+    public interface ThrowableSupplier<T> {
         T get() throws Exception;
     }
 
-    public V getOrInsert(K key, Supplier<V> defaultVal) {
-        if (containsKey(key)) {
-            return get(key);
+    private K currentKey;
+    private V value;
+
+    public V get(K key, Supplier<V> valSupplier) {
+        if (!Objects.equals(currentKey, key)) {
+            currentKey = key;
+            value = null;
+            value = valSupplier.get();
         }
 
-        put(key, defaultVal.get());
-        return get(key);
+        return value;
     }
 
-    public V getOrInsertThatCouldThrow(K key, SupplierWithException<V> defaultVal) throws Exception {
-        if (containsKey(key)) {
-            return get(key);
+    public V throwableGet(K key, ThrowableSupplier<V> valSupplier) throws Exception {
+        if (!Objects.equals(currentKey, key)) {
+            currentKey = key;
+            value = null;
+            value = valSupplier.get();
         }
 
-        put(key, defaultVal.get());
-        return get(key);
+        return value;
     }
-
 }

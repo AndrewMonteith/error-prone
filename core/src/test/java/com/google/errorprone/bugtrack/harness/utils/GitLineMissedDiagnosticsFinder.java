@@ -111,14 +111,14 @@ public final class GitLineMissedDiagnosticsFinder {
         RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
         RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "b7cadc1cfa0623ad377c274eb8db278e3e9a7054");
 
-        MatchResults results = DiagnosticsMatcher.fromFiles(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/82 b7cadc1cfa0623ad377c274eb8db278e3e9a7054"),
-                new DiagnosticPositionMotionComparer(
-                        new GitDiagnosticDeltaManager(project.loadRepo(), oldCommit, newCommit),
-                        compose(newTokenizedLineTracker(), newIJMStartPosTracker()))).getResults();
+//        MatchResults results = DiagnosticsMatcher.fromFiles(
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/82 b7cadc1cfa0623ad377c274eb8db278e3e9a7054"),
+//                new DiagnosticPositionMotionComparer(
+//                        new GitDiagnosticDeltaManager(project.loadRepo(), oldCommit, newCommit),
+//                        compose(newTokenizedLineTracker(), newIJMStartPosTracker()))).getResults();
 
-        proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
+//        proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);
     }
 
@@ -128,14 +128,14 @@ public final class GitLineMissedDiagnosticsFinder {
         RevCommit oldCommit = GitUtils.parseCommit(project.loadRepo(), "875868e7263491291d4f8bdc1332bfea746ad673");
         RevCommit newCommit = GitUtils.parseCommit(project.loadRepo(), "9b371d3663db9db230417f3cc394e72b705d7d7f");
 
-        MatchResults results = DiagnosticsMatcher.fromFiles(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"),
-                new DiagnosticPositionMotionComparer(
-                        new GitDiagnosticDeltaManager(project.loadRepo(), oldCommit, newCommit),
-                        newCharacterLineTracker())).getResults();
-
-        proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
+//        MatchResults results = DiagnosticsMatcher.fromFiles(
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"),
+//                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"),
+//                new DiagnosticPositionMotionComparer(
+//                        new GitDiagnosticDeltaManager(project.loadRepo(), oldCommit, newCommit),
+//                        newCharacterLineTracker())).getResults();
+//
+//        proposeMissedMatchesWithSubstringSimilarity(project, oldCommit, newCommit, results);
 //        proposeMissedMatchesWithLineDistanceSimilarity(results);
     }
 

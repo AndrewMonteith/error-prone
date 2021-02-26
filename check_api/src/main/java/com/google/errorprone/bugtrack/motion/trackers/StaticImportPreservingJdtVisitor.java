@@ -16,21 +16,22 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
-import com.github.gumtreediff.gen.jdt.AbstractJdtTreeGenerator;
-import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.github.gumtreediff.gen.jdt.JdtVisitor;
-import com.github.gumtreediff.tree.TreeContext;
-import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.errorprone.apply.ImportOrganizer;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 
-import java.io.IOException;
-
-public class KeepEveryNodeTreeGenerator extends AbstractJdtTreeGenerator {
-    public static TreeContext parseSrc(SrcFile file) throws IOException {
-        return new KeepEveryNodeTreeGenerator().generateFromString(file.getSrc());
-    }
+public class StaticImportPreservingJdtVisitor extends JdtVisitor {
 
     @Override
-    protected AbstractJdtVisitor createVisitor() {
-        return new JdtVisitor();
+    protected String getLabel(ASTNode node) {
+        if (node instanceof ImportDeclaration) {
+            ImportDeclaration importDecl = (ImportDeclaration) node;
+            String labelPrefix = importDecl.isStatic() ? "static " : "";
+            return labelPrefix + importDecl.getName().getFullyQualifiedName();
+        } else {
+            return super.getLabel(node);
+        }
     }
+
 }

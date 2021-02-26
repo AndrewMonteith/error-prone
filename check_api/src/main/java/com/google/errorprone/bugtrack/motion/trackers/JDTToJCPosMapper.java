@@ -21,7 +21,7 @@ import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 
-public class JDTToJCStartPosMapper extends TreeScanner<Void, Void> {
+public class JDTToJCPosMapper extends TreeScanner<Void, Void> {
     private final EndPosTable endPosTable;
     private final long jdtPos;
 
@@ -30,7 +30,12 @@ public class JDTToJCStartPosMapper extends TreeScanner<Void, Void> {
         return closestStartPosition;
     }
 
-    public JDTToJCStartPosMapper(EndPosTable endPosTable, final long jdtPos) {
+    private long closestEndPosition = -1;
+    public long getClosestEndPosition() {
+        return closestEndPosition;
+    }
+
+    public JDTToJCPosMapper(EndPosTable endPosTable, final long jdtPos) {
         this.endPosTable = endPosTable;
         this.jdtPos = jdtPos;
     }
@@ -45,6 +50,7 @@ public class JDTToJCStartPosMapper extends TreeScanner<Void, Void> {
 
             if (jcStartPos <= jdtPos && jdtPos <= jcEndPos) {
                 closestStartPosition = jcStartPos;
+                closestEndPosition = jcEndPos;
                 tree.accept(this, p);
             }
         }

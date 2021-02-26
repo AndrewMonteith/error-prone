@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * This class is more a collection of regression tests than is completely testing the functionality of the component.
  */
-public class JDTToJCStartPosMapperTest {
+public class JDTToJCPosMapperTest {
 
     @Test
     public void caseTrackingClassDeclModifiers() throws IOException {
@@ -47,7 +47,7 @@ public class JDTToJCStartPosMapperTest {
         JCTree.JCCompilationUnit compUnit = new TrackersSharedState().loadNewJavacAST(srcFilePair);
 
         // WHEN:
-        JDTToJCStartPosMapper mapper = new JDTToJCStartPosMapper(compUnit.endPositions, newNodePos);
+        JDTToJCPosMapper mapper = new JDTToJCPosMapper(compUnit.endPositions, newNodePos);
         mapper.scan(compUnit, null);
 
         // THEN:
@@ -68,7 +68,7 @@ public class JDTToJCStartPosMapperTest {
         JCTree.JCCompilationUnit compUnit = new TrackersSharedState().loadNewJavacAST(srcFilePair);
 
         // WHEN:
-        JDTToJCStartPosMapper mapper = new JDTToJCStartPosMapper(compUnit.endPositions, newNodePos);
+        JDTToJCPosMapper mapper = new JDTToJCPosMapper(compUnit.endPositions, newNodePos);
         mapper.scan(compUnit, null);
 
         // THEN:
@@ -89,7 +89,7 @@ public class JDTToJCStartPosMapperTest {
         JCTree.JCCompilationUnit compUnit = new TrackersSharedState().loadNewJavacAST(srcFilePair);
 
         // WHEN:
-        JDTToJCStartPosMapper mapper = new JDTToJCStartPosMapper(compUnit.endPositions, newNodePos);
+        JDTToJCPosMapper mapper = new JDTToJCPosMapper(compUnit.endPositions, newNodePos);
         mapper.scan(compUnit, null);
 
         // THEN:
@@ -109,7 +109,7 @@ public class JDTToJCStartPosMapperTest {
         JCTree.JCCompilationUnit compUnit = new TrackersSharedState().loadNewJavacAST(srcFilePair);
 
         // WHEN:
-        JDTToJCStartPosMapper mapper = new JDTToJCStartPosMapper(compUnit.endPositions, newNodePos);
+        JDTToJCPosMapper mapper = new JDTToJCPosMapper(compUnit.endPositions, newNodePos);
         mapper.scan(compUnit, null);
 
         // THEN:

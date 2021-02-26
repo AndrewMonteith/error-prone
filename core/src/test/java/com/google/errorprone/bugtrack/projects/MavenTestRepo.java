@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.projects;
 
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import java.io.IOException;
+public class MavenTestRepo implements CorpusProject {
+    @Override
+    public Path getRoot() {
+        return Paths.get("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo");
+    }
 
-public interface DiagnosticsDeltaManager {
-    boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
+    @Override
+    public boolean shouldScanFile(Path file) {
+        return false;
+    }
 
-    SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+    @Override
+    public BuildSystem getBuildSystem() {
+        return BuildSystem.Maven;
+    }
 }

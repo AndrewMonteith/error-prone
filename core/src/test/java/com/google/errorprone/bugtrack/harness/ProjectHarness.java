@@ -81,16 +81,17 @@ public final class ProjectHarness {
         forEachCommitWithDiagnostics(commits, consumer);
     }
 
-    public void compareTwoCommits(String oldCommitId, String newCommitId, BugComparer comparer) throws IOException {
+    public void compareTwoCommits(String oldCommitId, String newCommitId, PathsComparer pathsComparer, BugComparer comparer) throws IOException {
         Repository repo = project.loadRepo();
         compareTwoCommits(
                 GitUtils.parseCommit(repo, oldCommitId),
                 GitUtils.parseCommit(repo, newCommitId),
+                pathsComparer,
                 comparer
         );
     }
 
-    public void compareTwoCommits(RevCommit oldCommit, RevCommit newCommit, BugComparer comparer) throws IOException {
+    public void compareTwoCommits(RevCommit oldCommit, RevCommit newCommit, PathsComparer pathComparer, BugComparer bugComparer) throws IOException {
         Collection<DatasetDiagnostic> oldDiagnostics = new ArrayList<>();
         Collection<DatasetDiagnostic> newDiagnostics = new ArrayList<>();
 
@@ -100,7 +101,7 @@ public final class ProjectHarness {
             Iterables.transform(diagnostics, DatasetDiagnostic::new).forEach(sink::add);
         });
 
-        System.out.println(new DiagnosticsMatcher(oldDiagnostics, newDiagnostics, comparer));
+        System.out.println(new DiagnosticsMatcher(oldDiagnostics, newDiagnostics, bugComparer, pathComparer).getResults());
     }
 
     public void serialiseCommit(RevCommit commit, Path output) throws IOException {
@@ -109,7 +110,7 @@ public final class ProjectHarness {
         Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
                 DiagnosticsCollector.collectEPDiagnostics(project, commit, verbose);
 
-        DatasetDiagnosticsFile.save(output, commit, diagnostics);
+        DiagnosticsFile.save(output, commit, diagnostics);
     }
 
     public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output) throws GitAPIException, IOException {

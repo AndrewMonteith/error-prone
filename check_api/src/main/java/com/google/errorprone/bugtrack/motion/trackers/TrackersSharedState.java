@@ -21,14 +21,13 @@ import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.ErrorProneInMemoryFileManagerForCheckApi;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.utils.MemoMap;
+import com.google.errorprone.bugtrack.utils.SingleKeyCell;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Pair;
 
-import javax.tools.JavaCompiler;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -37,21 +36,21 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class TrackersSharedState {
-    private final MemoMap<String, Pair<JCTree.JCCompilationUnit, Context>> javacAstsAndContexts;
+    private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> oldAstAndContextCell;
+    private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> newAstAndContextCell;
 
-    private final JavaCompiler javacCompiler;
     private final ErrorProneInMemoryFileManagerForCheckApi fileManager;
 
     public TrackersSharedState() {
         this.fileManager = new ErrorProneInMemoryFileManagerForCheckApi();
-        this.javacCompiler = JavacTool.create();
-        this.javacAstsAndContexts = new MemoMap<>();
+        this.oldAstAndContextCell = new SingleKeyCell<>();
+        this.newAstAndContextCell = new SingleKeyCell<>();
     }
 
     private Pair<JCTree.JCCompilationUnit, Context> parseFileWithJavac(String fileName, List<String> fileSrc) {
         JavacTaskImpl task =
                 (JavacTaskImpl)
-                        javacCompiler.getTask(
+                        JavacTool.create().getTask(
                                 new PrintWriter(
                                         new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
                                 fileManager,
@@ -71,7 +70,9 @@ public final class TrackersSharedState {
 
     private Pair<JCTree.JCCompilationUnit, Context> loadJavacInfo(SrcFile file, String suffixId) {
         String fileNameId = file.getName() + suffixId;
-        return javacAstsAndContexts.getOrInsert(fileNameId, () -> parseFileWithJavac(fileNameId, file.getLines()));
+
+        return (suffixId.equals("_old.java") ? oldAstAndContextCell : newAstAndContextCell)
+                    .get(fileNameId, () -> parseFileWithJavac(fileNameId, file.getLines()));
     }
 
     public JCTree.JCCompilationUnit loadOldJavacAST(SrcFilePair srcFilePair) {

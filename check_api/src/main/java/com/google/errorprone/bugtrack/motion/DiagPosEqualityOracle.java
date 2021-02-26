@@ -29,38 +29,29 @@ import java.util.Objects;
  */
 public class DiagPosEqualityOracle {
     private final EqualityType eqType;
-    private long line;
-    private long col;
-    private long startPos;
+    private final long line;
+    private final long col;
+    private final long startPos;
+    private final long endPos;
 
-    public DiagPosEqualityOracle(EqualityType eqType, DatasetDiagnostic diagnostic) {
+    private DiagPosEqualityOracle(EqualityType eqType, long line, long col, long startPos, long endPos) {
         this.eqType = eqType;
-
-        if (eqType == EqualityType.BY_LINE) {
-            this.line = diagnostic.getLineNumber();
-            this.col = diagnostic.getColumnNumber();
-        } else {
-            this.startPos = diagnostic.getStartPos();
-        }
-    }
-
-    private DiagPosEqualityOracle(final long startPos) {
-        this.eqType = EqualityType.BY_START_POS;
-        this.startPos = startPos;
-    }
-
-    private DiagPosEqualityOracle(final long line, final long col) {
-        this.eqType = EqualityType.BY_LINE;
         this.line = line;
         this.col = col;
+        this.startPos = startPos;
+        this.endPos = endPos;
     }
 
     public static DiagPosEqualityOracle byStartPos(final long startPos) {
-        return new DiagPosEqualityOracle(startPos);
+        return new DiagPosEqualityOracle(EqualityType.BY_START_POS, -1, -1, startPos, -1);
+    }
+
+    public static DiagPosEqualityOracle byStartAndEndPos(final long startPos, final long endPos) {
+        return new DiagPosEqualityOracle(EqualityType.BY_START_AND_END_POS, -1, -1, startPos, endPos);
     }
 
     public static DiagPosEqualityOracle byLineCol(final long line, final long col) {
-        return new DiagPosEqualityOracle(line, col);
+        return new DiagPosEqualityOracle(EqualityType.BY_LINE, line, col, -1, -1);
     }
 
     public long getLine() {
@@ -73,26 +64,36 @@ public class DiagPosEqualityOracle {
 
     public long getCol() {
         if (eqType != EqualityType.BY_LINE) {
-            throw new RuntimeException("cannot get line if not tracking by line");
+            throw new RuntimeException("cannot get col if not tracking by line");
         }
 
         return col;
     }
 
     public long getStartPos() {
-        if (eqType != EqualityType.BY_START_POS) {
-            throw new RuntimeException("cannot get line if not tracking by line");
+        if (!(eqType == EqualityType.BY_START_POS || eqType == EqualityType.BY_START_AND_END_POS)) {
+            throw new RuntimeException("cannot get start position if not tracking by start, and possibly end, pos");
         }
 
         return startPos;
     }
 
+    public long getEndPos() {
+        if (eqType != EqualityType.BY_START_AND_END_POS) {
+            throw new RuntimeException("cannot get end pos if not tracking by start and end pos");
+        }
+
+        return endPos;
+    }
+
     public boolean hasSamePosition(DatasetDiagnostic diag) {
         switch (eqType) {
             case BY_LINE:
-                return diag.getLineNumber() == line && diag.getColumnNumber() == col;
+                return diag.getLineNumber() == this.line && diag.getColumnNumber() == this.col;
             case BY_START_POS:
                 return diag.getStartPos() == startPos;
+            case BY_START_AND_END_POS:
+                return diag.getStartPos() == startPos && diag.getEndPos() == endPos;
             default:
                 throw new RuntimeException("unsupported equality type");
         }
@@ -112,6 +113,8 @@ public class DiagPosEqualityOracle {
                 return line == that.line && col == that.col;
             case BY_START_POS:
                 return startPos == that.startPos;
+            case BY_START_AND_END_POS:
+                return startPos == that.startPos && endPos == that.endPos;
             default:
                 throw new RuntimeException("unexpected equality type");
         }
@@ -129,6 +132,8 @@ public class DiagPosEqualityOracle {
                 return "[" + eqType + ", (" + line + "," + col + ")]";
             case BY_START_POS:
                 return "[" + eqType + ", " + startPos + "]";
+            case BY_START_AND_END_POS:
+                return "[" + eqType + ", [" + startPos + "," + endPos + "]]";
             default:
                 throw new RuntimeException("unexpected equality type");
         }
@@ -136,6 +141,7 @@ public class DiagPosEqualityOracle {
 
     enum EqualityType {
         BY_LINE,
-        BY_START_POS
+        BY_START_POS,
+        BY_START_AND_END_POS
     }
 }

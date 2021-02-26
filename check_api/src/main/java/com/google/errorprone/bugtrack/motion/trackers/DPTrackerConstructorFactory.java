@@ -16,7 +16,9 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
+import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +41,19 @@ public final class DPTrackerConstructorFactory {
         return IJMStartPosTracker::new;
     }
 
-    public static DiagnosticPositionTrackerConstructor compose(DiagnosticPositionTrackerConstructor... trackerCtors) {
+    public static DiagnosticPositionTrackerConstructor newIJMStartPosTracker(IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) {
+        return (srcFilePair, sharedState) -> new IJMStartPosTracker(srcFilePair, sharedState, jdtVisitorSupplier);
+    }
+
+    public static DiagnosticPositionTrackerConstructor newIJMStartAndEndTracker() {
+        return IJMStartAndEndPosTracker::new;
+    }
+
+    public static DiagnosticPositionTrackerConstructor newIJMStartAndEndTracker(IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) {
+        return (srcFilePair, sharedState) -> new IJMStartAndEndPosTracker(srcFilePair, sharedState, jdtVisitorSupplier);
+    }
+
+    public static DiagnosticPositionTrackerConstructor any(DiagnosticPositionTrackerConstructor... trackerCtors) {
         return (srcFilePair, sharedState) -> {
             List<DiagnosticPositionTracker> trackers = new ArrayList<>();
             for (DiagnosticPositionTrackerConstructor trackerCtor : trackerCtors) {

@@ -37,11 +37,11 @@ public final class MatchResults {
         this.unmatchedNew = Sets.difference(Sets.newHashSet(newDiagnostics), Sets.newHashSet(matchedDiagnostics.values()));
     }
 
-    public Collection<DatasetDiagnostic> getOldDiagnostics() {
+    public Set<DatasetDiagnostic> getOldDiagnostics() {
         return Sets.union(unmatchedOld, matchedDiagnostics.keySet());
     }
 
-    public Collection<DatasetDiagnostic> getNewDiagnostics() {
+    public Set<DatasetDiagnostic> getNewDiagnostics() {
         return Sets.union(unmatchedNew, Sets.newHashSet(matchedDiagnostics.values()));
     }
 

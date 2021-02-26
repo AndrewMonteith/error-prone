@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.projects;
+package com.google.errorprone.bugtrack.motion;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import com.google.errorprone.bugtrack.BugComparer;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
-public class TomcatProject implements CorpusProject {
+public class NoLineDiagnosticMatcher implements BugComparer {
     @Override
-    public Path getRoot() {
-        return Paths.get("/home/monty/IdeaProjects/java-corpus/tomcat");
-    }
-
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return file.toAbsolutePath().startsWith(getRoot() + "/java");
-    }
-
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Other;
+    public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
+        return oldDiagnostic.isSameType(newDiagnostic)
+                && oldDiagnostic.getLineNumber() == -1 && newDiagnostic.getLineNumber() == -1;
     }
 }

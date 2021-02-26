@@ -17,18 +17,20 @@
 package com.google.errorprone.bugtrack.harness.matching;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.harness.DatasetDiagnosticsFile;
-import com.google.errorprone.bugtrack.harness.Verbosity;
+import com.google.errorprone.bugtrack.GitPathComparer;
+import com.google.errorprone.bugtrack.PathsComparer;
+import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
+import com.google.errorprone.bugtrack.projects.CorpusProject;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -36,66 +38,92 @@ public final class DiagnosticsMatcher {
     private final Collection<DatasetDiagnostic> oldDiagnostics;
     private final Collection<DatasetDiagnostic> newDiagnostics;
     private final BugComparer comparer;
-    private final Verbosity verbose;
-
-    public DiagnosticsMatcher(Collection<DatasetDiagnostic> oldDiagnostics,
-                              Collection<DatasetDiagnostic> newDiagnostics,
-                              BugComparer comparer) {
-        this(oldDiagnostics, newDiagnostics, comparer, Verbosity.SILENT);
-    }
+    private final PathsComparer pathsComparer;
 
     public DiagnosticsMatcher(Collection<DatasetDiagnostic> oldDiagnostics,
                               Collection<DatasetDiagnostic> newDiagnostics,
                               BugComparer comparer,
-                              Verbosity verbose) {
+                              PathsComparer pathsComparer) {
         this.oldDiagnostics = oldDiagnostics;
         this.newDiagnostics = newDiagnostics;
         this.comparer = comparer;
-        this.verbose = verbose;
+        this.pathsComparer = pathsComparer;
     }
 
-    public static DiagnosticsMatcher fromFiles(Path oldFile, Path newFile, BugComparer comparer) throws IOException {
-        return fromFiles(oldFile, newFile, comparer, Verbosity.SILENT);
+    public static DiagnosticsMatcher fromFiles(CorpusProject project,
+                                               DiagnosticsFile oldDiagFile,
+                                               DiagnosticsFile newDiagFile,
+                                               BugComparer bugComparer) throws IOException, GitAPIException {
+        return new DiagnosticsMatcher(
+                oldDiagFile.diagnostics,
+                newDiagFile.diagnostics,
+                bugComparer,
+                new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
     }
 
-    public static DiagnosticsMatcher fromFiles(Path oldFile, Path newFile, BugComparer comparer, Verbosity verbose) throws IOException {
-        DatasetDiagnosticsFile oldDiagnositcsFile = DatasetDiagnosticsFile.loadFromFile(oldFile);
-        DatasetDiagnosticsFile newDiagnositcsFile = DatasetDiagnosticsFile.loadFromFile(newFile);
-
-        return new DiagnosticsMatcher(oldDiagnositcsFile.diagnostics, newDiagnositcsFile.diagnostics, comparer, verbose);
+    public static DiagnosticsMatcher fromFiles(CorpusProject project,
+                                               Path oldFile,
+                                               Path newFile,
+                                               BugComparer bugComparer) throws IOException, GitAPIException {
+        return fromFiles(
+                project,
+                DiagnosticsFile.load(oldFile),
+                DiagnosticsFile.load(newFile),
+                bugComparer);
     }
 
     public MatchResults getResults() {
         Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = new HashMap<>();
 
-        oldDiagnostics.forEach(oldDiagnostic -> {
-            Collection<DatasetDiagnostic> matching = newDiagnostics.stream()
-                    .filter(newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) && comparer.areSame(oldDiagnostic, newDiagnostic))
-                    .collect(Collectors.toList());
+        Set<String> oldFiles = Sets.newHashSet(Iterables.transform(oldDiagnostics, DatasetDiagnostic::getFileName));
 
-            if (matching.size() == 1) {
-                matchedDiagnostics.put(oldDiagnostic, Iterables.getOnlyElement(matching));
-            } else if (matching.size() > 1) {
-                if (verbose == Verbosity.VERBOSE) {
+        oldFiles.forEach(oldFile -> {
+            oldDiagnostics.forEach(oldDiag -> {
+                if (!oldDiag.getFileName().equals(oldFile) || matchedDiagnostics.containsKey(oldDiag)) {
+                    return;
+                }
+
+                Collection<DatasetDiagnostic> matching = newDiagnostics.stream()
+                        .filter(newDiag -> pathsComparer.inSameFile(oldDiag, newDiag))
+                        .filter(newDiag -> !matchedDiagnostics.containsValue(newDiag) && comparer.areSame(oldDiag, newDiag))
+                        .collect(Collectors.toList());
+
+                if (matching.size() == 1) {
+                    matchedDiagnostics.put(oldDiag, Iterables.getOnlyElement(matching));
+                } else if (matching.size() > 1) {
                     System.out.println("A diagnostic matched with multiple diagnostics");
                     System.out.println("Old diagnostic:");
-                    System.out.println(oldDiagnostic);
+                    System.out.println(oldDiag);
                     System.out.println("Candidate new:");
                     matching.forEach(System.out::println);
                 }
-            }
+            });
         });
+
+        // This code will regularly trigger OutOfMemoryError because of having to hold lots of AST's it's memory
+//        oldDiagnostics.forEach(oldDiagnostic -> {
+//            Collection<DatasetDiagnostic> matching = newDiagnostics.stream()
+//                    .filter(newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) && comparer.areSame(oldDiagnostic, newDiagnostic))
+//                    .collect(Collectors.toList());
+//
+//            if (matching.size() == 1) {
+//                matchedDiagnostics.put(oldDiagnostic, Iterables.getOnlyElement(matching));
+//            } else if (matching.size() > 1) {
+//                if (verbose == Verbosity.VERBOSE) {
+//                    System.out.println("A diagnostic matched with multiple diagnostics");
+//                    System.out.println("Old diagnostic:");
+//                    System.out.println(oldDiagnostic);
+//                    System.out.println("Candidate new:");
+//                    matching.forEach(System.out::println);
+//                }
+//            }
+//        });
 
         return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
     }
 
     public void writeToStdout() {
         System.out.println(getResults());
-    }
-
-    @Override
-    public String toString() {
-        return getResults().toString();
     }
 
     private void writeLogFile(Path file, Consumer<StringBuilder> buildString) throws IOException {

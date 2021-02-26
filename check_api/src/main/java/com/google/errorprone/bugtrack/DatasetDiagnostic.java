@@ -115,11 +115,12 @@ public class DatasetDiagnostic {
                 && columnNumber == that.columnNumber
                 && startPos == that.startPos
                 && endPos == that.endPos
-                && Objects.equals(fileName, that.fileName);
+                && fileName.equals(that.fileName)
+                && message.equals(that.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileName, lineNumber, columnNumber, startPos, endPos);
+        return Objects.hash(fileName, lineNumber, columnNumber, startPos, endPos, message);
     }
 }

@@ -49,6 +49,6 @@ public class TokenizedLineTracker implements DiagnosticPositionTracker {
         final long col = diag.getColumnNumber();
 
         return srcTracker.getNewLineNumber(lineNum).map(newLineNum ->
-                DiagPosEqualityOracle.byLineCol(newLineNum, getNewColumn( lineNum, col, newLineNum)));
+                DiagPosEqualityOracle.byLineCol(newLineNum, getNewColumn(lineNum, col, newLineNum)));
     }
 }

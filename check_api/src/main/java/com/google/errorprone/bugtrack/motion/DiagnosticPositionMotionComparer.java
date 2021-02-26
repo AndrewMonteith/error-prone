@@ -19,45 +19,50 @@ package com.google.errorprone.bugtrack.motion;
 import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.SrcFilePairLoader;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.motion.trackers.TrackersSharedState;
-import com.google.errorprone.bugtrack.utils.MemoMap;
+import com.google.errorprone.bugtrack.utils.SingleKeyCell;
 
 import java.io.IOException;
 import java.util.Optional;
 
 public class DiagnosticPositionMotionComparer implements BugComparer {
-    private final DiagnosticsDeltaManager diagnosticsDeltaManager;
+    private final SrcFilePairLoader srcFilePairLoader;
     private final DiagnosticPositionTrackerConstructor trackerConstructor;
 
-    private final MemoMap<String, DiagnosticPositionTracker> positionTrackers;
+    private SingleKeyCell<String, DiagnosticPositionTracker> positionTrackerCell;
+//    private final MemoMap<String, DiagnosticPositionTracker> positionTrackers;
     private final TrackersSharedState sharedState;
 
-    public DiagnosticPositionMotionComparer(DiagnosticsDeltaManager diagnosticsDeltaManager,
+    public DiagnosticPositionMotionComparer(SrcFilePairLoader srcFilePairLoader,
                                             DiagnosticPositionTrackerConstructor trackerConstructor) {
-        this.diagnosticsDeltaManager = diagnosticsDeltaManager;
+        this.srcFilePairLoader = srcFilePairLoader;
         this.trackerConstructor = trackerConstructor;
-        this.positionTrackers = new MemoMap<>();
+        this.positionTrackerCell = new SingleKeyCell<>();
         this.sharedState = new TrackersSharedState();
     }
 
     private DiagnosticPositionTracker createDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
                                                                       DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
-        return trackerConstructor.create(
-                diagnosticsDeltaManager.loadFilesBetweenDiagnostics(oldDiagnostic, newDiagnostic), sharedState);
+        return trackerConstructor.create(srcFilePairLoader.load(oldDiagnostic, newDiagnostic), sharedState);
     }
 
     private DiagnosticPositionTracker getDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
                                                                    DatasetDiagnostic newDiagnostic) throws Exception {
-        return positionTrackers.getOrInsertThatCouldThrow(oldDiagnostic.getFileName(),
+        return positionTrackerCell.throwableGet(oldDiagnostic.getFileName(),
                 () -> createDiagnosticPositionTracker(oldDiagnostic, newDiagnostic));
     }
 
     @Override
     public boolean areSame(DatasetDiagnostic oldDiagnostic,
                            DatasetDiagnostic newDiagnostic) {
-        if (!(diagnosticsDeltaManager.inSameFile(oldDiagnostic, newDiagnostic) && oldDiagnostic.isSameType(newDiagnostic))) {
+        if (!oldDiagnostic.isSameType(newDiagnostic)) {
+            return false;
+        }
+
+        if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
             return false;
         }
 

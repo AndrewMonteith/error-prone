@@ -14,24 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.projects;
+package com.google.errorprone.bugtrack.utils;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
 
-public class TestProject implements CorpusProject {
-    @Override
-    public Path getRoot() {
-        return Paths.get("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/test_repo");
-    }
-
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Other;
-    }
-
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return true;
-    }
+public interface IOThrowingSupplier<T> {
+    T get() throws IOException;
 }

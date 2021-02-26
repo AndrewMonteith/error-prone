@@ -10,11 +10,13 @@ Description: Use diff information track tokenized source lines between two versi
              principle as Character line tracking. This technique is slightly more expensive because we have to parse
              the AST of the source file.
 
-Technique 3. Single AST node tracking
+Technique 3. Single AST node tracking (via start position)
 Description: Use diff information derived from AST difference algorithms (Curently IJM). Match the start position of a
              diagnostic to a node in the AST of the old source file. Hope the AST matched that node in a new AST. Match
              the diagnostic if the source buffer position of the newly matched node is the same as the diagnostic start
              pos.
+
+Techinque 4. Single AST node tracking (via start & end position)
 
 
 Case 1: The line get's put over multiple lines.
@@ -62,7 +64,11 @@ Breaks: Definately Character&Token line tracking, maybe not node tracking
 
 Case 5: The error is not bound to specific source code
 Breaks: All so far
-Example: [DefaultPackage] (not found in example in wild, but is a case to consider?)
+Example: ([DefaultPackage if it ever occured in the wild)
+[MissingSummary] A summary line is required on public/protected Javadocs.
+  mybatis3 1385892b6d0034485ac31a4f8a4a438ad2f5ad55..b3c5ffae3d9d7cb3062ea12f2606909cd4b9e9c8
+  /home/monty/IdeaProjects/java-corpus/mybatis-3/src/test/java/org/apache/ibatis/type/GenericTypeSupportedInHierarchiesTestCase.java
+  Error prone reports the line number as '-1' for MissingSummary hence any position tracking fails.
 
 Interesting diff point:
     Case 6: Start pos token changes
@@ -75,3 +81,21 @@ Interesting diff point:
       Case of problem:
         Implementation problem since our AST diff algorithm currently uses a different AST representation JDT to javac's JC.
         To solve this we created the 'JDTtoJCPosMapper'
+
+Case 7. Two diagnostics generated with same start position
+  Breaks: All but 4
+  [AndroidJdkLibsChecker] java.time.ZomedDateTime is not available
+    mybatis3 2065ebbfd79ba3a54568d6767963b1d5b31a54ad..638a00c9c91cf87a740d9b9e680acefc7685e273
+      /home/monty/IdeaProjects/java-corpus/mybatis-3/src/test/java/org/apache/ibatis/type/ZonedDateTimeTypeHandlerTest.java 40 33 1388 1401
+        40. ...'ZonedDateTime'...
+     Matches with both:
+      /home/monty/IdeaProjects/java-corpus/mybatis-3/src/test/java/org/apache/ibatis/type/ZonedDateTimeTypeHandlerTest.java 40 46 1388 1407
+        40. ...'ZoneDateTime.class'...
+      /home/monty/IdeaProjects/java-corpus/mybatis-3/src/test/java/org/apache/ibatis/type/ZonedDateTimeTypeHandlerTest.java 40 46 1388 1401
+        40. ...'ZoneDateTime'...
+
+Case 8. import statics aren't registed in the AST shape (either JDT or spoon) so in specific scenarios can break...
+[WildcardImport] Wildcard imports, static or otherwise, should not be used
+  mybatis3 0bbefb25236a4c6aaab3a2138aa71d3de2615e8c..b4a235b4e1583fd07a41322cbdae94fbee979498
+     /home/monty/IdeaProjects/java-corpus/mybatis-3/src/test/java/org/apache/ibatis/executor/loader/JavassistProxyTest.java 33 1 1217 1266
+     /home/monty/IdeaProjects/java-corpus/mybatis-3/src/test/java/org/apache/ibatis/executor/loader/JavassistProxyTest.java 18 1 694 743

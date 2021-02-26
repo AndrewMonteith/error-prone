@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack.harness.evaluating;
 
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.motion.SrcFilePair;
 
-import java.io.IOException;
-
-public interface DiagnosticsDeltaManager {
-    boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
-
-    SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+@FunctionalInterface
+public interface MissedLikelihoodCalculator {
+    double compute(SrcFilePair srcFilePair, DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
 }

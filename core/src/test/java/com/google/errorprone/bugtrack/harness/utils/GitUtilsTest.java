@@ -21,7 +21,6 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
-import com.google.errorprone.bugtrack.projects.TestProject;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -51,21 +50,21 @@ public class GitUtilsTest {
         }
     }
 
-    @Test
-    public void canLoadObjectsFromCommits() throws IOException {
-        // GIVEN:
-        Repository project = new TestProject().loadRepo();
-        RevCommit commit = GitUtils.parseCommit(project, "e4ffa7f74f461ca3e36fb89987f77e991ed8d998");
-        String file1 = "hi3.cpp", file2 = "foo/hi.txt";
-
-        // WHEN:
-        SrcFile file1Lines = GitUtils.loadSrcFile(project, commit, file1);
-        SrcFile file2Lines = GitUtils.loadSrcFile(project, commit, file2);
-
-        // THEN:
-        Assert.assertEquals(6, file1Lines.getLines().size());
-        Assert.assertEquals(5, file2Lines.getLines().size());
-    }
+//    @Test
+//    public void canLoadObjectsFromCommits() throws IOException {
+//        // GIVEN:
+//        Repository project = new TestProject().loadRepo();
+//        RevCommit commit = GitUtils.parseCommit(project, "e4ffa7f74f461ca3e36fb89987f77e991ed8d998");
+//        String file1 = "hi3.cpp", file2 = "foo/hi.txt";
+//
+//        // WHEN:
+//        SrcFile file1Lines = GitUtils.loadSrcFile(project, commit, file1);
+//        SrcFile file2Lines = GitUtils.loadSrcFile(project, commit, file2);
+//
+//        // THEN:
+//        Assert.assertEquals(6, file1Lines.getLines().size());
+//        Assert.assertEquals(5, file2Lines.getLines().size());
+//    }
 
     @Test
     public void canLoadLineFromDiagnostic() throws IOException {

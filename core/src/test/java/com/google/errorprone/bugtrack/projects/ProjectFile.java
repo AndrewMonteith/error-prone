@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.projects;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 public final class ProjectFile {
@@ -36,12 +37,20 @@ public final class ProjectFile {
         }
     }
 
+    public ProjectFile(CorpusProject project, String path) {
+        this(project, Paths.get(path));
+    }
+
     public boolean exists() {
         return toFile().exists();
     }
 
     public File toFile() {
         return project.getRoot().resolve(projPath).toFile();
+    }
+
+    public Path getProjectPath() {
+        return projPath;
     }
 
     @Override

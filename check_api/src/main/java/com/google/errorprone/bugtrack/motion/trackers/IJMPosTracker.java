@@ -54,7 +54,7 @@ public abstract class IJMPosTracker {
 
 
     public IJMPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState) throws IOException {
-        this(srcFilePair, sharedState, JdtVisitor::new);
+        this(srcFilePair, sharedState, StaticImportPreservingJdtVisitor::new);
     }
 
     private Optional<ITree> findClosestJDTNode(final long pos) {

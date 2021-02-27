@@ -16,10 +16,13 @@
 
 package com.google.errorprone.bugtrack;
 
+import org.junit.Test;
+
 public final class HPCCode {
     private HPCCode() {}
 
-    public static void main(String[] args) {
-        System.out.println("Hello world");
+    @Test
+    public void foo () {
+
     }
 }

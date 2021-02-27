@@ -123,7 +123,7 @@ public final class ProjectHarness {
         int commitNum = 0;
         for (RevCommit commit : commits) {
             System.out.printf("Serialising commit [%d / %d]\n", commitNum+1, commits.size());
-            Path diagnosticsOutput = output.resolve((commitNum+4) + " " + commit.getName());
+            Path diagnosticsOutput = output.resolve(commitNum + " " + commit.getName());
             try {
                 serialiseCommit(commit, diagnosticsOutput);
             } catch (Exception e) {

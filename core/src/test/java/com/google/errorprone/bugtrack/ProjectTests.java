@@ -50,7 +50,8 @@ import java.util.List;
 
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
 import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
-
+//mvn -Dtest=ProjectTests#canScanJSoup -DfailIfNoTests=false test
+    
 @RunWith(JUnit4.class)
 public class ProjectTests {
     private void assertFindsDiagnostics(CorpusProject project, String commitHash) throws IOException {
@@ -124,12 +125,12 @@ public class ProjectTests {
 
     @Test
     public void serialiseDiagnostics() throws IOException, GitAPIException {
-        CorpusProject project = new MyBatis3Project();
-        CommitRange range = new CommitRange("1eb11b8889c0af09bb6c88586ceaf64ebdf28d2d", "7cb8acea16378632ca51ee9c0f0790a3742382dc");
+        CorpusProject project = new JSoupProject();
+        CommitRange range = new CommitRange("f1110a9021c2caa28cbe3177c0c3a0f5ae326eb4", "ae9a18c9e1382b5d8bad14d09279eda725490c25");
 
         new ProjectHarness(project).serialiseCommits(range,
                 new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3"));
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup"));
 
     }
 

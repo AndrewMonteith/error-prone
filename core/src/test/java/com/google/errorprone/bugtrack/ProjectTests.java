@@ -17,7 +17,6 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
@@ -26,13 +25,11 @@ import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.*;
-import com.google.errorprone.bugtrack.harness.utils.DiagnosticsDistribution;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Assert;
 import org.junit.Test;
@@ -149,7 +146,7 @@ public class ProjectTests {
 
     @Test
     public void canScanMetrics() throws IOException {
-        assertFindsDiagnostics(new DubboProject(),
+        assertFindsDiagnostics(new MetricsProject(),
                 "e7a0370621aead1b9069e88a994af4b5e8bca25a");
     }
 
@@ -237,7 +234,7 @@ public class ProjectTests {
 
         BugComparer bugComparer = new DiagnosticPositionMotionComparer(
                 new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
-                any(newTokenizedLineTracker(), newIJMStartPosTracker()));
+                first(newTokenizedLineTracker(), newIJMStartPosTracker()));
 
         // WHEN:
         MatchResults results = DiagnosticsMatcher.fromFiles(
@@ -251,13 +248,13 @@ public class ProjectTests {
     @Test
     public void foo() throws IOException {
         // GIVEN:
-        CorpusProject project = new MyBatis3Project();
-        String oldCommit = "2065ebbfd79ba3a54568d6767963b1d5b31a54ad";
+        CorpusProject project = new GuiceProject();
+        String oldCommit = "ea179b962f6a0af1ee06444550bfbad788069675";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
         new ProjectHarness(project, Verbosity.VERBOSE)
                 .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
-                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/1 2065ebbfd79ba3a54568d6767963b1d5b31a54ad"));
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/11 ea179b962f6a0af1ee06444550bfbad788069675"));
 
 //        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));
@@ -282,7 +279,7 @@ public class ProjectTests {
 
         BugComparer comparer = new DiagnosticPositionMotionComparer(
                 new GitSrcFilePairLoader(project.loadRepo(), oldFile.commitId, newFile.commitId),
-                any(newTokenizedLineTracker(), newIJMStartPosTracker()));
+                first(newTokenizedLineTracker(), newIJMStartPosTracker()));
 
         // THEN:
         DiagnosticsMatcher.fromFiles(project, oldFile, newFile, comparer).writeToStdout();
@@ -298,7 +295,7 @@ public class ProjectTests {
 
         BugComparer comparer = new DiagnosticPositionMotionComparer(
                 new TestSrcFilePairLoader(),
-                any(newTokenizedLineTracker(), newIJMStartPosTracker()));
+                first(newTokenizedLineTracker(), newIJMStartPosTracker()));
 
         new DiagnosticsMatcher(
                 pair.oldDiagnostics,
@@ -310,37 +307,77 @@ public class ProjectTests {
     @Test
     public void compareTokenizedWithTokenizedAndIJM() throws Exception {
         // GIVEN:
-        CorpusProject project = new MyBatis3Project();
-        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3";
-        IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127);
+        CorpusProject project = new GuiceProject();
+        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/guice";
+        IntRanges validSeqFiles = IntRanges.include(0, 158).excludeRange(71, 73);
 
         BugComparerExperiment.forProject(project)
-                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
+                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, IntRanges.specific(0, 11)))
                 .comparePaths(withGit(project, GitPathComparer::new))
                 .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-                .makeBugComparer1(newTokenizedLineTracker())
-                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+                .makeBugComparer1(any(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
+                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMPosTracker()))
                 .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-                .trials(10)
-                .run("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3");
+                .trials(1)
+                .run("/home/monty/IdeaProjects/java-corpus/comparisons/guice");
+    }
+
+    @Test
+    public void compareTokenizedWithTokenizedAndIJM2() throws Exception {
+        CorpusProject[] projects = { new GuiceProject(), new JSoupProject(), new MyBatis3Project() };
+
+        String[] diagFolders = {
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice",
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup",
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3"
+        };
+
+        String[] comparisonFolders = {
+                "/home/monty/IdeaProjects/java-corpus/comparisons/guice",
+                "/home/monty/IdeaProjects/java-corpus/comparisons/jsoup",
+                "/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3"
+        };
+
+        LiveDatasetFilePairLoader[] dataLoader = {
+                LiveDatasetFilePairLoader.allFiles(diagFolders[0]),
+                LiveDatasetFilePairLoader.inSeqNumRange(diagFolders[1], IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127)),
+                LiveDatasetFilePairLoader.allFiles(diagFolders[2])
+        };
+
+
+        for (int i = 0; i < projects.length; ++i) {
+            {
+                BugComparerExperiment.forProject(projects[i])
+                        .withData(dataLoader[i])
+                        .comparePaths(withGit(projects[i], GitPathComparer::new))
+                        .loadDiags(withGit(projects[i], GitSrcFilePairLoader::new))
+                        .makeBugComparer1(first(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
+                        .makeBugComparer2(first(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
+                        .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
+                        .trials(100)
+                        .run(comparisonFolders[i]);
+            }
+
+            System.gc();
+        }
     }
 
     @Test
     public void computeSinglePair() throws IOException, GitAPIException {
-        CorpusProject project = new MyBatis3Project();
+        CorpusProject project = new JSoupProject();
 
         DiagnosticsFile oldFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/old");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/old");
 
         DiagnosticsFile newFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3/new");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/new");
 
-        System.out.println(new DiagnosticsDistribution(oldFile.diagnostics));
-        System.out.println(new DiagnosticsDistribution(newFile.diagnostics));
+//        System.out.println(new DiagnosticsDistribution(oldFile.diagnostics));
+//        System.out.println(new DiagnosticsDistribution(newFile.diagnostics));
 
         BugComparer bugComparer = new DiagnosticPositionMotionComparer(
                 new GitSrcFilePairLoader(project.loadRepo(), oldFile.commitId, newFile.commitId),
-                any(newTokenizedLineTracker(), newIJMStartAndEndTracker()));
+                newIJMPosTracker());
 
         DiagnosticsMatcher matcher = DiagnosticsMatcher.fromFiles(project, oldFile, newFile, bugComparer);
 
@@ -351,10 +388,7 @@ public class ProjectTests {
 
     @Test
     public void serialiseDiagnosticsScans() throws IOException, InterruptedException, GitAPIException {
-        CorpusProject project = new JSoupProject();
-        Collection<DiagnosticsScan> scans = DiagnosticsScanUtil.load(project, "/home/monty/IdeaProjects/java-corpus/scan");
-
-        System.out.println(scans.size());
+        DiagnosticsFile.load("/home/monty/IdeaProjects/java-corpus/diagnostics/dubbo/35 21e0227a44f7bb97c15d70d9da540a9953ee05b2");
 //        String commit = "79496d8d047f2d0774e0ad9d8169a021cb828fab";
 //
 //        ProjectScanner walker = new MavenProjectScanner();

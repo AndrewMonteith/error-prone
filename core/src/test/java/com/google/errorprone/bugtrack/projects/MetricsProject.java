@@ -22,8 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
-import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.notInBlockList;
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
 
 public class MetricsProject implements CorpusProject {
     private static final Set<String> JAVA_FILES_BLOCKLIST = ImmutableSet.of("FileDescriptorRatioGaugeTest.java");
@@ -35,7 +34,7 @@ public class MetricsProject implements CorpusProject {
 
     @Override
     public boolean shouldScanFile(Path file) {
-        return isJavaFile(file) && notInBlockList(JAVA_FILES_BLOCKLIST, file);
+        return isJavaFile(file) && notInBlockList(JAVA_FILES_BLOCKLIST, file) && !underDirectory(file, "generated-sources");
     }
 
     @Override

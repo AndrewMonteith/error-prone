@@ -40,8 +40,10 @@ public class SrcFile {
         StringBuilder result = new StringBuilder();
 
         int i = 0;
-        while (line.charAt(i) == '\n') {
-            result.append("    ");
+        while (i < line.length() && (line.charAt(i) == '\t' || line.charAt(i) == ' ')) {
+            char c = line.charAt(i);
+            result.append(c == '\t' ? "    " : " ");
+            ++i;
         }
 
         result.append(line.substring(i));

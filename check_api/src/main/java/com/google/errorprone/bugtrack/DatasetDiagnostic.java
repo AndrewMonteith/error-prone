@@ -30,27 +30,29 @@ public class DatasetDiagnostic {
     private final long columnNumber;
 
     private final long startPos;
+    private final long pos;
     private final long endPos;
 
     private final String message;
     private final DiagnosticSignature signature;
 
-    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long endPos, String message, DiagnosticSignature signature) {
+    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long pos, long endPos, String message, DiagnosticSignature signature) {
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
         this.startPos = startPos;
+        this.pos = pos;
         this.endPos = endPos;
         this.message = message;
         this.signature = signature;
     }
 
     public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, String message) {
-        this(fileName, lineNumber, columnNumber, -1, -1, message, null);
+        this(fileName, lineNumber, columnNumber, -1, -1, -1, message, null);
     }
 
-    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long endPos, String message) {
-        this(fileName, lineNumber, columnNumber, startPos, endPos, message, null);
+    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long pos, long endPos, String message) {
+        this(fileName, lineNumber, columnNumber, startPos, pos, endPos, message, null);
     }
 
     public DatasetDiagnostic(Diagnostic<? extends JavaFileObject> diagnostic) {
@@ -58,6 +60,7 @@ public class DatasetDiagnostic {
                 diagnostic.getLineNumber(),
                 diagnostic.getColumnNumber(),
                 diagnostic.getStartPosition(),
+                diagnostic.getPosition(),
                 diagnostic.getEndPosition(),
                 diagnostic.getMessage(null),
                 SignatureBucket.getSignature(diagnostic));
@@ -88,7 +91,12 @@ public class DatasetDiagnostic {
         StringBuilder result = new StringBuilder();
 
         result.append("----DIAGNOSTIC\n");
-        result.append(fileName).append(" ").append(lineNumber).append(" ").append(columnNumber).append(" ").append(startPos).append(" ").append(endPos).append("\n");
+        result.append(fileName).append(" ")
+                .append(lineNumber).append(" ")
+                .append(columnNumber).append(" ")
+                .append(startPos).append(" ")
+                .append(pos).append(" ")
+                .append(endPos).append("\n");
         result.append(message).append("\n");
 
         if (signature != null) {
@@ -106,6 +114,10 @@ public class DatasetDiagnostic {
         return endPos;
     }
 
+    public long getPos() {
+        return pos;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -114,6 +126,7 @@ public class DatasetDiagnostic {
         return lineNumber == that.lineNumber
                 && columnNumber == that.columnNumber
                 && startPos == that.startPos
+                && pos == that.pos
                 && endPos == that.endPos
                 && fileName.equals(that.fileName)
                 && message.equals(that.message);
@@ -121,6 +134,6 @@ public class DatasetDiagnostic {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileName, lineNumber, columnNumber, startPos, endPos, message);
+        return Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, message);
     }
 }

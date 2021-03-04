@@ -51,7 +51,7 @@ public class GradleProjectScannerTests {
     // Duplication from MavenProjectScannerTests... Acceptable for now.
     private static List<Collection<DiagnosticsScan>> collectScans(CommitRange commitRange) throws IOException, InterruptedException, GitAPIException {
         ProjectScanner walker = new GradleProjectScanner();
-        walker.cleanProject(GRADLE_TEST_PROJECT.getRoot().toFile());
+        walker.cleanProject(GRADLE_TEST_PROJECT.getRoot());
 
         Repository testRepo = GRADLE_TEST_PROJECT.loadRepo();
 

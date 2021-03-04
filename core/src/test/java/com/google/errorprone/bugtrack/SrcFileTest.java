@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.google.errorprone.bugtrack.TestUtils.readTestFile;
@@ -57,6 +58,26 @@ public class SrcFileTest {
         // THEN:
         Assert.assertEquals("class Foo", s.getSrcExtract(1, 9));
         Assert.assertEquals("public void main() {", s.getSrcExtract(17, 36));
+    }
+
+    @Test
+    public void correctlyNormalisesWhitespace() throws IOException {
+        // GIVEN:
+        String lines = "\t\tclass Foobar {\n" +
+                "   \tpublic void foo() {}\n" +
+                "\t\t}\n" +
+                "    ";
+
+        // WHEN:
+        SrcFile s = new SrcFile("weird_whitespace.java", Arrays.asList(lines.split("\n")));
+
+        // THEN:
+        List<String> normalizedLines = s.getLines();
+        Assert.assertEquals(4, normalizedLines.size());
+        Assert.assertEquals("        class Foobar {", normalizedLines.get(0));
+        Assert.assertEquals("       public void foo() {}", normalizedLines.get(1));
+        Assert.assertEquals("        }", normalizedLines.get(2));
+        Assert.assertEquals("    ", normalizedLines.get(3));
     }
 
 }

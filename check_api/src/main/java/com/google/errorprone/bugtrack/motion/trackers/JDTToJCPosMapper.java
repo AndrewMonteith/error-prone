@@ -35,6 +35,11 @@ public class JDTToJCPosMapper extends TreeScanner<Void, Void> {
         return closestEndPosition;
     }
 
+    private long closestPreferredPosition = -1;
+    public long getClosestPreferredPosition() {
+        return closestPreferredPosition;
+    }
+
     public JDTToJCPosMapper(EndPosTable endPosTable, final long jdtPos) {
         this.endPosTable = endPosTable;
         this.jdtPos = jdtPos;
@@ -51,6 +56,7 @@ public class JDTToJCPosMapper extends TreeScanner<Void, Void> {
             if (jcStartPos <= jdtPos && jdtPos <= jcEndPos) {
                 closestStartPosition = jcStartPos;
                 closestEndPosition = jcEndPos;
+                closestPreferredPosition = jcTree.getPreferredPosition();
                 tree.accept(this, p);
             }
         }

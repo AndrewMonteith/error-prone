@@ -40,6 +40,8 @@ public final class DiagnosticsMatcher {
     private final BugComparer comparer;
     private final PathsComparer pathsComparer;
 
+    private static final boolean printMultiMatches = false;
+    
     public DiagnosticsMatcher(Collection<DatasetDiagnostic> oldDiagnostics,
                               Collection<DatasetDiagnostic> newDiagnostics,
                               BugComparer comparer,
@@ -91,11 +93,13 @@ public final class DiagnosticsMatcher {
                 if (matching.size() == 1) {
                     matchedDiagnostics.put(oldDiag, Iterables.getOnlyElement(matching));
                 } else if (matching.size() > 1) {
-                    System.out.println("A diagnostic matched with multiple diagnostics");
-                    System.out.println("Old diagnostic:");
-                    System.out.println(oldDiag);
-                    System.out.println("Candidate new:");
-                    matching.forEach(System.out::println);
+                    if (printMultiMatches) {
+                        System.out.println("A diagnostic matched with multiple diagnostics");
+                        System.out.println("Old diagnostic:");
+                        System.out.println(oldDiag);
+                        System.out.println("Candidate new:");
+                        matching.forEach(System.out::println);
+                    }
                 }
             });
         });

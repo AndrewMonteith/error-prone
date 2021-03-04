@@ -28,14 +28,13 @@ import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.openjdk.tools.javac.util.Pair;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class BugComparerEvaluator {
     private final CorpusProject project;
@@ -107,12 +106,14 @@ public final class BugComparerEvaluator {
 
     private void writePossiblyMissedDiagnostic(FileWriter writer,
                                                DatasetDiagnostic missedOldDiagnostic,
-                                               DatasetDiagnostic mostLikelyNewDiagnostic,
-                                               double likelihood) throws IOException {
+                                               PriorityQueue<Pair<DatasetDiagnostic, Double>> likelyMatches) throws IOException {
         writer.write("Neither comparer could track:\n");
         writer.write(missedOldDiagnostic.toString());
-        writer.write("but it could match the following with " + likelihood + " confidence\n");
-        writer.write(mostLikelyNewDiagnostic.toString());
+        for (int i = 0; i < Math.min(3, likelyMatches.size()); ++i) {
+            Pair<DatasetDiagnostic, Double> match = likelyMatches.remove();
+            writer.write("but it could match the following with " + match.snd + " confidence\n");
+            writer.write(match.fst.toString());
+        }
     }
 
     private void writeLikelyDiagnosticsNeitherTracked(FileWriter writer,
@@ -133,8 +134,11 @@ public final class BugComparerEvaluator {
                         results2.getMatchedDiagnostics().values())));
 
         for (DatasetDiagnostic missedOldDiag : untrackedOldDiagnostics) {
-            double bestFoundLikelihood = -1;
-            DatasetDiagnostic mostLikelyMatch = null;
+            PriorityQueue<Pair<DatasetDiagnostic, Double>> likelyMatches = new PriorityQueue<>(
+                    3, Comparator.comparing(pair -> pair.snd));
+
+//            double bestFoundLikelihood = -1;
+//            DatasetDiagnostic mostLikelyMatch = null;
 
             for (DatasetDiagnostic missedNewDiag : untrackedNewDiagnostics) {
                 if (!pathsComparer.inSameFile(missedOldDiag, missedNewDiag) || !missedOldDiag.isSameType(missedNewDiag)) {
@@ -146,14 +150,13 @@ public final class BugComparerEvaluator {
                         missedOldDiag,
                         missedNewDiag);
 
-                if (0.3 <= likelihood && bestFoundLikelihood <= likelihood) {
-                    mostLikelyMatch = missedNewDiag;
-                    bestFoundLikelihood = likelihood;
+                if (0.3 <= likelihood) {
+                    likelyMatches.add(new Pair<>(missedNewDiag, likelihood));
                 }
             }
 
-            if (mostLikelyMatch != null) {
-                writePossiblyMissedDiagnostic(writer, missedOldDiag, mostLikelyMatch, bestFoundLikelihood);
+            if (!likelyMatches.isEmpty()) {
+                writePossiblyMissedDiagnostic(writer, missedOldDiag, likelyMatches);
             }
         }
     }
@@ -188,16 +191,16 @@ public final class BugComparerEvaluator {
             throw new RuntimeException(outputDir + " does not exist");
         }
 
-        Set<DiagnosticsFilePairLoader.Pair> mismatchedPairs = new HashSet<>();
+        Set<DiagnosticsFilePairLoader.Pair> comparedFiles = new HashSet<>();
 
         for (int trial = 0; trial < trials; ++trial) {
             DiagnosticsFilePairLoader.Pair oldAndNewDiagFiles = pairLoader.load();
             System.out.println("Comparing " + oldAndNewDiagFiles.oldFile.commitId + " to " + oldAndNewDiagFiles.newFile.commitId);
 
-            if (mismatchedPairs.contains(oldAndNewDiagFiles))  {
+            if (comparedFiles.contains(oldAndNewDiagFiles))  {
                 continue;
             }
-            mismatchedPairs.add(oldAndNewDiagFiles);
+            comparedFiles.add(oldAndNewDiagFiles);
 
             {
                 MatchResults comparer1Results = DiagnosticsMatcher.fromFiles(

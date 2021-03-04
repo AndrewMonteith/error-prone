@@ -16,11 +16,13 @@
 
 package com.google.errorprone.bugtrack.harness.scanning;
 
+import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
+import javax.validation.constraints.NotNull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -54,7 +56,7 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
 
     private void cleanProject() {
         try {
-            projectScanner.cleanProject(project.getRoot().toFile());
+            projectScanner.cleanProject(project.getRoot());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -68,11 +70,19 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
     @Override
     public Collection<DiagnosticsScan> next() {
         try {
+            // Clean all stuff from the build cache
             cleanProject();
-            RevCommit commit = commits.next();
+            
+            // Forward to the next commit
             Repository repo = project.loadRepo();
             new Git(repo).checkout().setAllPaths(true).call();
-            new Git(repo).checkout().setName(commit.getName()).call();
+            new Git(repo).checkout().setName(commits.next().getName()).call();
+
+            // Normalize the whitespace in all files
+            ShellUtils.runCommand(project.getRoot(),
+                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/scanning/shell_cmds.sh");
+
+            // Collect the scans
             return projectScanner.getScans(project);
         } catch (Exception e) {
             e.printStackTrace();

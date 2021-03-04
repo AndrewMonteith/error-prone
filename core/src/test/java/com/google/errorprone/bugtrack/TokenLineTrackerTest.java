@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory;
@@ -39,7 +40,7 @@ import static com.google.errorprone.bugtrack.TestUtils.readTestFile;
 public class TokenLineTrackerTest {
     private void assertLineIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, final long newLine) {
         DatasetDiagnostic mockOldDiag = new DatasetDiagnostic("", oldLine, 1, "");
-        Assert.assertEquals(newLine, lineMotionTracker.track(mockOldDiag).get().getLine());
+        Assert.assertEquals(newLine, ((DiagSrcPosEqualityOracle) lineMotionTracker.track(mockOldDiag).get()).getLine());
     }
 
     private void assertLineIsNotTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine) {
@@ -120,7 +121,7 @@ public class TokenLineTrackerTest {
             Optional<DiagPosEqualityOracle> newPos = lineMotionTracker.track(mockDiag);
 
             // THEN:
-            Assert.assertEquals(Optional.of(DiagPosEqualityOracle.byLineCol(1, 5)), newPos);
+            Assert.assertEquals(Optional.of(DiagSrcPosEqualityOracle.byLineCol(1, 5)), newPos);
         });
     }
 }

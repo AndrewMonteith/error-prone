@@ -19,13 +19,14 @@ package com.google.errorprone.bugtrack.motion.trackers;
 import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 
 import java.io.IOException;
 import java.util.Optional;
 
-public final class IJMStartAndEndPosTracker extends IJMPosTracker implements DiagnosticPositionTracker {
+public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
     public IJMStartAndEndPosTracker(SrcFilePair srcFilePair,
                                     TrackersSharedState sharedState,
                                     IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
@@ -38,17 +39,17 @@ public final class IJMStartAndEndPosTracker extends IJMPosTracker implements Dia
 
     @Override
     public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-        Optional<SrcBufferRange> mappedStartPos = findClosestMatchingSrcBuffer(oldDiag.getStartPos());
-        Optional<SrcBufferRange> mappedEndPos = findClosestMatchingSrcBuffer(oldDiag.getEndPos());
+        Optional<NodeLocation> mappedStartPos = findClosestMatchingSrcBuffer(oldDiag.getStartPos());
+        Optional<NodeLocation> mappedEndPos = findClosestMatchingSrcBuffer(oldDiag.getEndPos());
 
         if (!mappedStartPos.isPresent()) {
             return Optional.empty();
         }
 
         if (!mappedEndPos.isPresent()) {
-            return mappedStartPos.map(srcBufRange -> DiagPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
+            return mappedStartPos.map(srcBufRange -> DiagSrcPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
         }
 
-        return Optional.of(DiagPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, mappedEndPos.get().end));
+        return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, mappedEndPos.get().end));
     }
 }

@@ -16,8 +16,10 @@
 
 package com.google.errorprone.bugtrack.harness.evaluating;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
+
+import java.util.*;
 
 public final class IntRanges {
     private final Range entireRange;
@@ -30,6 +32,22 @@ public final class IntRanges {
 
     public static IntRanges include(final int start, final int end) {
         return new IntRanges(start, end);
+    }
+
+    public static IntRanges specific(int... numbers) {
+        List<Integer> numList = Ints.asList(Arrays.stream(numbers).sorted().toArray());
+
+        int min = numList.stream().min(Comparator.naturalOrder()).get();
+        int max = numList.stream().max(Comparator.naturalOrder()).get();
+
+        IntRanges range = IntRanges.include(min, max);
+        for (int i = min; i < max; ++i) {
+            if (!numList.contains(i)) {
+                range.exclude(i);
+            }
+        }
+
+        return range;
     }
 
     public IntRanges excludeRange(int start, int end) {

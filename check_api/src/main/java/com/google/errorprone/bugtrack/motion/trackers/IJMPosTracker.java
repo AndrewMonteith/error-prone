@@ -16,101 +16,30 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
-import at.aau.softwaredynamics.matchers.JavaMatchers;
-import com.github.gumtreediff.gen.jdt.AbstractJdtTreeGenerator;
 import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
-import com.github.gumtreediff.gen.jdt.JdtVisitor;
-import com.github.gumtreediff.matchers.MappingStore;
-import com.github.gumtreediff.tree.ITree;
-import com.github.gumtreediff.tree.TreeContext;
-import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
-import com.sun.tools.javac.tree.JCTree;
 
 import java.io.IOException;
 import java.util.Optional;
 
-public abstract class IJMPosTracker {
-    private final TrackersSharedState sharedState;
-    private final SrcFilePair srcFilePair;
-
-    private final TreeContext oldSrcTree;
-    private final TreeContext newSrcTree;
-    private final MappingStore mappings;
-
-    protected IJMPosTracker(SrcFilePair srcFilePair,
-                            TrackersSharedState sharedState,
-                            IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
-        this.sharedState = sharedState;
-        this.srcFilePair = srcFilePair;
-        this.oldSrcTree = parseFileWithVisitor(srcFilePair.oldFile, jdtVisitorSupplier.get());
-        this.newSrcTree = parseFileWithVisitor(srcFilePair.newFile, jdtVisitorSupplier.get());
-        this.mappings = new MappingStore();
-
-        new JavaMatchers.IterativeJavaMatcher_V2(
-                oldSrcTree.getRoot(), newSrcTree.getRoot(), mappings).match();
+public final class IJMPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
+    public IJMPosTracker(SrcFilePair srcFilePair,
+                         TrackersSharedState sharedState,
+                         IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
+        super(srcFilePair, sharedState, jdtVisitorSupplier);
     }
-
 
     public IJMPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState) throws IOException {
-        this(srcFilePair, sharedState, StaticImportPreservingJdtVisitor::new);
+        super(srcFilePair, sharedState);
     }
 
-    private Optional<ITree> findClosestJDTNode(final long pos) {
-        for (ITree node : oldSrcTree.getRoot().postOrder()) {
-            if (!node.isMatched()) {
-                continue;
-            }
-
-            if (node.getPos() <= pos && pos <= node.getPos() + node.getLength()) {
-                return Optional.of(node);
-            }
-        }
-
-        return Optional.empty();
-    }
-
-    protected Optional<SrcBufferRange> findClosestMatchingSrcBuffer(final long pos) {
-        Optional<ITree> closestOldJdtNode = findClosestJDTNode(pos);
-        if (!closestOldJdtNode.isPresent()) {
-            return Optional.empty();
-        }
-
-        // Find which JDT that maps to in the new AST
-        ITree newJdtNode = mappings.getDst(closestOldJdtNode.get());
-
-        // Find the src buffer range of the closest JC node to matched jdt node's start position
-        JCTree.JCCompilationUnit newJCAst = sharedState.loadNewJavacAST(srcFilePair);
-        JDTToJCPosMapper startPosMapper = new JDTToJCPosMapper(newJCAst.endPositions, newJdtNode.getPos());
-        startPosMapper.scan(newJCAst, null);
-
-        JDTToJCPosMapper endPosMapper = new JDTToJCPosMapper(newJCAst.endPositions, newJdtNode.getEndPos());
-        endPosMapper.scan(newJCAst, null);
-
-        return Optional.of(new SrcBufferRange(startPosMapper.getClosestStartPosition(), endPosMapper.getClosestEndPosition()));
-    }
-
-    private static TreeContext parseFileWithVisitor(SrcFile file, AbstractJdtVisitor visitor) throws IOException {
-        String src = file.getSrc();
-
-        AbstractJdtTreeGenerator treeGenerator = new AbstractJdtTreeGenerator() {
-            @Override
-            protected AbstractJdtVisitor createVisitor() {
-                return visitor;
-            }
-        };
-
-        return treeGenerator.generateFromString(src);
-    }
-
-    protected static class SrcBufferRange {
-        final long start;
-        final long end;
-
-        private SrcBufferRange(final long start, final long end) {
-            this.start = start;
-            this.end = end;
-        }
+    @Override
+    public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
+        return findClosestMatchingSrcBuffer(oldDiag.getPos())
+                .map(srcBufferRange -> DiagSrcPosEqualityOracle.byPosition(srcBufferRange.pos));
     }
 }

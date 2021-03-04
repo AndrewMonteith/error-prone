@@ -88,6 +88,7 @@ public class DiagnosticsFile {
                     Long.parseLong(locationDetails[2]),
                     Long.parseLong(locationDetails[3]),
                     Long.parseLong(locationDetails[4]),
+                    Long.parseLong(locationDetails[5]),
                     message);
 
             if (!acceptDiagnostic.test(diagnostic) || diagnostics.contains(diagnostic)) {

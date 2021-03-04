@@ -19,13 +19,14 @@ package com.google.errorprone.bugtrack.motion.trackers;
 import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 
 import java.io.IOException;
 import java.util.Optional;
 
-public final class IJMStartPosTracker extends IJMPosTracker implements DiagnosticPositionTracker {
+public final class IJMStartPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
     public IJMStartPosTracker(SrcFilePair srcFilePair,
                               TrackersSharedState sharedState,
                               IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
@@ -39,7 +40,7 @@ public final class IJMStartPosTracker extends IJMPosTracker implements Diagnosti
     @Override
     public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
         return findClosestMatchingSrcBuffer(oldDiag.getStartPos())
-                .map(srcBufferRange -> DiagPosEqualityOracle.byStartPos(srcBufferRange.start));
+                .map(srcBufferRange -> DiagSrcPosEqualityOracle.byStartPos(srcBufferRange.start));
     }
 }
 

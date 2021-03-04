@@ -22,12 +22,13 @@ import com.google.errorprone.bugtrack.projects.ProjectFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class MavenProjectScanner extends ProjectScanner {
     @Override
-    public void cleanProject(File projectDir) throws IOException, InterruptedException {
+    public void cleanProject(Path projectDir) throws IOException, InterruptedException {
         ShellUtils.runCommand(projectDir, "mvn", "clean");
     }
 
@@ -63,7 +64,7 @@ public class MavenProjectScanner extends ProjectScanner {
 
     @Override
     public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
-        String buildOutput = ShellUtils.runCommand(project.getRoot().toFile(),
+        String buildOutput = ShellUtils.runCommand(project.getRoot(),
                 "/usr/bin/python3.8",
                 "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/scanning/get_maven_cmdargs.py",
                 project.getRoot().toString());

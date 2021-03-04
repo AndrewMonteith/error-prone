@@ -24,6 +24,7 @@ import com.google.errorprone.bugtrack.projects.ProjectFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 
 public abstract class ProjectScanner {
-    public abstract void cleanProject(File project) throws IOException, InterruptedException;
+    public abstract void cleanProject(Path project) throws IOException, InterruptedException;
 
     public abstract Collection<DiagnosticsScan> getScans(CorpusProject project)
             throws IOException, InterruptedException;

@@ -17,9 +17,9 @@
 package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.gumtreediff.gen.jdt.JdtVisitor;
-import com.google.errorprone.apply.ImportOrganizer;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.TryStatement;
 
 public class StaticImportPreservingJdtVisitor extends JdtVisitor {
 

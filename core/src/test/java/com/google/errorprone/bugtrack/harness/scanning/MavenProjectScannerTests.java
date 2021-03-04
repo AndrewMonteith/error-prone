@@ -50,7 +50,7 @@ public class MavenProjectScannerTests {
 
     private static List<Collection<DiagnosticsScan>> collectScans(CommitRange commitRange) throws IOException, InterruptedException, GitAPIException {
         ProjectScanner walker = new MavenProjectScanner();
-        walker.cleanProject(MAVEN_TEST_PROJECT.getRoot().toFile());
+        walker.cleanProject(MAVEN_TEST_PROJECT.getRoot());
 
         Repository testRepo = MAVEN_TEST_PROJECT.loadRepo();
 

@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 
 import java.util.Optional;
 

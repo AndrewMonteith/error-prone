@@ -17,14 +17,12 @@
 package com.google.errorprone.bugtrack;
 
 import com.github.difflib.algorithm.DiffException;
-import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.trackers.CharacterLineTracker;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import org.junit.Assert;
 import org.junit.Test;
-import org.openjdk.tools.javac.util.JCDiagnostic;
 
-import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +32,7 @@ import static com.google.errorprone.bugtrack.TestUtils.readTestFile;
 public final class CharacterLineTrackerTest {
     private void assertLineIsTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine, final long newLine) {
         DatasetDiagnostic mockOldDiag = new DatasetDiagnostic("", oldLine, 1, "");
-        Assert.assertEquals(newLine, lineMotionTracker.track(mockOldDiag).get().getLine());
+        Assert.assertEquals(newLine, ((DiagSrcPosEqualityOracle) lineMotionTracker.track(mockOldDiag).get()).getLine());
     }
 
     private void assertLineIsNotTracked(DiagnosticPositionTracker lineMotionTracker, final long oldLine) {

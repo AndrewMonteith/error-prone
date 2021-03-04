@@ -19,8 +19,7 @@ package com.google.errorprone.bugtrack.projects;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
-import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.underMain;
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
 
 public class DubboProject implements CorpusProject {
     @Override
@@ -30,7 +29,7 @@ public class DubboProject implements CorpusProject {
 
     @Override
     public boolean shouldScanFile(Path file) {
-        return isJavaFile(file) && underMain(file);
+        return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources");
     }
 
     @Override

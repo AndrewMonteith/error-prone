@@ -19,6 +19,7 @@ package com.google.errorprone.bugtrack.motion.trackers;
 import com.github.difflib.algorithm.DiffException;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,6 @@ public class CharacterLineTracker implements DiagnosticPositionTracker {
     @Override
     public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic diag) {
         return srcTracker.getNewLineNumber(diag.getLineNumber())
-                .map(newLineNum -> DiagPosEqualityOracle.byLineCol(newLineNum, diag.getColumnNumber()));
+                .map(newLineNum -> DiagSrcPosEqualityOracle.byLineCol(newLineNum, diag.getColumnNumber()));
     }
 }

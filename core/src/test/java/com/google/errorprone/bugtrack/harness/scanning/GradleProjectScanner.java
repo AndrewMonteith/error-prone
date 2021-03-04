@@ -37,8 +37,8 @@ import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile
 
 public class GradleProjectScanner extends ProjectScanner {
     @Override
-    public void cleanProject(File project) throws IOException, InterruptedException {
-        if (project.toPath().resolve("gradlew").toFile().exists()) {
+    public void cleanProject(Path project) throws IOException, InterruptedException {
+        if (project.resolve("gradlew").toFile().exists()) {
             ShellUtils.runCommand(project, "./gradlew", "clean");
         } else {
             ShellUtils.runCommand(project, "gradle", "clean");
@@ -84,7 +84,7 @@ public class GradleProjectScanner extends ProjectScanner {
 
     @Override
     public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
-        String scriptOutput = ShellUtils.runCommand(project.getRoot().toFile(), "/usr/bin/python3.8",
+        String scriptOutput = ShellUtils.runCommand(project.getRoot(), "/usr/bin/python3.8",
                 "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/scanning/get_gradle_cmdargs.py",
                 project.getRoot().toString());
 

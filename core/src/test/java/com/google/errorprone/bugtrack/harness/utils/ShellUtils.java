@@ -24,14 +24,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 public final class ShellUtils {
 
-    public static String runCommand(File directory, String... command) throws IOException, InterruptedException {
+    public static String runCommand(Path directory, String... command) throws IOException, InterruptedException {
         Process process = new ProcessBuilder()
                 .command(command)
-                .directory(directory)
+                .directory(directory.toFile())
                 .start();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));

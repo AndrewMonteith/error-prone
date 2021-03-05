@@ -38,8 +38,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public final class DiagnosticsCollector {
+    private static boolean collectInParallel = true;
+    public static void setCollectInParallel(boolean collectInParallel) {
+        DiagnosticsCollector.collectInParallel = collectInParallel;
+    }
+
     public static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(DiagnosticsScan scan) {
         if (scan.files.isEmpty()) {
             return Collections.emptyList();
@@ -74,7 +80,33 @@ public final class DiagnosticsCollector {
         return diagnostics;
     }
 
-    private static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(Iterable<DiagnosticsScan> scans, Verbosity verbose) {
+    private static Collection<Diagnostic<? extends JavaFileObject>> scanInParallel(Iterable<DiagnosticsScan> scans,
+                                                                                   Verbosity verbose) {
+        // Split scans apart to ensure each one has at most files
+        Collection<DiagnosticsScan> partitionedScans = StreamSupport.stream(scans.spliterator(), false)
+                .map(scan -> {
+                    if (scan.files.size() <= 400) {
+                        return ImmutableList.of(scan);
+                    } else {
+                        return DiagnosticsScanUtil.chunkScan(scan, 400);
+                    }
+                }).flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        return partitionedScans.parallelStream()
+                .map(scan -> {
+                    System.out.println("Collecting diagnostics for a scan");
+                    Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(scan);
+                    System.out.println("Finished collecting diagnostics");
+                    return diagnostics;
+                })
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+
+
+    private static Collection<Diagnostic<? extends JavaFileObject>> scanInSerial(Iterable<DiagnosticsScan> scans, Verbosity verbose) {
         List<Diagnostic<? extends JavaFileObject>> diagnostics = new ArrayList<>();
 
         boolean printProgress = verbose == Verbosity.VERBOSE;
@@ -104,6 +136,14 @@ public final class DiagnosticsCollector {
         }
 
         return diagnostics;
+    }
+
+    private static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnosticsFromScans(Iterable<DiagnosticsScan> scans, Verbosity verbose) {
+        if (collectInParallel) {
+            return scanInParallel(scans, verbose);
+        } else {
+            return scanInSerial(scans, verbose);
+        }
     }
 
     private static Iterable<Collection<DiagnosticsScan>> loadScanWalker(CorpusProject project, Iterable<RevCommit> commits) throws IOException {
@@ -136,7 +176,7 @@ public final class DiagnosticsCollector {
     public static Collection<Diagnostic<? extends JavaFileObject>> collectEPDiagnostics(CorpusProject project,
                                                                                         RevCommit commit,
                                                                                         Verbosity verbose) throws IOException {
-        return collectDiagnostics(Iterables.getLast(loadScanWalker(project, ImmutableList.of(commit))), verbose);
+        return collectDiagnosticsFromScans(Iterables.getLast(loadScanWalker(project, ImmutableList.of(commit))), verbose);
     }
 
     public static Collection<DatasetDiagnostic> collectDatasetDiagnosics(DiagnosticsScan scan) {

@@ -1,6 +1,23 @@
-package com.google.errorprone.bugtrack;
+/*
+ * Copyright 2021 The Error Prone Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.errorprone.bugtrack.hpc;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
@@ -33,17 +50,32 @@ public final class HPCCode {
         FS.DETECTED.setGitSystemConfig(Paths.get("/home/am2857/git/etc/gitconfig").toFile());
     }
 
+    private Path getPath(String path1, String... paths) {
+        Path p = Paths.get(path1, paths);
+        if (!p.toFile().exists()) {
+            throw new RuntimeException(p.toString() + " does not exist");
+        }
+        return p;
+    }
+
+    private CorpusProject loadProject() {
+        String projectName = System.getProperty("project");
+        if (!projects.containsKey(projectName)) {
+            throw new RuntimeException("no project named " + projectName);
+        }
+
+        return new NewRootProject(projects.get(projectName), getPath(System.getProperty("projDir")));
+    }
+
     @Test
     public void scanCommit() throws IOException {
-        System.out.println("Running");
-        System.out.println(System.getenv("PATH"));
-        CorpusProject project = projects.get(System.getProperty("project"));
-        String sequenceNumAndCommit = System.getProperty("commit");
+        CorpusProject project = loadProject();
 
+        String sequenceNumAndCommit = System.getProperty("commit");
         String[] seqNumAndCommitSplit = sequenceNumAndCommit.split(" ");
 
         RevCommit commit = GitUtils.parseCommit(project.loadRepo(), seqNumAndCommitSplit[1]);
-        Path outputFile = Paths.get(System.getProperty("outputFolder"), sequenceNumAndCommit);
+        Path outputFile = getPath(System.getProperty("outputFolder")).resolve(sequenceNumAndCommit);
 
         System.out.println("Parsing commit " + commit.getName() + " for project " + System.getProperty("project"));
         System.out.println("Saving response into " + outputFile.toString());
@@ -58,6 +90,22 @@ public final class HPCCode {
 
         List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 50)
                 .filterCommits(GitUtils.expandCommitRange(repo, range));
+
+        System.out.println("Total commits  " + filteredCommits.size());
+
+        for (int i = 0; i < filteredCommits.size(); ++i) {
+            System.out.println(i + " " + filteredCommits.get(i).getName());
+        }
+    }
+
+    public static void main(String[] args) throws GitAPIException, IOException {
+        Repository repo = projects.get("jsoup").loadRepo();
+        CommitRange range = new CommitRange("f1110a9021c2caa28cbe3177c0c3a0f5ae326eb4", "ae9a18c9e1382b5d8bad14d09279eda725490c25");
+
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 50)
+                .filterCommits(GitUtils.expandCommitRange(repo, range));
+
+        System.out.println("Total commits  " + filteredCommits.size());
 
         for (int i = 0; i < filteredCommits.size(); ++i) {
             System.out.println(i + " " + filteredCommits.get(i).getName());

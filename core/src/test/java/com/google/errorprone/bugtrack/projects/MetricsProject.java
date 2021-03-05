@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.projects;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,7 +30,7 @@ public class MetricsProject implements CorpusProject {
 
     @Override
     public Path getRoot() {
-        return Paths.get("/home/monty/IdeaProjects/java-corpus/metrics");
+        return ProjectFiles.get("java-corpus/metrics");
     }
 
     @Override

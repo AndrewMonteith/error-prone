@@ -254,7 +254,7 @@ public class ProjectTests {
 
         new ProjectHarness(project, Verbosity.VERBOSE)
                 .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
-                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/11 ea179b962f6a0af1ee06444550bfbad788069675"));
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/fo"));
 
 //        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));

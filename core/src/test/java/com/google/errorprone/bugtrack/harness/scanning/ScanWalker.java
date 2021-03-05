@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.harness.scanning;
 
 import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -80,7 +81,7 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
 
             // Normalize the whitespace in all files
             ShellUtils.runCommand(project.getRoot(),
-                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/scanning/shell_cmds.sh");
+                ProjectFiles.find("error-prone", "shell_cmds.sh").toString());
 
             // Collect the scans
             return projectScanner.getScans(project);

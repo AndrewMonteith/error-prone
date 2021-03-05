@@ -19,6 +19,7 @@ package com.google.errorprone.bugtrack.harness.scanning;
 import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class MavenProjectScanner extends ProjectScanner {
     public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
         String buildOutput = ShellUtils.runCommand(project.getRoot(),
                 "/usr/bin/python3.8",
-                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/scanning/get_maven_cmdargs.py",
+                ProjectFiles.find("error-prone", "get_maven_cmdargs.py").toString(),
                 project.getRoot().toString());
 
         return parseScansOutput(project, buildOutput);

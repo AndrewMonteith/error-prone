@@ -21,6 +21,7 @@ import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -169,7 +170,7 @@ public class MavenProjectScannerTests {
     private static final CorpusProject MAVEN_TEST_PROJECT = new CorpusProject() {
         @Override
         public Path getRoot() {
-            return Paths.get("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo/");
+            return ProjectFiles.get("error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo/");
         }
 
         @Override

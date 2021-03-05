@@ -16,13 +16,15 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class MavenTestRepo implements CorpusProject {
     @Override
     public Path getRoot() {
-        return Paths.get("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo");
+        return ProjectFiles.get("error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo");
     }
 
     @Override

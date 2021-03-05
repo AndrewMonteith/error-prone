@@ -16,6 +16,8 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -24,7 +26,7 @@ import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
 public class DubboProject implements CorpusProject {
     @Override
     public Path getRoot() {
-        return Paths.get("/home/monty/IdeaProjects/java-corpus/dubbo");
+        return ProjectFiles.get("java-corpus/dubbo");
     }
 
     @Override

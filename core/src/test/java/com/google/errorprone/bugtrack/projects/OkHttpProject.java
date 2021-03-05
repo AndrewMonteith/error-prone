@@ -16,13 +16,15 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class OkHttpProject implements CorpusProject {
     @Override
     public Path getRoot() {
-        return Paths.get("/home/monty/IdeaProjects/java-corpus/okhttp");
+        return ProjectFiles.get("java-corpus/okhttp");
     }
 
     @Override

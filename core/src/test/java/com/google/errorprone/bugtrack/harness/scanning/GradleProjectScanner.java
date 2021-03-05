@@ -24,6 +24,7 @@ import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.projects.ShouldScanUtils;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.io.File;
 import java.io.IOException;
@@ -84,8 +85,9 @@ public class GradleProjectScanner extends ProjectScanner {
 
     @Override
     public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
-        String scriptOutput = ShellUtils.runCommand(project.getRoot(), "/usr/bin/python3.8",
-                "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/harness/scanning/get_gradle_cmdargs.py",
+        String scriptOutput = ShellUtils.runCommand(project.getRoot(),
+                "/usr/bin/python3.8",
+                ProjectFiles.find("error-prone", "get_gradle_cmdargs.py").toString(),
                 project.getRoot().toString());
 
         if (scriptOutput.trim().isEmpty()) {

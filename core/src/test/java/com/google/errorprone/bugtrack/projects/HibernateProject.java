@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.projects;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,7 +31,7 @@ import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
 public final class HibernateProject implements CorpusProject {
     @Override
     public Path getRoot() {
-        return Paths.get("/home/monty/IdeaProjects/java-corpus/hibernate-orm");
+        return ProjectFiles.get("java-corpus/hibernate-orm");
     }
 
     private static final List<String> allowList = ImmutableList.of("src/main", "target/generated-src");

@@ -24,6 +24,7 @@ import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -80,7 +81,7 @@ public final class TestUtils {
     private static CorpusProject TEST_PROJECT = new CorpusProject() {
         @Override
         public Path getRoot() {
-            return Paths.get("/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata");
+            return ProjectFiles.get("error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata");
         }
 
         @Override

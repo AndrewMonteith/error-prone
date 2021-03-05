@@ -9,7 +9,7 @@ os.chdir(sys.argv[1])
 
 # Parse mvn install for command line options
 install_proc = subprocess.run(["mvn", "-X", "install", "-Dmaven.javadoc.skip=true", "-DskipTests"],
-                              capture_output=True)
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def escape_ansi(line):
     ansi_escape = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")

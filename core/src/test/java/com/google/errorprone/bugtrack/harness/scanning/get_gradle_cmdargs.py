@@ -32,10 +32,10 @@ def print_targets(output):
 gradle_cmd = "./gradlew" if os.path.isfile("./gradlew") else "gradle"
 
 build_proc = subprocess.run([gradle_cmd, "--debug", "--no-build-cache", "classes"],
-                            capture_output=True)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 test_build_proc = subprocess.run([gradle_cmd, "--debug", "--no-build-cache", "testClasses"],
-                                  capture_output=True)
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 print_targets(build_proc.stdout.decode("utf-8"))
 print_targets(test_build_proc.stdout.decode("utf-8"))

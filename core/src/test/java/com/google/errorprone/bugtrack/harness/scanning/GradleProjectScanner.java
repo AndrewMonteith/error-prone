@@ -86,7 +86,7 @@ public class GradleProjectScanner extends ProjectScanner {
     @Override
     public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
         String scriptOutput = ShellUtils.runCommand(project.getRoot(),
-                "/usr/bin/python3.8",
+                "/usr/bin/python3",
                 ProjectFiles.find("error-prone", "get_gradle_cmdargs.py").toString(),
                 project.getRoot().toString());
 

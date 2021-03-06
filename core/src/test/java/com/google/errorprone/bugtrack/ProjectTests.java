@@ -155,7 +155,7 @@ public class ProjectTests {
     public void canScanJUnit() throws IOException {
         // Note 9b061ea8c96fa6cba0ac9d7cfd5e8ffbd030b34a does not compile
         assertFindsDiagnostics(new JUnitProject(),
-                "7a098547474fb11c91262476a172f994e8051ada");
+                "138d278012f9d647f983f59c3ede954ea111bdd5");
     }
 
     @Test

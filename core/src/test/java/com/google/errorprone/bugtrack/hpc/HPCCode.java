@@ -102,18 +102,19 @@ public final class HPCCode {
 
     @Test
     public void betweenCommits() throws GitAPIException, IOException {
-        CorpusProject project = projects.get(System.getProperty("project"));
+        CorpusProject project = loadProject();
         CommitRange range = new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
 
         new ProjectHarness(project).serialiseCommits(range,
                 new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
-                getPath("outputPath"));
-
+                getPath(System.getProperty("outputPath")),
+                (System.getProperty("offset") == null ? 0 : Integer.parseInt(System.getProperty("offset"))));
     }
 
     public static void main(String[] args) throws GitAPIException, IOException {
-        Repository repo = projects.get("jsoup").loadRepo();
-        CommitRange range = new CommitRange("f1110a9021c2caa28cbe3177c0c3a0f5ae326eb4", "ae9a18c9e1382b5d8bad14d09279eda725490c25");
+        System.out.println(System.getProperty("foobar"));
+        Repository repo = projects.get("checkstyle").loadRepo();
+        CommitRange range = new CommitRange("ae9edbd4a8645c8cc1a99ad6890dd0006700d1cb", "f1e8346ef9dc13c9d778bb35a8821d43d409d003");
 
         List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 50)
                 .filterCommits(GitUtils.expandCommitRange(repo, range));

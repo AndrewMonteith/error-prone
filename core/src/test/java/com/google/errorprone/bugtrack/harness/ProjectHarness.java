@@ -114,6 +114,10 @@ public final class ProjectHarness {
     }
 
     public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output) throws GitAPIException, IOException {
+        serialiseCommits(range, filter, output, 0);
+    }
+
+    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output, int offset) throws GitAPIException, IOException {
         if (!output.toFile().isDirectory()) {
             throw new RuntimeException(output + " is not a directory.");
         }
@@ -126,7 +130,7 @@ public final class ProjectHarness {
             Path diagnosticsOutput = output.resolve(commitNum + " " + commit.getName());
             try {
                 serialiseCommit(commit, diagnosticsOutput);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 try {
                     Files.write(diagnosticsOutput, Arrays.asList("failed to write", Arrays.toString(e.getStackTrace())));
                 } catch (IOException e2) {

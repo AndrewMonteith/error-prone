@@ -1,5 +1,6 @@
 #!/bin/python3
 import re
+import random
 import sys
 import os
 import subprocess
@@ -7,18 +8,20 @@ import subprocess
 # Collect output from mvn install
 os.chdir(sys.argv[1])
 
-# Parse mvn install for command line options
-install_proc = subprocess.run(["mvn", "-X", "install", "-Dmaven.javadoc.skip=true", "-DskipTests"],
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE    )
+stdout_file = "stdout_" + str(random.randint(1, 10000))
+
+# subprocess.PIPE can hang for sufficient large outputs, so we pipe everything into text files
+with open(stdout_file, "w") as f:
+    # Parse mvn install for command line options
+    install_proc = subprocess.run(["mvn", "-X", "install", "-Dmaven.javadoc.skip=true", "-DskipTests"],
+                                  stdout=f)
 
 def escape_ansi(line):
     ansi_escape = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
     return ansi_escape.sub("", line)
 
 build_output = [escape_ansi(line)
-                for line in install_proc.stdout.decode('utf-8').split("\n")]
-# build_output = [escape_ansi(line)
-#                 for line in open("/home/monty/IdeaProjects/java-corpus/jsoup/jsoup_output").readlines()]
+                for line in open(stdout_file, "r").readlines()]
 
 proj_re = re.compile(r"^.*\[.*INFO.*\].* @ .*")
 proj_name_re = re.compile(r"^\[INFO\] --- .* \((.*)\) @ (.*) .*")

@@ -27,7 +27,16 @@ import java.nio.file.Paths;
 import java.util.Collection;
 
 public class ProjectFiles {
-    private static final String projRoot = System.getenv("ROOT");
+    private static final String projRoot;
+    
+    static {
+        String root = System.getenv("ROOT");
+        if (root == null || root.isEmpty()) {
+            projRoot = "/home/monty/IdeaProjects/";
+        } else {
+            projRoot = root;
+        }
+    }
 
     public static Path get(String path) {
         return Paths.get(projRoot, path);

@@ -107,8 +107,8 @@ public final class HPCCode {
 
         new ProjectHarness(project).serialiseCommits(range,
                 new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
-                getPath(System.getProperty("outputPath")),
-                (System.getProperty("offset") == null ? 0 : Integer.parseInt(System.getProperty("offset"))));
+                getPath(System.getProperty("outputFolder")),
+                Integer.parseInt(System.getProperty("offset")));
     }
 
     public static void main(String[] args) throws GitAPIException, IOException {

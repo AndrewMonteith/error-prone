@@ -117,15 +117,15 @@ public final class ProjectHarness {
         serialiseCommits(range, filter, output, 0);
     }
 
-    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output, int offset) throws GitAPIException, IOException {
+    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output, int commitNum) throws GitAPIException, IOException {
         if (!output.toFile().isDirectory()) {
             throw new RuntimeException(output + " is not a directory.");
         }
 
         List<RevCommit> commits = filter.filterCommits(GitUtils.expandCommitRange(project.loadRepo(), range));
 
-        int commitNum = 0;
-        for (RevCommit commit : commits) {
+        for (; commitNum < commits.size(); ++commitNum) {
+            RevCommit commit = commits.get(commitNum);
             System.out.printf("Serialising commit [%d / %d]\n", commitNum+1, commits.size());
             Path diagnosticsOutput = output.resolve(commitNum + " " + commit.getName());
             try {
@@ -137,8 +137,6 @@ public final class ProjectHarness {
                     e2.printStackTrace();
                 }
             }
-
-            ++commitNum;
         }
     }
 }

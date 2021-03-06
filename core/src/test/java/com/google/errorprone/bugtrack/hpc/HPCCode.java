@@ -21,6 +21,7 @@ import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
+import com.google.errorprone.bugtrack.projects.CheckstyleProject;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import com.google.errorprone.bugtrack.projects.MetricsProject;
@@ -42,7 +43,8 @@ import java.util.Map;
 public final class HPCCode {
     private static final Map<String, CorpusProject> projects = ImmutableMap.of(
             "jsoup", new JSoupProject(),
-            "metrics", new MetricsProject()
+            "metrics", new MetricsProject(),
+            "checkstyle", new CheckstyleProject()
     );
 
     @Before
@@ -96,6 +98,17 @@ public final class HPCCode {
         for (int i = 0; i < filteredCommits.size(); ++i) {
             System.out.println(i + " " + filteredCommits.get(i).getName());
         }
+    }
+
+    @Test
+    public void betweenCommits() throws GitAPIException, IOException {
+        CorpusProject project = projects.get(System.getProperty("project"));
+        CommitRange range = new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
+
+        new ProjectHarness(project).serialiseCommits(range,
+                new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
+                getPath("outputPath"));
+
     }
 
     public static void main(String[] args) throws GitAPIException, IOException {

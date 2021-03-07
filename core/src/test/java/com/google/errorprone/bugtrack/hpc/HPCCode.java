@@ -50,6 +50,7 @@ public final class HPCCode {
         projs.put("dubbo", new DubboProject());
         projs.put("guice", new GuiceProject());
         projs.put("mybatis-3", new MyBatis3Project());
+        projs.put("jetty.project", new JettyProject());
 
         projects = ImmutableMap.copyOf(projs);
     }
@@ -112,18 +113,19 @@ public final class HPCCode {
         CorpusProject project = loadProject();
         CommitRange range = new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
 
+        int linesChangedThreshold = System.getProperty("linesChanged") == null ? 50 : Integer.parseInt(System.getProperty("linesChanged"));
+
         new ProjectHarness(project).serialiseCommits(range,
-                new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
+                new LinesChangedCommitFilter(new Git(project.loadRepo()), linesChangedThreshold),
                 getPath(System.getProperty("outputFolder")),
                 Integer.parseInt(System.getProperty("offset")));
     }
 
     public static void main(String[] args) throws GitAPIException, IOException {
-        System.out.println(System.getProperty("foobar"));
-        Repository repo = projects.get("junit4").loadRepo();
-        CommitRange range = new CommitRange("54b7613484be714a769a8d62f1ac507912e61a01", "9ad61c6bf757be8d8968fd5977ab3ae15b0c5aba");
+        Repository repo = projects.get("jetty.project").loadRepo();
+        CommitRange range = new CommitRange("07035b7376c4a64ec8b7509fcce795765cbc9c7b", "217a97b952fe2c7c580880414d78d78455631dc2");
 
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 50)
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 1000)
                 .filterCommits(GitUtils.expandCommitRange(repo, range));
 
         System.out.println("Total commits  " + filteredCommits.size());

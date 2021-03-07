@@ -88,6 +88,7 @@ public final class DiagnosticsCollector {
                     if (scan.files.size() <= 400) {
                         return ImmutableList.of(scan);
                     } else {
+                        System.out.println("Chunked big scan");
                         return DiagnosticsScanUtil.chunkScan(scan, 400);
                     }
                 }).flatMap(Collection::stream)
@@ -95,9 +96,9 @@ public final class DiagnosticsCollector {
 
         return partitionedScans.parallelStream()
                 .map(scan -> {
-                    System.out.println("Scanning some files " + scan.files.size());
+                    System.out.printf("Scanning %s with %d files\n", scan.name, scan.files.size());
                     Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(scan);
-                    System.out.println("Collected " + diagnostics.size());
+                    System.out.printf("%s %d got %d diagnostics\n", scan.name, scan.files.size(), diagnostics.size());
                     return diagnostics;
                 })
                 .flatMap(Collection::stream)

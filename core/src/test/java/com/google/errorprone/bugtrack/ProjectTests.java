@@ -175,6 +175,11 @@ public class ProjectTests {
         assertFindsDiagnostics(new OkHttpProject(),
                 "5d72f8980d841173dd0d52ae0422e8ea04ef1e09");
     }
+    
+    @Test
+    public void canScanCheckstyle() throws IOException {
+        assertFindsDiagnostics(new CheckstyleProject(), "23cf0bed6c36b9f31143e28bca000b290b23c799");
+    }
 
 
     @Test

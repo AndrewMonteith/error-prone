@@ -21,10 +21,7 @@ import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
-import com.google.errorprone.bugtrack.projects.CheckstyleProject;
-import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.projects.JSoupProject;
-import com.google.errorprone.bugtrack.projects.MetricsProject;
+import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -37,15 +34,25 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class HPCCode {
-    private static final Map<String, CorpusProject> projects = ImmutableMap.of(
-            "jsoup", new JSoupProject(),
-            "metrics", new MetricsProject(),
-            "checkstyle", new CheckstyleProject()
-    );
+    private static final Map<String, CorpusProject> projects;
+
+    static {
+        Map<String, CorpusProject> projs = new HashMap<>();
+        projs.put("jsoup", new JSoupProject());
+        projs.put("metrics", new MetricsProject());
+        projs.put("checkstyle", new CheckstyleProject());
+        projs.put("junit4", new JUnitProject());
+        projs.put("dubbo", new DubboProject());
+        projs.put("guice", new GuiceProject());
+        projs.put("mybatis3", new MyBatis3Project());
+
+        projects = ImmutableMap.copyOf(projs);
+    }
 
     @Before
     public void initJGit() {
@@ -113,8 +120,8 @@ public final class HPCCode {
 
     public static void main(String[] args) throws GitAPIException, IOException {
         System.out.println(System.getProperty("foobar"));
-        Repository repo = projects.get("checkstyle").loadRepo();
-        CommitRange range = new CommitRange("ae9edbd4a8645c8cc1a99ad6890dd0006700d1cb", "f1e8346ef9dc13c9d778bb35a8821d43d409d003");
+        Repository repo = projects.get("junit4").loadRepo();
+        CommitRange range = new CommitRange("54b7613484be714a769a8d62f1ac507912e61a01", "9ad61c6bf757be8d8968fd5977ab3ae15b0c5aba");
 
         List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 50)
                 .filterCommits(GitUtils.expandCommitRange(repo, range));

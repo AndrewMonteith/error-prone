@@ -51,6 +51,10 @@ public class DatasetDiagnostic {
         this(fileName, lineNumber, columnNumber, -1, -1, -1, message, null);
     }
 
+    public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long endPos, String message) {
+        this(fileName, lineNumber, columnNumber, startPos, -1, endPos, message);
+    }
+
     public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long pos, long endPos, String message) {
         this(fileName, lineNumber, columnNumber, startPos, pos, endPos, message, null);
     }

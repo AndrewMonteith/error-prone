@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public final class DiagnosticsCollector {
-    private static boolean collectInParallel = true;
+    private static boolean collectInParallel = false;
     public static void setCollectInParallel(boolean collectInParallel) {
         DiagnosticsCollector.collectInParallel = collectInParallel;
     }
@@ -95,9 +95,9 @@ public final class DiagnosticsCollector {
 
         return partitionedScans.parallelStream()
                 .map(scan -> {
-                    System.out.println("Collecting diagnostics for a scan");
+                    System.out.println("Scanning some files " + scan.files.size());
                     Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(scan);
-                    System.out.println("Finished collecting diagnostics");
+                    System.out.println("Collected " + diagnostics.size());
                     return diagnostics;
                 })
                 .flatMap(Collection::stream)

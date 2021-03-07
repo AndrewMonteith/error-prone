@@ -71,19 +71,23 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
     @Override
     public Collection<DiagnosticsScan> next() {
         try {
+            System.out.println("Cleaning project");
             // Clean all stuff from the build cache
             cleanProject();
-            
+
+            System.out.println("forwarding repo");
             // Forward to the next commit
             Repository repo = project.loadRepo();
             new Git(repo).checkout().setAllPaths(true).call();
             new Git(repo).checkout().setName(commits.next().getName()).call();
 
+            System.out.println("running shell cmds");
             // Normalize the whitespace in all files
             ShellUtils.runCommand(project.getRoot(),
                 ProjectFiles.find("error-prone", "shell_cmds.sh").toString());
 
             // Collect the scans
+            System.out.println("scanning");
             return projectScanner.getScans(project);
         } catch (Exception e) {
             e.printStackTrace();

@@ -49,7 +49,7 @@ public final class HPCCode {
         projs.put("junit4", new JUnitProject());
         projs.put("dubbo", new DubboProject());
         projs.put("guice", new GuiceProject());
-        projs.put("mybatis3", new MyBatis3Project());
+        projs.put("mybatis-3", new MyBatis3Project());
 
         projects = ImmutableMap.copyOf(projs);
     }

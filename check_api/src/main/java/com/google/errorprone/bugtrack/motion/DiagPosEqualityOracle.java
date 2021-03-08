@@ -16,9 +16,16 @@
 
 package com.google.errorprone.bugtrack.motion;
 
+import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+
+import java.util.Arrays;
 
 @FunctionalInterface
 public interface DiagPosEqualityOracle {
     boolean hasSamePosition(DatasetDiagnostic diagnostic);
+
+    static DiagPosEqualityOracle any(Iterable<DiagPosEqualityOracle> oracles) {
+        return diagnostic -> Iterables.any(oracles, oracle -> oracle.hasSamePosition(diagnostic));
+    }
 }

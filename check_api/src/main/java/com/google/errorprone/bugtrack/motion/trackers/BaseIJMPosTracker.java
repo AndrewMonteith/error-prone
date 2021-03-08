@@ -28,6 +28,8 @@ import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 import com.sun.tools.javac.tree.JCTree;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class BaseIJMPosTracker {
@@ -70,27 +72,69 @@ public abstract class BaseIJMPosTracker {
         return Optional.empty();
     }
 
-    protected Optional<NodeLocation> findClosestMatchingSrcBuffer(final long pos) {
-        Optional<ITree> closestOldJdtNode = findClosestMatchingJDTNode(pos);
-        if (!closestOldJdtNode.isPresent()) {
-            return Optional.empty();
+    private boolean isTemplatedClassNode(ITree tree) {
+        String className = tree.getLabel();
+        String templatedClassName = className + "<";
+        while (tree != null && tree.getLabel().startsWith(className)) {
+            if (tree.getLabel().startsWith(templatedClassName)) {
+                return true;
+            }
+
+            tree = tree.getParent();
         }
 
-        // Find which JDT that maps to in the new AST
-        ITree newJdtNode = mappings.getDst(closestOldJdtNode.get());
+        return false;
+    }
 
+    private ITree findNodeWithAngleBrackets(ITree tree) {
+        while (tree != null && !tree.getLabel().endsWith(">")) {
+            tree = tree.getParent();
+        }
+
+        if (tree == null) {
+            throw new RuntimeException("class began with < but couldn't find >");
+        }
+
+        return tree;
+    }
+
+    private NodeLocation mapJdtSrcRangeToJCSrcRange(ITree jdtNode) {
         // Find the src buffer range of the closest JC node to matched jdt node's start position
         JCTree.JCCompilationUnit newJCAst = sharedState.loadNewJavacAST(srcFilePair);
-        JDTToJCPosMapper startPosMapper = new JDTToJCPosMapper(newJCAst.endPositions, newJdtNode.getPos());
+        JDTToJCPosMapper startPosMapper = new JDTToJCPosMapper(newJCAst.endPositions, jdtNode.getPos());
         startPosMapper.scan(newJCAst, null);
 
-        JDTToJCPosMapper endPosMapper = new JDTToJCPosMapper(newJCAst.endPositions, newJdtNode.getEndPos());
+        JDTToJCPosMapper endPosMapper = new JDTToJCPosMapper(newJCAst.endPositions, jdtNode.getEndPos());
         endPosMapper.scan(newJCAst, null);
 
-        return Optional.of(new NodeLocation(
+        return new NodeLocation(
                 startPosMapper.getClosestStartPosition(),
                 startPosMapper.getClosestPreferredPosition(),
-                endPosMapper.getClosestEndPosition()));
+                endPosMapper.getClosestEndPosition());
+    }
+
+    protected Optional<NodeLocation> trackPosition(final long startPos) {
+        return findClosestMatchingJDTNode(startPos)
+                .map(closestOldJdtNode -> mapJdtSrcRangeToJCSrcRange(mappings.getDst(closestOldJdtNode)));
+    }
+
+    protected Optional<List<NodeLocation>> trackEndPosition(final long endPos) {
+        // We return a list since we're going to consider multiple cases for a possible end position
+        // If the position refers to a non-generic class (determined syntatically) then we merely return one location
+        // by tracking the token. Else we track both the token and the 'token<...>'
+        return findClosestMatchingJDTNode(endPos)
+                .map(closestOldJdtNode -> {
+                    ITree newJdtNode = mappings.getDst(closestOldJdtNode);
+
+                    List<NodeLocation> locations = new ArrayList<>();
+                    if (isTemplatedClassNode(newJdtNode)) {
+                        locations.add(mapJdtSrcRangeToJCSrcRange(findNodeWithAngleBrackets(newJdtNode)));
+                    }
+
+                    locations.add(mapJdtSrcRangeToJCSrcRange(newJdtNode));
+
+                    return locations;
+                });
     }
 
     private static TreeContext parseFileWithVisitor(SrcFile file, AbstractJdtVisitor visitor) throws IOException {

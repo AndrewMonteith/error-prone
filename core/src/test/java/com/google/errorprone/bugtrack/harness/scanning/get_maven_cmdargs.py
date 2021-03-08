@@ -13,7 +13,7 @@ stdout_file = "stdout_" + str(random.randint(1, 10000))
 # subprocess.PIPE can hang for sufficient large outputs, so we pipe everything into text files
 with open(stdout_file, "w") as f:
     # Parse mvn install for command line options
-    install_proc = subprocess.run(["mvn", "-X", "install", "-Dmaven.javadoc.skip=true", "-DskipTests"],
+    install_proc = subprocess.run(["mvn", "-X", "-e", "install", "-Dmaven.javadoc.skip=true", "-DskipTests"],
                                   stdout=f)
 
 def escape_ansi(line):

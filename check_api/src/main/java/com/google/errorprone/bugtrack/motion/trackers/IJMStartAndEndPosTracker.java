@@ -24,7 +24,9 @@ import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
     public IJMStartAndEndPosTracker(SrcFilePair srcFilePair,
@@ -39,17 +41,21 @@ public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker implements
 
     @Override
     public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-        Optional<NodeLocation> mappedStartPos = findClosestMatchingSrcBuffer(oldDiag.getStartPos());
-        Optional<NodeLocation> mappedEndPos = findClosestMatchingSrcBuffer(oldDiag.getEndPos());
+        Optional<NodeLocation> mappedStartPos = trackPosition(oldDiag.getStartPos());
+        Optional<List<NodeLocation>> mappedEndPoses = trackEndPosition(oldDiag.getEndPos());
 
         if (!mappedStartPos.isPresent()) {
             return Optional.empty();
         }
 
-        if (!mappedEndPos.isPresent()) {
+        if (!mappedEndPoses.isPresent() || mappedEndPoses.get().isEmpty()) {
             return mappedStartPos.map(srcBufRange -> DiagSrcPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
         }
 
-        return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, mappedEndPos.get().end));
+        List<DiagPosEqualityOracle> posOracles = mappedEndPoses.get().stream()
+                .map(endPos -> DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, endPos.end))
+                .collect(Collectors.toList());
+
+        return Optional.of(DiagPosEqualityOracle.any(posOracles));
     }
 }

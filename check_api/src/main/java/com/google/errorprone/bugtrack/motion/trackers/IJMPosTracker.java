@@ -39,7 +39,7 @@ public final class IJMPosTracker extends BaseIJMPosTracker implements Diagnostic
 
     @Override
     public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-        return findClosestMatchingSrcBuffer(oldDiag.getPos())
+        return trackPosition(oldDiag.getPos())
                 .map(srcBufferRange -> DiagSrcPosEqualityOracle.byPosition(srcBufferRange.pos));
     }
 }

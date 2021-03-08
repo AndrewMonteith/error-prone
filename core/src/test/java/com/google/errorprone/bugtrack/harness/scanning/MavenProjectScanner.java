@@ -21,7 +21,6 @@ import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
@@ -30,7 +29,8 @@ import java.util.stream.Collectors;
 public class MavenProjectScanner extends ProjectScanner {
     @Override
     public void cleanProject(Path projectDir) throws IOException, InterruptedException {
-        ShellUtils.runCommand(projectDir, "mvn", "clean");
+//        ShellUtils.runCommand(projectDir, "mvn", "clean");
+        ShellUtils.runCommand(projectDir, "/bin/bash", ProjectFiles.find("error-prone", "clean_proj.sh").toString());
     }
 
     private List<ProjectFile> getFilesFromSourcepaths(CorpusProject project, String sourcepaths, Set<String> scannedSourcepaths) {

@@ -313,19 +313,19 @@ public class ProjectTests {
     @Test
     public void compareTokenizedWithTokenizedAndIJM() throws Exception {
         // GIVEN:
-        CorpusProject project = new GuiceProject();
-        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/guice";
-        IntRanges validSeqFiles = IntRanges.include(0, 158).excludeRange(71, 73);
+        CorpusProject project = new MyBatis3Project();
+        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3";
+        IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127);
 
         BugComparerExperiment.forProject(project)
-                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, IntRanges.specific(0, 11)))
+                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
                 .comparePaths(withGit(project, GitPathComparer::new))
                 .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-                .makeBugComparer1(any(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
-                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMPosTracker()))
+                .makeBugComparer1(any(newTokenizedLineTracker(), newIJMStartPosTracker()))
+                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
                 .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-                .trials(1)
-                .run("/home/monty/IdeaProjects/java-corpus/comparisons/guice");
+                .trials(25)
+                .run("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3");
     }
 
     @Test
@@ -360,7 +360,7 @@ public class ProjectTests {
                         .makeBugComparer1(first(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
                         .makeBugComparer2(first(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
                         .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-                        .trials(100)
+                        .trials(50)
                         .run(comparisonFolders[i]);
             }
 
@@ -370,20 +370,20 @@ public class ProjectTests {
 
     @Test
     public void computeSinglePair() throws IOException, GitAPIException {
-        CorpusProject project = new JSoupProject();
+        CorpusProject project = new GuiceProject();
 
         DiagnosticsFile oldFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/old");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/old");
 
         DiagnosticsFile newFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/new");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/new");
 
 //        System.out.println(new DiagnosticsDistribution(oldFile.diagnostics));
 //        System.out.println(new DiagnosticsDistribution(newFile.diagnostics));
 
         BugComparer bugComparer = new DiagnosticPositionMotionComparer(
                 new GitSrcFilePairLoader(project.loadRepo(), oldFile.commitId, newFile.commitId),
-                newIJMPosTracker());
+                newIJMStartAndEndTracker());
 
         DiagnosticsMatcher matcher = DiagnosticsMatcher.fromFiles(project, oldFile, newFile, bugComparer);
 

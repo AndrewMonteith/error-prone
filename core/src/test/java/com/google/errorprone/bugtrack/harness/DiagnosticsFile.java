@@ -56,6 +56,24 @@ public class DiagnosticsFile {
         return load(Paths.get(file));
     }
 
+    private static DatasetDiagnostic loadDiagnostic(String[] locationDetails, String message) {
+        long line = Long.parseLong(locationDetails[1]);
+        long col = Long.parseLong(locationDetails[2]);
+
+        if (locationDetails.length == 6) { // old version without position
+            return new DatasetDiagnostic(locationDetails[0], line, col,
+                    Long.parseLong(locationDetails[3]),
+                    Long.parseLong(locationDetails[4]),
+                    Long.parseLong(locationDetails[5]),
+                    message);
+        } else { // new version with position
+            return new DatasetDiagnostic(locationDetails[0], line, col,
+                    Long.parseLong(locationDetails[3]),
+                    -1,
+                    Long.parseLong(locationDetails[4]),
+                    message);
+        }
+    }
 
     public static DiagnosticsFile load(Path file, Predicate<DatasetDiagnostic> acceptDiagnostic) throws IOException {
         List<String> lines = Files.readAllLines(file);
@@ -81,16 +99,7 @@ public class DiagnosticsFile {
                 message = Joiner.on('\n').join(lines.subList(startPos + 1, i));
             }
 
-            // TODO: Add signature to DatasetDiagnostic
-            DatasetDiagnostic diagnostic = new DatasetDiagnostic(
-                    locationDetails[0],
-                    Long.parseLong(locationDetails[1]),
-                    Long.parseLong(locationDetails[2]),
-                    Long.parseLong(locationDetails[3]),
-                    Long.parseLong(locationDetails[4]),
-                    Long.parseLong(locationDetails[5]),
-                    message);
-
+            DatasetDiagnostic diagnostic = loadDiagnostic(locationDetails, message);
             if (!acceptDiagnostic.test(diagnostic) || diagnostics.contains(diagnostic)) {
                 continue;
             }

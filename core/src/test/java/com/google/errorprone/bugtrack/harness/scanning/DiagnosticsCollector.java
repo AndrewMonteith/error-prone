@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public final class DiagnosticsCollector {
-    private static boolean collectInParallel = false;
+    private static boolean collectInParallel = true;
     public static void setCollectInParallel(boolean collectInParallel) {
         DiagnosticsCollector.collectInParallel = collectInParallel;
     }

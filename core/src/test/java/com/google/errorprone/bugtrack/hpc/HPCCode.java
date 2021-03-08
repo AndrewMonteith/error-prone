@@ -51,6 +51,7 @@ public final class HPCCode {
         projs.put("guice", new GuiceProject());
         projs.put("mybatis-3", new MyBatis3Project());
         projs.put("jetty.project", new JettyProject());
+        projs.put("hazelcast", new HazelcastProject());
 
         projects = ImmutableMap.copyOf(projs);
     }

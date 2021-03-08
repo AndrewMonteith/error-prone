@@ -28,6 +28,7 @@ import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.scanner.BuiltInCheckerSuppliers;
 import com.google.errorprone.scanner.ScannerSupplier;
+import jdk.internal.org.jline.utils.ShutdownHooks;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import javax.tools.Diagnostic;
@@ -37,8 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -96,35 +96,32 @@ public final class DiagnosticsCollector {
                 }).flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        // ugly code but copied and pasted from
-        // https://stackoverflow.com/questions/21163108/custom-thread-pool-in-java-8-parallel-stream
-        final int parallelism = 8;
-        ForkJoinPool forkJoinPool = null;
-        try {
-            forkJoinPool = new ForkJoinPool(parallelism);
+        // so using parallel streams doesn't work since it's about data parallelism so since scans doesn't have alot
+        // of items in they're not chunked at all. This code is not idiomatic but hopefully works.
+        ExecutorService executor = Executors.newFixedThreadPool(32); // HPC cell has 32 cores
 
-            return forkJoinPool.submit(() ->
-                // Parallel task here, for example
-                partitionedScans.parallelStream()
-                        .map(scan -> {
-                            System.out.printf("Scanning %s with %d files\n", scan.name, scan.files.size());
-                            Collection<Diagnostic<? extends JavaFileObject>> diagnostics1 = collectDiagnostics(scan);
-                            System.out.printf("%s %d got %d diagnostics\n", scan.name, scan.files.size(), diagnostics1.size());
-                            return diagnostics1;
-                        })
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toList())
-            ).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (forkJoinPool != null) {
-                forkJoinPool.shutdown();
+        List<Callable<Collection<Diagnostic<? extends JavaFileObject>>>> scanTasks = new ArrayList<>();
+        partitionedScans.forEach(scan -> scanTasks.add(() -> {
+            System.out.printf("Scanning %s with %d files\n", scan.name, scan.files.size());
+            Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(scan);
+            System.out.printf("Finished scanning %s with %d files and got %d diagnostics\n", scan.name, scan.files.size(), diagnostics.size());
+            return diagnostics;
+        }));
+
+        try {
+            Collection<Diagnostic<? extends JavaFileObject>> result = new ArrayList<>();
+
+            List<Future<Collection<Diagnostic<? extends JavaFileObject>>>> results = executor.invokeAll(scanTasks);
+            for (Future<Collection<Diagnostic<? extends JavaFileObject>>> future : results) {
+                future.wait();
+                result.addAll(future.get());
             }
+
+            return result;
+        } catch(InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
-
-
 
     private static Collection<Diagnostic<? extends JavaFileObject>> scanInSerial(Iterable<DiagnosticsScan> scans, Verbosity verbose) {
         List<Diagnostic<? extends JavaFileObject>> diagnostics = new ArrayList<>();

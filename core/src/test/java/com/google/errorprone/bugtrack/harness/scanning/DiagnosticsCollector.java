@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -83,7 +85,7 @@ public final class DiagnosticsCollector {
     private static Collection<Diagnostic<? extends JavaFileObject>> scanInParallel(Iterable<DiagnosticsScan> scans,
                                                                                    Verbosity verbose) {
         // Split scans apart to ensure each one has at most files
-        Collection<DiagnosticsScan> partitionedScans = StreamSupport.stream(scans.spliterator(), false)
+        final Collection<DiagnosticsScan> partitionedScans = StreamSupport.stream(scans.spliterator(), false)
                 .map(scan -> {
                     if (scan.files.size() <= 400) {
                         return ImmutableList.of(scan);
@@ -94,15 +96,32 @@ public final class DiagnosticsCollector {
                 }).flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        return partitionedScans.parallelStream()
-                .map(scan -> {
-                    System.out.printf("Scanning %s with %d files\n", scan.name, scan.files.size());
-                    Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(scan);
-                    System.out.printf("%s %d got %d diagnostics\n", scan.name, scan.files.size(), diagnostics.size());
-                    return diagnostics;
-                })
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+        // ugly code but copied and pasted from
+        // https://stackoverflow.com/questions/21163108/custom-thread-pool-in-java-8-parallel-stream
+        final int parallelism = 8;
+        ForkJoinPool forkJoinPool = null;
+        try {
+            forkJoinPool = new ForkJoinPool(parallelism);
+
+            return forkJoinPool.submit(() ->
+                // Parallel task here, for example
+                partitionedScans.parallelStream()
+                        .map(scan -> {
+                            System.out.printf("Scanning %s with %d files\n", scan.name, scan.files.size());
+                            Collection<Diagnostic<? extends JavaFileObject>> diagnostics1 = collectDiagnostics(scan);
+                            System.out.printf("%s %d got %d diagnostics\n", scan.name, scan.files.size(), diagnostics1.size());
+                            return diagnostics1;
+                        })
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList())
+            ).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (forkJoinPool != null) {
+                forkJoinPool.shutdown();
+            }
+        }
     }
 
 

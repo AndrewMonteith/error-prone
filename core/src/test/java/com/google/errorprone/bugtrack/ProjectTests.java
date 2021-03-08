@@ -21,10 +21,13 @@ import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
-import com.google.errorprone.bugtrack.harness.evaluating.*;
+import com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment;
+import com.google.errorprone.bugtrack.harness.evaluating.IntRanges;
+import com.google.errorprone.bugtrack.harness.evaluating.LiveDatasetFilePairLoader;
+import com.google.errorprone.bugtrack.harness.evaluating.MissedLikelihoodCalculatorFactory;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
-import com.google.errorprone.bugtrack.harness.scanning.*;
+import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
@@ -32,7 +35,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -391,20 +393,4 @@ public class ProjectTests {
 
         System.out.println(results);
     }
-
-    @Test
-    public void serialiseDiagnosticsScans() throws IOException, InterruptedException, GitAPIException {
-        DiagnosticsFile.load("/home/monty/IdeaProjects/java-corpus/diagnostics/dubbo/35 21e0227a44f7bb97c15d70d9da540a9953ee05b2");
-//        String commit = "79496d8d047f2d0774e0ad9d8169a021cb828fab";
-//
-//        ProjectScanner walker = new MavenProjectScanner();
-//        walker.cleanProject(project.getRoot().toFile());
-//
-//        new Git(project.loadRepo()).checkout().setName(commit).call();
-//
-//        Collection<DiagnosticsScan> scan = walker.getScans(project);
-//
-//        DiagnosticsScanUtil.save(scan, "/home/monty/IdeaProjects/java-corpus/scan");
-    }
-
 }

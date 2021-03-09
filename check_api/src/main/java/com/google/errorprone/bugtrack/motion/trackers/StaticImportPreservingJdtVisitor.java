@@ -17,11 +17,12 @@
 package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.gumtreediff.gen.jdt.JdtVisitor;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
-import org.eclipse.jdt.core.dom.TryStatement;
+import org.eclipse.jdt.core.dom.*;
+
+import java.util.regex.Pattern;
 
 public class StaticImportPreservingJdtVisitor extends JdtVisitor {
+    private static final Pattern X_DOT_Y = Pattern.compile("^[a-zA-Z_]\\w*\\.[a-zA-Z_]\\w*$");
 
     @Override
     protected String getLabel(ASTNode node) {
@@ -32,6 +33,18 @@ public class StaticImportPreservingJdtVisitor extends JdtVisitor {
         } else {
             return super.getLabel(node);
         }
+    }
+
+    @Override
+    public boolean visit(QualifiedName qualName) {
+        if (X_DOT_Y.matcher(qualName.getFullyQualifiedName()).matches()) {
+            pushNode(qualName.getQualifier(), qualName.getQualifier().toString());
+            popNode();
+            pushNode(qualName.getName(), qualName.getName().toString());
+            popNode();
+        }
+
+        return false;
     }
 
 }

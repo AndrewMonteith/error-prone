@@ -21,14 +21,13 @@ import com.google.common.collect.Iterables;
 import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.harness.utils.ListUtils;
-import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.harness.Verbosity;
+import com.google.errorprone.bugtrack.harness.utils.ListUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.scanner.BuiltInCheckerSuppliers;
 import com.google.errorprone.scanner.ScannerSupplier;
-import jdk.internal.org.jline.utils.ShutdownHooks;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import javax.tools.Diagnostic;
@@ -44,6 +43,7 @@ import java.util.stream.StreamSupport;
 
 public final class DiagnosticsCollector {
     private static boolean collectInParallel = true;
+
     public static void setCollectInParallel(boolean collectInParallel) {
         DiagnosticsCollector.collectInParallel = collectInParallel;
     }
@@ -57,7 +57,7 @@ public final class DiagnosticsCollector {
                 BuiltInCheckerSuppliers.ENABLED_ERRORS,
                 BuiltInCheckerSuppliers.ENABLED_WARNINGS,
                 BuiltInCheckerSuppliers.DISABLED_CHECKS),
-            check -> !check.canonicalName().equals("Var"));
+                check -> !check.canonicalName().equals("Var"));
 
         CompilationTestHelper helper = CompilationTestHelper.newInstance(ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker), DiagnosticsCollector.class);
 //        CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
@@ -113,13 +113,14 @@ public final class DiagnosticsCollector {
 
             List<Future<Collection<Diagnostic<? extends JavaFileObject>>>> results = executor.invokeAll(scanTasks);
             for (Future<Collection<Diagnostic<? extends JavaFileObject>>> future : results) {
-                future.wait();
                 result.addAll(future.get());
             }
 
             return result;
-        } catch(InterruptedException | ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
+        } finally {
+            executor.shutdown();
         }
     }
 
@@ -140,12 +141,12 @@ public final class DiagnosticsCollector {
 
             try {
                 Collection<Diagnostic<? extends JavaFileObject>> scanDiagnostics = collectDiagnostics(scan);
-                if (printProgress){
+                if (printProgress) {
                     System.out.printf("%s had %d files and generated %d alerts\n", scan.name, scan.files.size(), scanDiagnostics.size());
                 }
 
                 diagnostics.addAll(scanDiagnostics);
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 System.out.println("Failed to scan a target");
                 e.printStackTrace();
                 System.out.println(scan);

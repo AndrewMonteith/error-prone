@@ -172,6 +172,50 @@ Case 11. IJM cannot track it
             This one seems to be in particular a series of refactorings, where most likely it's the same diagnostic
               just AST differencing has very little chance here. Perhaps refactoring inference might?
 
+    mybatis3 640af60c22010fd56dee7db0ad8cdd420fb19f6a..45a1fcbfa2cef5c9b3bf1fe808498a69467df07a
+    ----DIAGNOSTIC
+     /home/monty/IdeaProjects/java-corpus/mybatis-3/src/main/java/org/apache/ibatis/binding/MapperProxy.java 61 23 2148 -1 2175
+     [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
+        60. private MapperMethod cachedMapperMethod(Method method) {
+        61.    return methodCache.computeIfAbsent(method, k -> new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
+        62. }
+
+     /home/monty/IdeaProjects/java-corpus/mybatis-3/src/main/java/org/apache/ibatis/binding/MapperProxy.java 94 25 3391 -1 3418
+     [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
+        92. private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
+        93.     try {
+        94.         return methodCache.computeIfAbsent(method, m -> {
+        95.             if (m.isDefault()) {
+        96.                 try {
+        97.                     if (privateLookupInMethod == null) {
+        98.                         return new DefaultMethodInvoker(getMethodHandleJava8(method));
+        99.                     } else {
+        100.                        return new DefaultMethodInvoker(getMethodHandleJava9(method));
+        101.                    }
+        102.                } catch (IllegalAccessException | InstantiationException | InvocationTargetException
+        103.                            | NoSuchMethodException e) {
+        104.                    throw new RuntimeException(e);
+        105.                }
+        106.            } else {
+        107.                return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
+        108.            }
+        109.        });
+        110.    } catch (RuntimeException re) {
+        111.        Throwable cause = re.getCause();
+        112.        throw cause == null ? re : cause;
+        113.    }
+        114.}
+
+        ----DIAGNOSTIC
+        /home/monty/IdeaProjects/java-corpus/mybatis-3/src/main/java/org/apache/ibatis/binding/MapperProxy.java 50 24 1789 -1 1805
+        [AndroidJdkLibsChecker] java.lang.reflect.Method#isDefault() is not available in java.lang.reflect.Method
+        ----DIAGNOSTIC
+        /home/monty/IdeaProjects/java-corpus/mybatis-3/src/main/java/org/apache/ibatis/binding/MapperProxy.java 95 14 3446 -1 3457
+        [AndroidJdkLibsChecker] java.lang.reflect.Method#isDefault() is not available in java.lang.reflect.Method
+
+
+
+
 
 Case 12. IJM improperly tracks it
     dubbo/7 427e2d237aca9cb0fca83b3e17c6bdb1bc2abf86..123 6a7028446bcd76ec75c742ab283c7dc5675144e7
@@ -207,3 +251,9 @@ Case 13. Diagnostics are collected together into 'one diagnostic'
     [ProtectedMembersInFinalClass] Make members of final classes package-private: REQUEST_WITH_WARNING_KEY, requestWithWarning
     (see https://errorprone.info/bugpattern/ProtectedMembersInFinalClass)
     Did you mean 'static final String REQUEST_WITH_WARNING_KEY = "lazyclient_request_with_warning";'?
+
+
+Cases where I needed to improve the shape of the tree as to get better granularity
+    Qualified names of the form 'X.Y' are now a root nodes with to children for X and Y respectively.
+       mybatis3 28..57 /MonthTypeHandlerTest.java AndroidJdkLibsChecker were getting confused
+    Labels on static import's

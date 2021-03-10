@@ -24,7 +24,7 @@ build_output = [escape_ansi(line)
                 for line in open(stdout_file, "r").readlines()]
 
 proj_re = re.compile(r"^.*\[.*INFO.*\].* @ .*")
-proj_name_re = re.compile(r"^\[INFO\] --- .* \((.*)\) @ (.*) .*")
+proj_name_re = re.compile(r"^\[INFO\] (?:\-\-\-|\>\>\>) .* \((.*)\).*@.*(.*) .*")
 
 cmdline_options = [i for (i, line) in enumerate(build_output)
                      if "Command line options:" in line]

@@ -250,7 +250,7 @@ public class ProjectTests {
 
         // THEN:
         Assert.assertEquals(6, results.getUnmatchedOldDiagnostics().size());
-        Assert.assertEquals(63, results.getUnmatchedNewDiagnostics().size());
+        Assert.assertEquals(68, results.getUnmatchedNewDiagnostics().size());
     }
 
     @Test
@@ -385,7 +385,7 @@ public class ProjectTests {
 
         BugComparer bugComparer = new DiagnosticPositionMotionComparer(
                 new GitSrcFilePairLoader(project.loadRepo(), oldFile.commitId, newFile.commitId),
-                newIJMStartAndEndTracker());
+                any(newTokenizedLineTracker(), newIJMStartAndEndTracker()));
 
         DiagnosticsMatcher matcher = DiagnosticsMatcher.fromFiles(project, oldFile, newFile, bugComparer);
 

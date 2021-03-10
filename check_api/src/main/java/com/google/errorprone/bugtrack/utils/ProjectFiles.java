@@ -36,6 +36,8 @@ public class ProjectFiles {
         } else {
             projRoot = root;
         }
+
+        System.out.println("Initialised project root to " + projRoot);
     }
 
     public static Path get(String path) {

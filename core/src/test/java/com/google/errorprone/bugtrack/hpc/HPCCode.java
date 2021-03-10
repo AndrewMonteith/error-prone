@@ -99,7 +99,7 @@ public final class HPCCode {
         Repository repo = projects.get(System.getProperty("project")).loadRepo();
         CommitRange range = new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
 
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 50)
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), Integer.valueOf(System.getProperty("linesChanged")))
                 .filterCommits(GitUtils.expandCommitRange(repo, range));
 
         System.out.println("Total commits  " + filteredCommits.size());
@@ -116,6 +116,9 @@ public final class HPCCode {
 
         int linesChangedThreshold = System.getProperty("linesChanged") == null ? 50 : Integer.parseInt(System.getProperty("linesChanged"));
 
+        System.out.println("Lines changed threshold "+ linesChangedThreshold);
+        System.out.println("Number of cores " + Runtime.getRuntime().availableProcessors());
+
         new ProjectHarness(project).serialiseCommits(range,
                 new LinesChangedCommitFilter(new Git(project.loadRepo()), linesChangedThreshold),
                 getPath(System.getProperty("outputFolder")),
@@ -131,8 +134,8 @@ public final class HPCCode {
 
         System.out.println("Total commits  " + filteredCommits.size());
 
-        for (int i = 0; i < filteredCommits.size(); ++i) {
-            System.out.println(i + " " + filteredCommits.get(i).getName());
-        }
+//        for (int i = 0; i < filteredCommits.size(); ++i) {
+//            System.out.println(i + " " + filteredCommits.get(i).getName());
+//        }
     }
 }

@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.gumtreediff.gen.jdt.JdtVisitor;
+import com.github.gumtreediff.gen.jdt.cd.EntityType;
 import org.eclipse.jdt.core.dom.*;
 
 import java.util.regex.Pattern;
@@ -45,6 +46,24 @@ public class StaticImportPreservingJdtVisitor extends JdtVisitor {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean visit(TryStatement tryStatement) {
+        pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 3);
+        getCurrentParent().setLabel("try-sig");
+
+        pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 3);
+        getCurrentParent().setLabel("try-sig");
+        popNode();
+
+        pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 4);
+        getCurrentParent().setLabel("try-sig");
+        popNode();
+
+        popNode();
+
+        return super.visit(tryStatement);
     }
 
 }

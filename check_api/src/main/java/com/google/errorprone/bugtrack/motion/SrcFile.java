@@ -20,6 +20,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.utils.JExpand;
 import com.sun.tools.javac.util.Position;
 
 import java.util.Arrays;
@@ -53,7 +54,7 @@ public class SrcFile {
 
     public SrcFile(String fileName, List<String> src) {
         this.name = fileName;
-        this.src = ImmutableList.copyOf(Iterables.transform(src, SrcFile::expandTabs));
+        this.src = ImmutableList.copyOf(JExpand.expand(src));
         this.charBuf = Joiner.on('\n').join(this.src).toCharArray();
         this.lineMap = Position.makeLineMap(charBuf, charBuf.length, true);
     }

@@ -98,7 +98,7 @@ public final class DiagnosticsCollector {
 
         // so using parallel streams doesn't work since it's about data parallelism so since scans doesn't have alot
         // of items in they're not chunked at all. This code is not idiomatic but hopefully works.
-        ExecutorService executor = Executors.newFixedThreadPool(32); // HPC cell has 32 cores
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
         List<Callable<Collection<Diagnostic<? extends JavaFileObject>>>> scanTasks = new ArrayList<>();
         partitionedScans.forEach(scan -> scanTasks.add(() -> {

@@ -160,12 +160,6 @@ Case 11. IJM cannot track it
         Did you mean 'CreationException expected = assertThrows(CreationException.class, () -> Guice.createInjector(module));'?
     Possible intuition: Diagnostics which encompass large trees are more likely to have subtrees changed so harder to track through AST diff'ing
 
-    jsoup 27 2da07a110b04c7d181c04c0fbcfb141035255374..83 77fcaf4dcdc8fd185e2f5d8eb6aa9c425a38bc9b
-        ElementsTest.java UnncessaryParenthesis L:953 -> L:1064
-            assertFalse(e0.hashCode() == (e2.hashCode())); -> assertNotEquals(e0.hashCode(), (e2.hashCode()));
-        ElementsTest.java UnncessaryParenthesis L:954 -> L:1065
-            <similar to above>
-
     dubbo 70 d75ce73e94bf85acfbc284e9139d9f64c8cf99c6..94 dcee618463696494e1748b40e8d58e6e1f5ed19d
         HeaderExchangeClient.java BooleanParameter L:65 -> L:48
             https://github.com/apache/dubbo/compare/d75ce73e94bf85acfbc284e9139d9f64c8cf99c6..dcee618463696494e1748b40e8d58e6e1f5ed19d#diff-456035e093c8422b12ad6f7df3b92675f843e19d2537421ddd92b79f1fd61650L65
@@ -252,8 +246,24 @@ Case 13. Diagnostics are collected together into 'one diagnostic'
     (see https://errorprone.info/bugpattern/ProtectedMembersInFinalClass)
     Did you mean 'static final String REQUEST_WITH_WARNING_KEY = "lazyclient_request_with_warning";'?
 
+    RemoveUnusedImports generates one per import block and not one per import
+    jsoup 63 f4338e20a5e439632e3d2fc8fa3a330ade6d02ad..91 50576455fd4f244375d05b029c25b3b17edfbb74
+    [RemovedUnusedImports] UrlConnectTest.java 4 1 -> UrlConnectTest.java 6 1
 
-Cases where I needed to improve the shape of the tree as to get better granularity
+
+
+Perhaps useful things to write about or reference in report:
     Qualified names of the form 'X.Y' are now a root nodes with to children for X and Y respectively.
        mybatis3 28..57 /MonthTypeHandlerTest.java AndroidJdkLibsChecker were getting confused
     Labels on static import's
+
+    Nice example of fine grained tracking:
+    jsoup 27 2da07a110b04c7d181c04c0fbcfb141035255374..83 77fcaf4dcdc8fd185e2f5d8eb6aa9c425a38bc9b
+        ElementsTest.java UnncessaryParenthesis L:953 -> L:1064
+            assertFalse(e0.hashCode() == (e2.hashCode())); -> assertNotEquals(e0.hashCode(), (e2.hashCode()));
+        ElementsTest.java UnncessaryParenthesis L:954 -> L:1065
+            <similar to above>
+
+
+Possible questions to ask:
+    Is there a relationship between the size of source code described by a diagnostic and how easily it's tracked

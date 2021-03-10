@@ -52,13 +52,14 @@ public final class HPCCode {
         projs.put("mybatis-3", new MyBatis3Project());
         projs.put("jetty.project", new JettyProject());
         projs.put("hazelcast", new HazelcastProject());
+        projs.put("zxing", new ZXingProject());
 
         projects = ImmutableMap.copyOf(projs);
     }
 
     @Before
     public void initJGit() {
-        FS.DETECTED.setGitSystemConfig(Paths.get("/home/am2857/git/etc/gitconfig").toFile());
+        FS.DETECTED.setGitSystemConfig(Paths.get("/rds/user/am2857/hpc-work/java-corpus/git/etc/gitconfig").toFile());
     }
 
     private Path getPath(String path1, String... paths) {
@@ -126,10 +127,10 @@ public final class HPCCode {
     }
 
     public static void main(String[] args) throws GitAPIException, IOException {
-        Repository repo = projects.get("jetty.project").loadRepo();
-        CommitRange range = new CommitRange("07035b7376c4a64ec8b7509fcce795765cbc9c7b", "217a97b952fe2c7c580880414d78d78455631dc2");
+        Repository repo = projects.get("zxing").loadRepo();
+        CommitRange range = new CommitRange("379e18daf44c5cb9d3a5387a35a997fa1f08b6ab", "44267115986e7fdcb2a9629fd7986f65ab9a2670");
 
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 1000)
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 1)
                 .filterCommits(GitUtils.expandCommitRange(repo, range));
 
         System.out.println("Total commits  " + filteredCommits.size());

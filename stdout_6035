@@ -1,0 +1,212 @@
+[1mApache Maven 3.6.3[m
+Maven home: /usr/share/maven
+Java version: 11.0.10, vendor: Ubuntu, runtime: /usr/lib/jvm/java-11-openjdk-amd64
+Default locale: en_GB, platform encoding: UTF-8
+OS name: "linux", version: "5.8.0-44-generic", arch: "amd64", family: "unix"
+[[1;36mDEBUG[m] Created new class realm maven.api
+[[1;36mDEBUG[m] Importing foreign packages into class realm maven.api
+[[1;36mDEBUG[m]   Imported: javax.annotation.* < plexus.core
+[[1;36mDEBUG[m]   Imported: javax.annotation.security.* < plexus.core
+[[1;36mDEBUG[m]   Imported: javax.enterprise.inject.* < plexus.core
+[[1;36mDEBUG[m]   Imported: javax.enterprise.util.* < plexus.core
+[[1;36mDEBUG[m]   Imported: javax.inject.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.artifact < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.classrealm < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.cli < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.configuration < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.exception < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.execution < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.execution.scope < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.lifecycle < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.model < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.monitor < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.plugin < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.profiles < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.project < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.reporting < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.repository < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.rtinfo < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.settings < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.toolchain < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.usability < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.authentication < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.authorization < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.events < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.observers < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.proxy < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.repository < plexus.core
+[[1;36mDEBUG[m]   Imported: org.apache.maven.wagon.resource < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.classworlds < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.classworlds < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.component < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.configuration < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.container < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.context < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.lifecycle < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.logging < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.personality < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.util.xml.Xpp3Dom < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.util.xml.pull.XmlPullParser < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.util.xml.pull.XmlPullParserException < plexus.core
+[[1;36mDEBUG[m]   Imported: org.codehaus.plexus.util.xml.pull.XmlSerializer < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.artifact < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.collection < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.deployment < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.graph < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.impl < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.installation < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.internal.impl < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.metadata < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.repository < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.resolution < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.spi < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.transfer < plexus.core
+[[1;36mDEBUG[m]   Imported: org.eclipse.aether.version < plexus.core
+[[1;36mDEBUG[m]   Imported: org.fusesource.jansi.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.slf4j.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.slf4j.event.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.slf4j.helpers.* < plexus.core
+[[1;36mDEBUG[m]   Imported: org.slf4j.spi.* < plexus.core
+[[1;36mDEBUG[m] Populating class realm maven.api
+[[1;34mINFO[m] Error stacktraces are turned on.
+[[1;36mDEBUG[m] Message scheme: color
+[[1;36mDEBUG[m] Message styles: [1;36mdebug[m [1;34minfo[m [1;33mwarning[m [1;31merror[m [1;32msuccess[m [1;31mfailure[m [1mstrong[m [32mmojo[m [36mproject[m
+[[1;36mDEBUG[m] Reading global settings from /usr/share/maven/conf/settings.xml
+[[1;36mDEBUG[m] Reading user settings from /home/monty/.m2/settings.xml
+[[1;36mDEBUG[m] Reading global toolchains from /usr/share/maven/conf/toolchains.xml
+[[1;36mDEBUG[m] Reading user toolchains from /home/monty/.m2/toolchains.xml
+[[1;36mDEBUG[m] Using local repository at /home/monty/.m2/repository
+[[1;36mDEBUG[m] Using manager EnhancedLocalRepositoryManager with priority 10.0 for /home/monty/.m2/repository
+[[1;34mINFO[m] Scanning for projects...
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_parent:pom:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging pom from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project org.sonatype.oss:oss-parent:pom:7: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging pom from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_check_api:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_test_helpers:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Dependency collection stats: {ConflictMarker.analyzeTime=697541, ConflictMarker.markTime=131823, ConflictMarker.nodeCount=20, ConflictIdSorter.graphTime=398298, ConflictIdSorter.topsortTime=443072, ConflictIdSorter.conflictIdCount=16, ConflictIdSorter.conflictIdCycleCount=0, ConflictResolver.totalTime=3268493, ConflictResolver.conflictItemCount=20, DefaultDependencyCollector.collectTime=140753902, DefaultDependencyCollector.transformTime=7322337}
+[[1;36mDEBUG[m] kr.motd.maven:os-maven-plugin:jar:1.4.0.Final
+[[1;36mDEBUG[m]    org.apache.maven:maven-plugin-api:jar:3.2.1:compile
+[[1;36mDEBUG[m]       org.apache.maven:maven-model:jar:3.2.1:compile
+[[1;36mDEBUG[m]       org.apache.maven:maven-artifact:jar:3.2.1:compile
+[[1;36mDEBUG[m]       org.eclipse.sisu:org.eclipse.sisu.plexus:jar:0.0.0.M5:compile
+[[1;36mDEBUG[m]          javax.enterprise:cdi-api:jar:1.0:compile
+[[1;36mDEBUG[m]             javax.annotation:jsr250-api:jar:1.0:compile
+[[1;36mDEBUG[m]             javax.inject:javax.inject:jar:1:compile
+[[1;36mDEBUG[m]          com.google.guava:guava:jar:10.0.1:compile
+[[1;36mDEBUG[m]             com.google.code.findbugs:jsr305:jar:1.3.9:compile
+[[1;36mDEBUG[m]          org.sonatype.sisu:sisu-guice:jar:no_aop:3.1.0:compile
+[[1;36mDEBUG[m]             aopalliance:aopalliance:jar:1.0:compile
+[[1;36mDEBUG[m]          org.eclipse.sisu:org.eclipse.sisu.inject:jar:0.0.0.M5:compile
+[[1;36mDEBUG[m]          org.codehaus.plexus:plexus-component-annotations:jar:1.5.5:compile
+[[1;36mDEBUG[m]          org.codehaus.plexus:plexus-classworlds:jar:2.4:compile
+[[1;36mDEBUG[m]    org.codehaus.plexus:plexus-utils:jar:3.0.17:compile
+[[1;36mDEBUG[m] Created new class realm extension>kr.motd.maven:os-maven-plugin:1.4.0.Final
+[[1;36mDEBUG[m] Importing foreign packages into class realm extension>kr.motd.maven:os-maven-plugin:1.4.0.Final
+[[1;36mDEBUG[m]   Imported:  < maven.api
+[[1;36mDEBUG[m] Populating class realm extension>kr.motd.maven:os-maven-plugin:1.4.0.Final
+[[1;36mDEBUG[m]   Included: kr.motd.maven:os-maven-plugin:jar:1.4.0.Final
+[[1;36mDEBUG[m]   Included: javax.enterprise:cdi-api:jar:1.0
+[[1;36mDEBUG[m]   Included: com.google.guava:guava:jar:10.0.1
+[[1;36mDEBUG[m]   Included: com.google.code.findbugs:jsr305:jar:1.3.9
+[[1;36mDEBUG[m]   Included: org.sonatype.sisu:sisu-guice:jar:no_aop:3.1.0
+[[1;36mDEBUG[m]   Included: aopalliance:aopalliance:jar:1.0
+[[1;36mDEBUG[m]   Included: org.eclipse.sisu:org.eclipse.sisu.inject:jar:0.0.0.M5
+[[1;36mDEBUG[m]   Included: org.codehaus.plexus:plexus-component-annotations:jar:1.5.5
+[[1;36mDEBUG[m]   Included: org.codehaus.plexus:plexus-utils:jar:3.0.17
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_core:jar:2.4.1-SNAPSHOT: [ClassRealm[extension>kr.motd.maven:os-maven-plugin:1.4.0.Final, parent: jdk.internal.loader.ClassLoaders$AppClassLoader@55054057]]
+[[1;36mDEBUG[m] Created new class realm project>com.google.errorprone:error_prone_core:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Populating class realm project>com.google.errorprone:error_prone_core:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[project>com.google.errorprone:error_prone_core:2.4.1-SNAPSHOT, parent: ClassRealm[maven.api, parent: null]]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_annotation:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_annotations:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_type_annotations:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_docgen:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_docgen_processor:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;36mDEBUG[m] Extension realms for project com.google.errorprone:error_prone_refaster:jar:2.4.1-SNAPSHOT: (none)
+[[1;36mDEBUG[m] Looking up lifecycle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[[1;34mINFO[m] ------------------------------------------------------------------------
+[[1;34mINFO[m] Detecting the operating system and CPU architecture
+[[1;34mINFO[m] ------------------------------------------------------------------------
+[[1;34mINFO[m] os.detected.name: linux
+[[1;34mINFO[m] os.detected.arch: x86_64
+[[1;34mINFO[m] os.detected.release: ubuntu
+[[1;34mINFO[m] os.detected.release.version: 20.04
+[[1;34mINFO[m] os.detected.release.like.ubuntu: true
+[[1;34mINFO[m] os.detected.release.like.debian: true
+[[1;34mINFO[m] os.detected.classifier: linux-x86_64
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] [1mReactor Build Order:[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] Error Prone parent POM                                             [pom]
+[[1;34mINFO[m] @BugPattern annotation                                             [jar]
+[[1;34mINFO[m] error-prone annotations                                            [jar]
+[[1;34mINFO[m] error-prone check api                                              [jar]
+[[1;34mINFO[m] error-prone test helpers                                           [jar]
+[[1;34mINFO[m] error-prone type annotations                                       [jar]
+[[1;34mINFO[m] error-prone library                                                [jar]
+[[1;34mINFO[m] JSR-269 annotation processor for @BugPattern annotation            [jar]
+[[1;34mINFO[m] Documentation tool for generating Error Prone bugpattern documentation [jar]
+[[1;34mINFO[m] Refaster rule compiler                                             [jar]
+[[1;36mDEBUG[m] === REACTOR BUILD PLAN ================================================
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_parent:pom:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_annotation:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_annotations:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_check_api:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_test_helpers:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_type_annotations:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_core:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_docgen_processor:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_docgen:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] -----------------------------------------------------------------------
+[[1;36mDEBUG[m] Project: com.google.errorprone:error_prone_refaster:jar:2.4.1-SNAPSHOT
+[[1;36mDEBUG[m] Tasks:   [install]
+[[1;36mDEBUG[m] Style:   Regular
+[[1;36mDEBUG[m] =======================================================================
+[[1;34mINFO[m] 
+[[1;34mINFO[m] Using the MultiThreadedBuilder implementation with a thread count of 4
+[[1;36mDEBUG[m] Scheduling: MavenProject: com.google.errorprone:error_prone_parent:2.4.1-SNAPSHOT @ /home/monty/IdeaProjects/error-prone/pom.xml
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--------------< [0;36mcom.google.errorprone:error_prone_parent[0;1m >--------------[m
+[[1;34mINFO[m] [1mBuilding Error Prone parent POM 2.4.1-SNAPSHOT                    [1/10][m
+[[1;34mINFO[m] [1m--------------------------------[ pom ]---------------------------------[m
+[[1;36mDEBUG[m] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[[1;36mDEBUG[m] Lifecycle clean -> [pre-clean, clean, post-clean]
+[[1;36mDEBUG[m] Lifecycle site -> [pre-site, site, post-site, site-deploy]

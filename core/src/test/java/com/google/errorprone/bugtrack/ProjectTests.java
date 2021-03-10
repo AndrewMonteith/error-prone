@@ -256,13 +256,13 @@ public class ProjectTests {
     @Test
     public void foo() throws IOException {
         // GIVEN:
-        CorpusProject project = new JenkinsProject();
-        String oldCommit = "ccc0e347240d2f10da77ac8a311be9a30d5434ed";
+        CorpusProject project = new ZXingProject();
+        String oldCommit = "379e18daf44c5cb9d3a5387a35a997fa1f08b6ab";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
         new ProjectHarness(project, Verbosity.VERBOSE)
                 .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
-                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jenkins_new"));
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/zxing_old"));
 
 //        DatasetDiagnosticsFile oldFile = DatasetDiagnosticsFile.loadFromFile(
 //                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/0 468c5369b52ca45de3c7e54a3d2ddae352495851"));

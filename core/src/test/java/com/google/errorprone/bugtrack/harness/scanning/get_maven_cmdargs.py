@@ -13,7 +13,8 @@ stdout_file = "stdout_" + str(random.randint(1, 10000))
 # subprocess.PIPE can hang for sufficient large outputs, so we pipe everything into text files
 with open(stdout_file, "w") as f:
     # Parse mvn install for command line options
-    install_proc = subprocess.run(["mvn", "-X", "-e", "-T", "1C", "install", "-Dmaven.javadoc.skip=true", "-DskipTests"],
+    install_proc = subprocess.run(["mvn", "-X", "-e", "-T", "1C", "install", "-Dmaven.javadoc.skip=true", "-DskipTests",
+                                   "-Dcheckstyle.skip=true", "-Drat.skip=true", "-Dcheckbugs.skip=true", "-Dspotbugs.skip=true"],
                                   stdout=f)
 
 def escape_ansi(line):
@@ -22,9 +23,6 @@ def escape_ansi(line):
 
 build_output = [escape_ansi(line)
                 for line in open(stdout_file, "r").readlines()]
-
-# build_output = [escape_ansi(line)
-#                 for line in open("/home/monty/IdeaProjects/java-corpus/jetty.project/build_output", "r").readlines()]
 
 proj_re = re.compile(r"^.*\[.*INFO.*\].* @ .*")
 proj_name_re = re.compile(r"^\[INFO\] (?:\-\-\-|\>\>\>) .* \((.*)\).*@.*(.*) .*$")

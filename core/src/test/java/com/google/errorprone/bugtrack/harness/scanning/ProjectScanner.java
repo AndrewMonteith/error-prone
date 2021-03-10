@@ -46,10 +46,12 @@ public abstract class ProjectScanner {
         for (int i = 0; i < individualArgs.length; ++i) {
             if (singleArgBlockList.contains(individualArgs[i])) { continue; }
             else if (individualArgs[i].equals("-d")) { ++i; continue; }
+            else if (individualArgs[i].startsWith("(") || individualArgs[i].startsWith("[")) { continue; }
             else if (isJavaFile(individualArgs[i])) { continue; }
             else if (individualArgs[i].equals("-target") || individualArgs[i].equals("-source")) {
-                individualArgs[i+1] = "1.8";
-                ++i; continue;
+                individualArgs[i + 1] = "1.8";
+                ++i;
+                continue;
             }
             else if (individualArgs[i].startsWith("-Xlint")) { continue; }
             else if (individualArgs[i].startsWith("-Xdoclint")) { continue; }

@@ -40,6 +40,10 @@ public final class ShouldScanUtils {
         return path.toString().contains("/" + dir + "/");
     }
 
+    public static boolean hasName(Path path, String name) {
+        return path.getFileName().toString().equals(name);
+    }
+
     public static boolean inDirectoryAllowlist(Iterable<String> allowList, Path file) {
         return Iterables.any(allowList, dir -> underDirectory(file, dir));
     }

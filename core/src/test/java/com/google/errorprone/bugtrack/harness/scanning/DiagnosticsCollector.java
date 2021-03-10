@@ -103,9 +103,16 @@ public final class DiagnosticsCollector {
         List<Callable<Collection<Diagnostic<? extends JavaFileObject>>>> scanTasks = new ArrayList<>();
         partitionedScans.forEach(scan -> scanTasks.add(() -> {
             System.out.printf("Scanning %s with %d files\n", scan.name, scan.files.size());
-            Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(scan);
-            System.out.printf("Finished scanning %s with %d files and got %d diagnostics\n", scan.name, scan.files.size(), diagnostics.size());
-            return diagnostics;
+            try {
+                Collection<Diagnostic<? extends JavaFileObject>> diagnostics = collectDiagnostics(scan);
+                System.out.printf("Finished scanning %s with %d files and got %d diagnostics\n", scan.name, scan.files.size(), diagnostics.size());
+                return diagnostics;
+            } catch (Throwable e) {
+                System.out.println("Failed to scan target " + scan.name);
+                e.printStackTrace();
+                System.out.println(scan);
+                return ImmutableList.of();
+            }
         }));
 
         try {
@@ -127,7 +134,7 @@ public final class DiagnosticsCollector {
     private static Collection<Diagnostic<? extends JavaFileObject>> scanInSerial(Iterable<DiagnosticsScan> scans, Verbosity verbose) {
         List<Diagnostic<? extends JavaFileObject>> diagnostics = new ArrayList<>();
 
-        boolean printProgress = verbose == Verbosity.VERBOSE;
+        boolean printProgress = true;
 
         int current = 1, numberOfScans = Iterables.size(scans);
         if (printProgress) {
@@ -147,7 +154,7 @@ public final class DiagnosticsCollector {
 
                 diagnostics.addAll(scanDiagnostics);
             } catch (Throwable e) {
-                System.out.println("Failed to scan a target");
+                System.out.println("Failed to scan target " + scan.name);
                 e.printStackTrace();
                 System.out.println(scan);
             }

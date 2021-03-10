@@ -23,13 +23,19 @@ def escape_ansi(line):
 build_output = [escape_ansi(line)
                 for line in open(stdout_file, "r").readlines()]
 
+# build_output = [escape_ansi(line)
+#                 for line in open("/home/monty/IdeaProjects/java-corpus/jetty.project/build_output", "r").readlines()]
+
 proj_re = re.compile(r"^.*\[.*INFO.*\].* @ .*")
-proj_name_re = re.compile(r"^\[INFO\] (?:\-\-\-|\>\>\>) .* \((.*)\).*@.*(.*) .*")
+proj_name_re = re.compile(r"^\[INFO\] (?:\-\-\-|\>\>\>) .* \((.*)\).*@.*(.*) .*$")
 
 cmdline_options = [i for (i, line) in enumerate(build_output)
                      if "Command line options:" in line]
 
 for i in cmdline_options:
+    if "-d" not in build_output[i+1]:
+        continue
+
     cmdline_args = build_output[i+1][7:].strip()
     proj_line = next(build_output[i] for i in range(i, 0, -1)
                      if proj_re.match(build_output[i])).strip()

@@ -18,11 +18,18 @@ package com.google.errorprone.bugtrack.hpc;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.bugtrack.CommitRange;
+import com.google.errorprone.bugtrack.GitPathComparer;
+import com.google.errorprone.bugtrack.GitSrcFilePairLoader;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
+import com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment;
+import com.google.errorprone.bugtrack.harness.evaluating.IntRanges;
+import com.google.errorprone.bugtrack.harness.evaluating.LiveDatasetFilePairLoader;
+import com.google.errorprone.bugtrack.harness.evaluating.MissedLikelihoodCalculatorFactory;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -37,6 +44,10 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
+import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.newIJMStartAndEndTracker;
 
 public final class HPCCode {
     private static final Map<String, CorpusProject> projects;
@@ -126,11 +137,30 @@ public final class HPCCode {
                 Integer.parseInt(System.getProperty("offset")));
     }
 
-    public static void main(String[] args) throws GitAPIException, IOException {
-        Repository repo = projects.get("zxing").loadRepo();
-        CommitRange range = new CommitRange("379e18daf44c5cb9d3a5387a35a997fa1f08b6ab", "44267115986e7fdcb2a9629fd7986f65ab9a2670");
+    @Test
+    public void genDubboComparisons() throws Exception {
+        CorpusProject project = new MyBatis3Project();
+        Path diagFolders = ProjectFiles.get("diagnostics/dubbo");
+        IntRanges validSeqFiles = IntRanges.include(0, 158).excludeRange(71, 73);
 
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 1)
+        BugComparerExperiment.forProject(project)
+                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
+                .comparePaths(withGit(project, GitPathComparer::new))
+                .loadDiags(withGit(project, GitSrcFilePairLoader::new))
+                .makeBugComparer1(any(newTokenizedLineTracker(), newIJMStartPosTracker()))
+                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+                .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
+                .trials(Integer.parseInt(System.getProperty("trials")))
+                .run(ProjectFiles.get("comparisons/dubbo").toString());
+    }
+
+    public static void main(String[] args) throws GitAPIException, IOException {
+        Repository repo = new JenkinsProject().loadRepo();
+        CommitRange range = new CommitRange("a544cb79f8d102228fbb5929fad44712a8c9fc76", "7eae00a5a5c82bfc34c066ff8bc2db24d0aa2e52");
+
+        System.out.println(GitUtils.expandCommitRange(repo, range).size());
+        
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 1000)
                 .filterCommits(GitUtils.expandCommitRange(repo, range));
 
         System.out.println("Total commits  " + filteredCommits.size());

@@ -257,7 +257,7 @@ public class ProjectTests {
     public void foo() throws IOException {
         // GIVEN:
         CorpusProject project = new ZXingProject();
-        String oldCommit = "379e18daf44c5cb9d3a5387a35a997fa1f08b6ab";
+        String oldCommit = "f5b5c3a97ed1d3be6156cb4d27f0428b95ec4275";
         String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
 
         new ProjectHarness(project, Verbosity.VERBOSE)

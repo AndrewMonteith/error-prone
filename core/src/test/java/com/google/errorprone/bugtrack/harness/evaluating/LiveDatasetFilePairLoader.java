@@ -50,9 +50,13 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
     }
 
     public static LiveDatasetFilePairLoader inSeqNumRange(String folderOfDiagnosticFiles, IntRanges validSequenceNums) {
+        return inSeqNumRange(Paths.get(folderOfDiagnosticFiles), validSequenceNums);
+    }
+
+    public static LiveDatasetFilePairLoader inSeqNumRange(Path folderOfDiagnosticFiles, IntRanges validSequenceNums) {
         return new LiveDatasetFilePairLoader(
-                Paths.get(folderOfDiagnosticFiles), diagnosticsFile ->
-                    validSequenceNums.contains(DiagnosticsFile.getSequenceNumberFromName(diagnosticsFile.getName())));
+                folderOfDiagnosticFiles, diagnosticsFile ->
+                validSequenceNums.contains(DiagnosticsFile.getSequenceNumberFromName(diagnosticsFile.getName())));
     }
 
     public static LiveDatasetFilePairLoader allFiles(String folderOfDiagnosticsFiles) {

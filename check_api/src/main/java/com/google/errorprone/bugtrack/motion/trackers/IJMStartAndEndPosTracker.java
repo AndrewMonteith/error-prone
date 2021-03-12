@@ -42,12 +42,16 @@ public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker implements
     @Override
     public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
         Optional<NodeLocation> mappedStartPos = trackPosition(oldDiag.getStartPos());
-        Optional<List<NodeLocation>> mappedEndPoses = trackEndPosition(oldDiag.getEndPos());
 
         if (!mappedStartPos.isPresent()) {
             return Optional.empty();
         }
 
+        if (oldDiag.getEndPos() == -1) {
+            return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, -1));
+        }
+
+        Optional<List<NodeLocation>> mappedEndPoses = trackEndPosition(oldDiag.getEndPos());
         if (!mappedEndPoses.isPresent() || mappedEndPoses.get().isEmpty()) {
             return mappedStartPos.map(srcBufRange -> DiagSrcPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
         }

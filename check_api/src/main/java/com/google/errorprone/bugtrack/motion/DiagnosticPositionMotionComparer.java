@@ -32,8 +32,7 @@ public class DiagnosticPositionMotionComparer implements BugComparer {
     private final SrcFilePairLoader srcFilePairLoader;
     private final DiagnosticPositionTrackerConstructor trackerConstructor;
 
-    private SingleKeyCell<String, DiagnosticPositionTracker> positionTrackerCell;
-//    private final MemoMap<String, DiagnosticPositionTracker> positionTrackers;
+    private final SingleKeyCell<String, DiagnosticPositionTracker> positionTrackerCell;
     private final TrackersSharedState sharedState;
 
     public DiagnosticPositionMotionComparer(SrcFilePairLoader srcFilePairLoader,

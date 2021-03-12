@@ -73,6 +73,10 @@ public abstract class BaseIJMPosTracker {
     }
 
     private boolean isTemplatedClassNode(ITree tree) {
+        if (tree.getLabel().isEmpty()) {
+            return false;
+        }
+
         String className = tree.getLabel();
         String templatedClassName = className + "<";
         while (tree != null && tree.getLabel().startsWith(className)) {
@@ -87,15 +91,21 @@ public abstract class BaseIJMPosTracker {
     }
 
     private ITree findNodeWithAngleBrackets(ITree tree) {
-        while (tree != null && !tree.getLabel().endsWith(">")) {
-            tree = tree.getParent();
+        ITree node = tree;
+        while (node != null && !node.getLabel().endsWith(">")) {
+            node = node.getParent();
         }
 
-        if (tree == null) {
-            throw new RuntimeException("class began with < but couldn't find >");
+        if (node == null) {
+            String msg = "class began with < but couldn't find >\n" +
+                    "Tree label " + tree.getLabel() + "\n" +
+                    "Old file " + srcFilePair.oldFile.getName() + "\n" +
+                    "New file " + srcFilePair.newFile.getName() + "\n";
+
+            throw new RuntimeException(msg);
         }
 
-        return tree;
+        return node;
     }
 
     private NodeLocation mapJdtSrcRangeToJCSrcRange(ITree jdtNode) {

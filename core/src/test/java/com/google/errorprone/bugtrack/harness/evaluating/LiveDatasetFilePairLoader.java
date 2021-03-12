@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.harness.evaluating;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
+import com.google.errorprone.bugtrack.projects.CorpusProject;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +46,6 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
             return id1.compareTo(id2);
         });
 
-
         this.validFiles = ImmutableList.copyOf(allFiles.stream().filter(includeFile).collect(Collectors.toList()));
     }
 
@@ -55,8 +55,9 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
 
     public static LiveDatasetFilePairLoader inSeqNumRange(Path folderOfDiagnosticFiles, IntRanges validSequenceNums) {
         return new LiveDatasetFilePairLoader(
-                folderOfDiagnosticFiles, diagnosticsFile ->
-                validSequenceNums.contains(DiagnosticsFile.getSequenceNumberFromName(diagnosticsFile.getName())));
+                folderOfDiagnosticFiles,
+                diagnosticsFile ->
+                    validSequenceNums.contains(DiagnosticsFile.getSequenceNumberFromName(diagnosticsFile.getName())));
     }
 
     public static LiveDatasetFilePairLoader allFiles(String folderOfDiagnosticsFiles) {
@@ -68,15 +69,15 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
     }
 
     @Override
-    public Pair load() throws IOException {
+    public Pair load(CorpusProject project) throws IOException {
         int i1 = getRandomId(), i2 = getRandomId();
         while (i1 >= i2) {
             i1 = getRandomId();
             i2 = getRandomId();
         }
 
-        DiagnosticsFile oldFile = DiagnosticsFile.load(validFiles.get(i1).toPath());
-        DiagnosticsFile newFile = DiagnosticsFile.load(validFiles.get(i2).toPath());
+        DiagnosticsFile oldFile = DiagnosticsFile.load(project, validFiles.get(i1).toPath());
+        DiagnosticsFile newFile = DiagnosticsFile.load(project, validFiles.get(i2).toPath());
 
         return new Pair(oldFile, newFile);
     }

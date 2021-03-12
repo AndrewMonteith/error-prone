@@ -31,6 +31,7 @@ import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -41,12 +42,14 @@ import org.junit.runners.JUnit4;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
 import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
@@ -120,17 +123,17 @@ public class ProjectTests {
         new ProjectHarness(jsoup, Verbosity.VERBOSE).serialiseCommit(commit, output);
 
         // THEN:
-        Assert.assertEquals(376, DiagnosticsFile.load(output).diagnostics.size());
+        Assert.assertEquals(376, DiagnosticsFile.load(jsoup, output).diagnostics.size());
     }
 
     @Test
     public void serialiseDiagnostics() throws IOException, GitAPIException {
-        CorpusProject project = new JSoupProject();
-        CommitRange range = new CommitRange("f1110a9021c2caa28cbe3177c0c3a0f5ae326eb4", "ae9a18c9e1382b5d8bad14d09279eda725490c25");
+        CorpusProject project = new ZXingProject();
+        CommitRange range = new CommitRange("f5b5c3a97ed1d3be6156cb4d27f0428b95ec4275", "44267115986e7fdcb2a9629fd7986f65ab9a2670");
 
         new ProjectHarness(project).serialiseCommits(range,
-                new LinesChangedCommitFilter(new Git(project.loadRepo()), 50),
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup"));
+                new LinesChangedCommitFilter(new Git(project.loadRepo()), 10),
+                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/zxing"));
 
     }
 
@@ -234,11 +237,11 @@ public class ProjectTests {
         // GIVEN:
         CorpusProject project = new GuiceProject();
 
-        DiagnosticsFile oldDiagFile = DiagnosticsFile.load(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
+        DiagnosticsFile oldDiagFile = DiagnosticsFile.load(project,
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673");
 
-        DiagnosticsFile newDiagFile = DiagnosticsFile.load(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f"));
+        DiagnosticsFile newDiagFile = DiagnosticsFile.load(project,
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f");
 
         BugComparer bugComparer = new DiagnosticPositionMotionComparer(
                 new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
@@ -278,11 +281,11 @@ public class ProjectTests {
         // GIVEN:
         CorpusProject project = new GuiceProject();
 
-        DiagnosticsFile oldFile = DiagnosticsFile.load(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673"));
+        DiagnosticsFile oldFile = DiagnosticsFile.load(project,
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673");
 
-        DiagnosticsFile newFile = DiagnosticsFile.load(
-                Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/82 b7cadc1cfa0623ad377c274eb8db278e3e9a7054"));
+        DiagnosticsFile newFile = DiagnosticsFile.load(project,
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/82 b7cadc1cfa0623ad377c274eb8db278e3e9a7054");
 
 
         BugComparer comparer = new DiagnosticPositionMotionComparer(
@@ -330,55 +333,16 @@ public class ProjectTests {
                 .run("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3");
     }
 
-    @Test
-    public void compareTokenizedWithTokenizedAndIJM2() throws Exception {
-        CorpusProject[] projects = { new GuiceProject(), new JSoupProject(), new MyBatis3Project() };
-
-        String[] diagFolders = {
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice",
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup",
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3"
-        };
-
-        String[] comparisonFolders = {
-                "/home/monty/IdeaProjects/java-corpus/comparisons/guice",
-                "/home/monty/IdeaProjects/java-corpus/comparisons/jsoup",
-                "/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3"
-        };
-
-        LiveDatasetFilePairLoader[] dataLoader = {
-                LiveDatasetFilePairLoader.allFiles(diagFolders[0]),
-                LiveDatasetFilePairLoader.inSeqNumRange(diagFolders[1], IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127)),
-                LiveDatasetFilePairLoader.allFiles(diagFolders[2])
-        };
-
-
-        for (int i = 0; i < projects.length; ++i) {
-            {
-                BugComparerExperiment.forProject(projects[i])
-                        .withData(dataLoader[i])
-                        .comparePaths(withGit(projects[i], GitPathComparer::new))
-                        .loadDiags(withGit(projects[i], GitSrcFilePairLoader::new))
-                        .makeBugComparer1(first(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
-                        .makeBugComparer2(first(newTokenizedLineTracker(), newIJMStartPosTracker(), newIJMStartAndEndTracker()))
-                        .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-                        .trials(50)
-                        .run(comparisonFolders[i]);
-            }
-
-            System.gc();
-        }
-    }
 
     @Test
-    public void computeSinglePair() throws IOException, GitAPIException {
-        CorpusProject project = new GuiceProject();
+    public void compareSinglePair() throws IOException, GitAPIException {
+        CorpusProject project = new JSoupProject();
 
-        DiagnosticsFile oldFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/old");
+        DiagnosticsFile oldFile = DiagnosticsFile.load(project,
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/76 8e432a5f5fde4694834ce23c5ac1503ce8d381bc");
 
-        DiagnosticsFile newFile = DiagnosticsFile.load(
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/new");
+        DiagnosticsFile newFile = DiagnosticsFile.load(project,
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/78 6e3c98c4a578fb7910241e72a5a33014bb8e85f1");
 
 //        System.out.println(new DiagnosticsDistribution(oldFile.diagnostics));
 //        System.out.println(new DiagnosticsDistribution(newFile.diagnostics));
@@ -391,6 +355,42 @@ public class ProjectTests {
 
         MatchResults results = matcher.getResults();
 
-        System.out.println(results);
+//        System.out.println(results);
+        System.out.println(results.getMatchedDiagnostics().size());
+        System.out.println(results.getUnmatchedOldDiagnostics().size());
+        System.out.println(results.getUnmatchedNewDiagnostics().size());
+    }
+
+    @Test
+    public void trackJSoupDiagnostics() throws IOException, GitAPIException {
+        CorpusProject project = new JSoupProject();
+        Path diagnosticsFile = ProjectFiles.get("java-corpus/diagnostics/jsoup");
+
+        DiagnosticsFile[] files = new DiagnosticsFile[102];
+        for (String f : Objects.requireNonNull(diagnosticsFile.toFile().list())) {
+            int seq = DiagnosticsFile.getSequenceNumberFromName(f);
+            files[seq] = DiagnosticsFile.load(project, diagnosticsFile.resolve(f));
+        }
+
+        for (int seq = 1; seq < files.length; ++seq) {
+            int prior = (seq == 78 ? 76 : seq-1);
+
+            DiagnosticsFile before = files[prior];
+            DiagnosticsFile current = files[seq];
+
+            {
+                BugComparer bugComparer = new DiagnosticPositionMotionComparer(
+                        new GitSrcFilePairLoader(project.loadRepo(), before.commitId, current.commitId),
+                        any(newTokenizedLineTracker(), newIJMStartAndEndTracker()));
+
+                DiagnosticsMatcher matcher = DiagnosticsMatcher.fromFiles(project, before, current, bugComparer);
+
+                MatchResults results = matcher.getResults();
+
+                results.save(ProjectFiles.get("java-corpus/comparison_data/jsoup").resolve(prior + " -> " + seq));
+            }
+
+            System.gc();
+        }
     }
 }

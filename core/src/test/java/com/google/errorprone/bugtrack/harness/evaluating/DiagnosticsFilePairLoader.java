@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.harness.evaluating;
 
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
+import com.google.errorprone.bugtrack.projects.CorpusProject;
 
 import java.io.IOException;
 
@@ -32,5 +33,5 @@ public interface DiagnosticsFilePairLoader {
         }
     }
 
-    Pair load() throws IOException;
+    Pair load(CorpusProject project) throws IOException;
 }

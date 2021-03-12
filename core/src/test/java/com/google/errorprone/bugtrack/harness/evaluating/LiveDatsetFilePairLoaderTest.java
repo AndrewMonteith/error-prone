@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.harness.evaluating;
 
+import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -52,11 +53,28 @@ public final class LiveDatsetFilePairLoaderTest {
         // WHEN:
         ArrayList<DiagnosticsFilePairLoader.Pair> pairs = new ArrayList<>();
         for (int i = 0; i < 1000; ++i) {
-            pairs.add(loader.load());
+            pairs.add(loader.load(TEST_PROJECT));
         }
 
         // THEN:
         Assert.assertTrue(pairs.stream().allMatch(pair ->
                 pair.oldFile.commitId.compareTo(pair.newFile.commitId) <= 0));
     }
+
+    private static CorpusProject TEST_PROJECT = new CorpusProject() {
+        @Override
+        public Path getRoot() {
+            return Paths.get("root/java-corpus/test");
+        }
+
+        @Override
+        public boolean shouldScanFile(Path file) {
+            return true;
+        }
+
+        @Override
+        public BuildSystem getBuildSystem() {
+            return BuildSystem.Maven;
+        }
+    };
 }

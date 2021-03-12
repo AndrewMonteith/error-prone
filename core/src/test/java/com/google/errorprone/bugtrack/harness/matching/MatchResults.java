@@ -17,9 +17,13 @@
 package com.google.errorprone.bugtrack.harness.matching;
 
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
 import javax.xml.crypto.Data;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -75,5 +79,24 @@ public final class MatchResults {
         unmatchedNew.forEach(diag -> result.append(diag).append("\n"));
 
         return result.toString();
+    }
+
+    public void save(Path p) throws IOException {
+        StringBuilder result = new StringBuilder();
+
+        matchedDiagnostics.forEach((oldDiag, newDiag) -> {
+            result.append("--------Matches\n");
+            result.append(oldDiag.toString());
+            result.append("  to\n");
+            result.append(newDiag.toString());
+        });
+
+        result.append("--------Unmatched old\n");
+        unmatchedOld.forEach(result::append);
+
+        result.append("--------Unmatched new\n");
+        unmatchedNew.forEach(result::append);
+
+        Files.write(result.toString().getBytes(StandardCharsets.UTF_8), p.toFile());
     }
 }

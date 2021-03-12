@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import javax.tools.Diagnostic;
@@ -48,26 +49,37 @@ public class DiagnosticsFile {
         return Integer.parseInt(fileName.split(" ")[0]);
     }
 
-    public static DiagnosticsFile load(Path file) throws IOException {
-        return load(file, diagnostic -> true);
+    public static DiagnosticsFile load(CorpusProject project, Path file) throws IOException {
+        return load(project, file, diagnostic -> true);
     }
 
-    public static DiagnosticsFile load(String file) throws IOException {
-        return load(Paths.get(file));
+    public static DiagnosticsFile load(CorpusProject project, String file) throws IOException {
+        return load(project, Paths.get(file));
     }
 
-    private static DatasetDiagnostic loadDiagnostic(String[] locationDetails, String message) {
+    private static String relativeProjectFile(CorpusProject project, String fileName) {
+        // any project file will be <ROOT>/java-corpus/<PROJECT>/...
+        // we want to append ... onto project root
+        Path file = Paths.get(fileName);
+        int corpusName = Iterables.indexOf(file, path -> path.equals(Paths.get("java-corpus")));
+        Path filePath = file.subpath(corpusName+2, file.getNameCount());
+
+        return project.getRoot().resolve(filePath).toString();
+    }
+
+    private static DatasetDiagnostic loadDiagnostic(CorpusProject project, String[] locationDetails, String message) {
         long line = Long.parseLong(locationDetails[1]);
         long col = Long.parseLong(locationDetails[2]);
+        String fileName = relativeProjectFile(project, locationDetails[0]);
 
         if (locationDetails.length == 6) { // old version without position
-            return new DatasetDiagnostic(locationDetails[0], line, col,
+            return new DatasetDiagnostic(fileName, line, col,
                     Long.parseLong(locationDetails[3]),
                     Long.parseLong(locationDetails[4]),
                     Long.parseLong(locationDetails[5]),
                     message);
         } else { // new version with position
-            return new DatasetDiagnostic(locationDetails[0], line, col,
+            return new DatasetDiagnostic(fileName, line, col,
                     Long.parseLong(locationDetails[3]),
                     -1,
                     Long.parseLong(locationDetails[4]),
@@ -75,7 +87,7 @@ public class DiagnosticsFile {
         }
     }
 
-    public static DiagnosticsFile load(Path file, Predicate<DatasetDiagnostic> acceptDiagnostic) throws IOException {
+    public static DiagnosticsFile load(CorpusProject project, Path file, Predicate<DatasetDiagnostic> acceptDiagnostic) throws IOException {
         List<String> lines = Files.readAllLines(file);
 
         String commitId = lines.get(0).split(" ")[0];
@@ -99,7 +111,7 @@ public class DiagnosticsFile {
                 message = Joiner.on('\n').join(lines.subList(startPos + 1, i));
             }
 
-            DatasetDiagnostic diagnostic = loadDiagnostic(locationDetails, message);
+            DatasetDiagnostic diagnostic = loadDiagnostic(project, locationDetails, message);
             if (!acceptDiagnostic.test(diagnostic) || diagnostics.contains(diagnostic)) {
                 continue;
             }

@@ -69,8 +69,8 @@ public final class DiagnosticsMatcher {
                                                BugComparer bugComparer) throws IOException, GitAPIException {
         return fromFiles(
                 project,
-                DiagnosticsFile.load(oldFile),
-                DiagnosticsFile.load(newFile),
+                DiagnosticsFile.load(project, oldFile),
+                DiagnosticsFile.load(project, newFile),
                 bugComparer);
     }
 

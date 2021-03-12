@@ -22,15 +22,15 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 public final class DiagnosticUtils {
-    private static String getDiagnosticType(String message) {
+    public static String extractDiagnosticType(String message) {
         return message.substring(1, message.indexOf(']'));
     }
 
     public static String extractDiagnosticType(Diagnostic<? extends JavaFileObject> diagnostic) {
-        return getDiagnosticType(diagnostic.getMessage(null));
+        return extractDiagnosticType(diagnostic.getMessage(null));
     }
 
     public static String extractDiagnosticType(DatasetDiagnostic diagnostic) {
-        return getDiagnosticType(diagnostic.getMessage());
+        return extractDiagnosticType(diagnostic.getMessage());
     }
 }

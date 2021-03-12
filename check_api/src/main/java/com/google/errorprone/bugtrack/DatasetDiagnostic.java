@@ -34,6 +34,7 @@ public class DatasetDiagnostic {
     private final long endPos;
 
     private final String message;
+    private final String type;
     private final DiagnosticSignature signature;
 
     public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, long startPos, long pos, long endPos, String message, DiagnosticSignature signature) {
@@ -44,6 +45,7 @@ public class DatasetDiagnostic {
         this.pos = pos;
         this.endPos = endPos;
         this.message = message;
+        this.type = DiagnosticUtils.extractDiagnosticType(message);
         this.signature = signature;
     }
 
@@ -86,8 +88,12 @@ public class DatasetDiagnostic {
         return message;
     }
 
+    public String getType() {
+        return type;
+    }
+
     public boolean isSameType(DatasetDiagnostic other) {
-        return DiagnosticUtils.extractDiagnosticType(this).equals(DiagnosticUtils.extractDiagnosticType(other));
+        return type.equals(other.type);
     }
 
     @Override
@@ -132,11 +138,12 @@ public class DatasetDiagnostic {
                 && startPos == that.startPos
                 && pos == that.pos
                 && endPos == that.endPos
-                && fileName.equals(that.fileName);
+                && fileName.equals(that.fileName)
+                && type.equals(that.type);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos);
+        return Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, type);
     }
 }

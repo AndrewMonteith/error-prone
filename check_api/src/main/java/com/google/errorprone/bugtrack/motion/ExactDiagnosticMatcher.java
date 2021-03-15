@@ -19,10 +19,13 @@ package com.google.errorprone.bugtrack.motion;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
-public class NoLineDiagnosticMatcher implements BugComparer {
+public class ExactDiagnosticMatcher implements BugComparer {
     @Override
     public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
-        return oldDiagnostic.isSameType(newDiagnostic)
-                && oldDiagnostic.getLineNumber() == -1 && newDiagnostic.getLineNumber() == -1;
+        if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
+            return false;
+        }
+
+        return oldDiagnostic.equals(newDiagnostic);
     }
 }

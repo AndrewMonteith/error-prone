@@ -132,13 +132,13 @@ public class DatasetDiagnostic {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        // Assumption: this & that are in the same file.
         DatasetDiagnostic that = (DatasetDiagnostic) o;
         return lineNumber == that.lineNumber
                 && columnNumber == that.columnNumber
                 && startPos == that.startPos
                 && pos == that.pos
                 && endPos == that.endPos
-                && fileName.equals(that.fileName)
                 && type.equals(that.type);
     }
 

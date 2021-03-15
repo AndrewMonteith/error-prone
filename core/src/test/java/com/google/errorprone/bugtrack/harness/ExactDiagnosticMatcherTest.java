@@ -17,23 +17,21 @@
 package com.google.errorprone.bugtrack.harness;
 
 import com.google.errorprone.bugtrack.BugComparer;
-import com.google.errorprone.bugtrack.TestDiagnosticsDeltaManager;
 import com.google.errorprone.bugtrack.TestUtils;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
-import com.google.errorprone.bugtrack.motion.DiagnosticsDeltaManager;
-import com.google.errorprone.bugtrack.motion.NoLineDiagnosticMatcher;
+import com.google.errorprone.bugtrack.motion.ExactDiagnosticMatcher;
 import org.junit.Assert;
 import org.junit.Test;
 
-public final class NoLineDiagnosticMatcherTest {
+public final class ExactDiagnosticMatcherTest {
     @Test
     public void canMatchDiagnosticsBetweenFiles() {
         TestUtils.DiagnosticsPair pair = TestUtils.compareDiagnostics(
                 "breaking_changes/no_line_old.java",
                 "breaking_changes/no_line_new.java");
 
-        BugComparer comparer = new NoLineDiagnosticMatcher();
+        BugComparer comparer = new ExactDiagnosticMatcher();
 
         MatchResults results = new DiagnosticsMatcher(
                 pair.oldDiagnostics,
@@ -50,7 +48,7 @@ public final class NoLineDiagnosticMatcherTest {
                 "breaking_changes/no_line_old_removed.java",
                 "breaking_changes/no_line_new.java");
 
-        BugComparer comparer = new NoLineDiagnosticMatcher();
+        BugComparer comparer = new ExactDiagnosticMatcher();
 
         MatchResults results = new DiagnosticsMatcher(
                 pair.oldDiagnostics,
@@ -67,7 +65,7 @@ public final class NoLineDiagnosticMatcherTest {
                 "breaking_changes/no_line_old.java",
                 "breaking_changes/no_line_new_removed.java");
 
-        BugComparer comparer = new NoLineDiagnosticMatcher();
+        BugComparer comparer = new ExactDiagnosticMatcher();
 
         MatchResults results = new DiagnosticsMatcher(
                 pair.oldDiagnostics,

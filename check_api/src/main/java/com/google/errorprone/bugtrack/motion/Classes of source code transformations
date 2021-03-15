@@ -159,6 +159,7 @@ Case 11. IJM cannot track it
         [TryFailRefactoring] Prefer assertThrows to try/fail
         Did you mean 'CreationException expected = assertThrows(CreationException.class, () -> Guice.createInjector(module));'?
     Possible intuition: Diagnostics which encompass large trees are more likely to have subtrees changed so harder to track through AST diff'ing
+       Have possibly solved by forcing the tracking of 'try' statement keywords
 
     dubbo 70 d75ce73e94bf85acfbc284e9139d9f64c8cf99c6..94 dcee618463696494e1748b40e8d58e6e1f5ed19d
         HeaderExchangeClient.java BooleanParameter L:65 -> L:48
@@ -166,7 +167,7 @@ Case 11. IJM cannot track it
             This one seems to be in particular a series of refactorings, where most likely it's the same diagnostic
               just AST differencing has very little chance here. Perhaps refactoring inference might?
 
-    mybatis3 640af60c22010fd56dee7db0ad8cdd420fb19f6a..45a1fcbfa2cef5c9b3bf1fe808498a69467df07a
+    mybatis3 2 640af60c22010fd56dee7db0ad8cdd420fb19f6a..72 45a1fcbfa2cef5c9b3bf1fe808498a69467df07a
     ----DIAGNOSTIC
      /home/monty/IdeaProjects/java-corpus/mybatis-3/src/main/java/org/apache/ibatis/binding/MapperProxy.java 61 23 2148 -1 2175
      [AndroidJdkLibsChecker] java.util.Map#computeIfAbsent(K,java.util.function.Function<? super K,? extends V>) is not available in java.util.Map
@@ -207,7 +208,43 @@ Case 11. IJM cannot track it
         /home/monty/IdeaProjects/java-corpus/mybatis-3/src/main/java/org/apache/ibatis/binding/MapperProxy.java 95 14 3446 -1 3457
         [AndroidJdkLibsChecker] java.lang.reflect.Method#isDefault() is not available in java.lang.reflect.Method
 
+     hazelcast 11 8b4b2d452f8ceb6cc82ebc7cfa1a3c2e7ab34d5f..120 093d1345022cb8d756219dbd5ee017b20dd032a3
+        ----DIAGNOSTIC
+        /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast/src/main/java/com/hazelcast/internal/partition/impl/InternalPartitionServiceImpl.java 652 101 27120 27120 27124
+        Did you mean 'PartitionStateOperation operation = new PartitionStateOperation(partitionState, /* sync= */true);'?
+        ----DIAGNOSTIC
+        /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast/src/main/java/com/hazelcast/internal/partition/impl/InternalPartitionServiceImpl.java 675 90 27963 27963 27967
+        Did you mean 'PartitionStateOperation op = new PartitionStateOperation(partitionState, /* sync= */false);'?
+        Close but doesn't get there sadly e.g matches 653 -> 676 but not 652->
 
+     mcMMO 0 2e7f56eeb5faaf71d14fe657a35b0b766e2ffe41..134 74a2485cffc987c75ba41b24eeee28e8317445d5
+        ----DIAGNOSTIC
+        /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/skills/repair/repairables/RepairableFactory.java 14 30 557 582 997
+        [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: getRepairable(Material itemMaterial, Material repairMaterial, byte repairMe    tadata, int minimumQuantity, short maximumDurability, int minimumLevel, ItemType repairItemType, MaterialType repairMaterialType, double xpMultiplier)
+        ----DIAGNOSTIC
+        /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/skills/repair/repairables/RepairableFactory.java 13 30 481 506 846
+        [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: getRepairable(Material itemMaterial, Material repairMaterial, short maximum    Durability, int minimumLevel, ItemType repairItemType, MaterialType repairMaterialType, double xpMultiplier)
+       IJM method matching might struggle with factory methods since there are lots of similar candidates?
+
+     mcMMO 7 2b159adefd65717f264d025aaba28b0c866fb5a9..149 76ca7cc88fb810076ab547f3d6571a85e0fcba7d
+     ----DIAGNOSTIC
+     /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/listeners/BlockListener.java 398 114 16232 16232 16236
+       Did you mean 'if (AbilityType.BERSERK.blockCheck(block.getState()) && EventUtils.simulateBlockBreak(block, player, /* shouldArmSwing= */true)) {'?
+     ----DIAGNOSTIC
+     /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/listeners/BlockListener.java 593 66 22716 22716 22720
+       Did you mean 'if (EventUtils.simulateBlockBreak(block, player, /* shouldArmSwing= */true) && mcMMOPlayer.getUnarmedManager().blockCrackerCheck(blockState)) {'?
+     Spaghetti conditionals, would have though identical subtree would match it but apparently not
+
+    // TODO: investigate why these aren't matched?
+     91 fef9058e1698e7cfd09b045a79852c8909f68470..187 749c83ac59ab8a5c47a322759fd0ddf7e090b461
+     [UnnecessaryDefaultInEnumSwitch] Switch handles all enum values: move code from the default case to execute after the switch statement to enable checking for non-exhaustive switches. That is, prefer: `switch     (...) { ... } throw new AssertionError();` to `switch (...) { ... default: throw new AssertionError(); }`
+     RandomChanceUtil.java 44 13 2250 2250 2288
+     RandomChanceUtil.java 44 13 2271 2271 2309
+     Remain unchanged but IJM cannot track it?
+
+     [CatchAndPrintStackTrace] Logging or rethrowing exceptions should usually be preferred to catching and calling printStackTrace
+     WorldBlacklist.java 65 13 1722 1722 1742
+     WorldBlacklist.java 77 17 2031 2031 2051
 
 
 
@@ -235,7 +272,20 @@ Case 12. IJM improperly tracks it
         611.    return sslSocketFactory;
         612. }
 
+     hazelcast 2 7e36e092c8066d9c28656abf8cc2c83cbf6f28b7..51 ad5251208122c5d0f27a3cff3881cda17f957c3a
+     /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast/src/main/java/com/hazelcast/internal/ascii/rest/HttpPostCommandProcessor.java 354 57 16136 16161 16166
+         Did you mean 'List<String> strList = Splitter.on('&').splitToList(bytesToString(data));'?
+     /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast/src/main/java/com/hazelcast/internal/ascii/rest/HttpPostCommandProcessor.java 356 66 16022 16060 16065
+         Did you mean 'List<String> strList = Splitter.on('&').splitToList(bytesToString(command.getData()));'?
+     Alot of statements are deleted and changed a fair amount so probably just below threshold, surprised not caught on the bottom up matching though
 
+     mcMMO 2 15436b44da9d8ad42abf486c5e6795f5424af15e..174 3a035e234a5931a7b218ffc609fd5630b8d0b478
+     PartyManager.java 196 53 6632 6668 6680
+        [CollectionIncompatibleType] Argument 'playerName' should not be passed to this method; its type String is not compatible with its collection's type argument UUID
+        if (party.getMembers().keySet().contains(playerName)) {
+     PartyManager.java 252 47 8577 8607 8619
+        if (party.getMembers().containsKey(playerName)) {
+        Note: Tracks party.getmembers() but cannot map playerName so only tracking start position would work here
 
 Case 13. Diagnostics are collected together into 'one diagnostic'
     ProtectedMembersInFinalClass reports multiple locations are one diagnostic
@@ -250,7 +300,60 @@ Case 13. Diagnostics are collected together into 'one diagnostic'
     jsoup 63 f4338e20a5e439632e3d2fc8fa3a330ade6d02ad..91 50576455fd4f244375d05b029c25b3b17edfbb74
     [RemovedUnusedImports] UrlConnectTest.java 4 1 -> UrlConnectTest.java 6 1
 
+Case 14. Start/end position moved into a different token
+    hazelcast 0 6a5bc11894e312366e82d4c808df31c2d441d0fc..119 695e5765a6821d78af498ea3054acb568106b967
+    [FutureReturnValueIsIgnored] /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast-client/src/main/java/com/hazelcast/client/connection/nio/HeartbeatManager.java 61 40 2804 2878 2936
+        60. client.getClientExecutionService()
+        61.            .scheduleWithRepetition(this, heartbeatInterval, heartbeatInterval, MILLISECONDS);
+    [FutureReturnValueIsIgnored] /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast-client/src/main/java/com/hazelcast/client/connection/nio/HeartbeatManager.java 62 34 2923 2948 3015
+        61. final ClientExecutionServiceImpl es = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        62. es.scheduleWithRepetition(this, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
+    Old start position points to client token, new start position points to es token.
+    Possible heuristic is just match against old mapped start position
 
+    hazelcast 11.120
+    [InconsistentOverloads] /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast/src/main/java/com/hazelcast/internal/partition/impl/InternalPartitionImpl.java 172 23 6358 6376 6673
+        172. public static int getReplicaIndex(Address[] addresses, Address address) { ... }
+    [InconsistentOverloads] /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast/src/main/java/com/hazelcast/internal/partition/impl/InternalPartitionImpl.java 202 16 7403 7414 7727
+        202. static int getReplicaIndex(PartitionReplica[] replicas, PartitionReplica replica) { ... }
+    Since 'public' token is deleted there's a start position mismatch
+
+    mcMMO 2 15436b44da9d8ad42abf486c5e6795f5424af15e..174 3a035e234a5931a7b218ffc609fd5630b8d0b478
+    /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/database/DatabaseManager.java 106 26 3700 3721 3788
+    [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: loadPlayerProfile(String playerName, boolean createNew, UUID uuid)
+    /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/database/DatabaseManager.java 114 19 3870 3884 3951
+    [InconsistentOverloads] The parameters of this method are inconsistent with other overloaded versions. A consistent order would be: loadPlayerProfile(String playerName, boolean createNew, UUID uuid)
+        Same case as hazelcast 11..120
+
+    mcMMO 31 626890ed95d0d7ba87ab46ca852f02ee8b893410..135 53d6065185b5a840d0f1ae40c7e60796530185aa
+    [MultiVariableDeclaration] Roll.java 388 16 15064 15071 15077 -> Roll.java 395 16 16023 16030 16047
+        double curve, maxBonusLevel, playerChanceRoll, playerChanceGrace;
+        double playerChanceRoll, playerChanceGrace;
+      token end position points to was deleted
+      Start position can track this but not the below one, interesting
+
+    mcMMO 43 655a31d5567c7c0f88a0e767875aa25f26abf743..78 d81c3d06c5134ceea97730ffa6d038891b4e88d8
+     Roll.java 363 16 14028 14035 14053
+       Did you mean 'double rollChanceHalfMax;double graceChanceHalfMax;double maxBonusLevel;double curve;double damageThreshold;double chancePerLevel;'?
+     Roll.java 376 16 14765 14772 14790
+       Did you mean 'double rollChanceHalfMax;double graceChanceHalfMax;double damageThreshold;double chancePerLevel;'?
+    Threshold problem for why this did not track?
+
+    Tracking by diagnostic position could solve these problems
+
+Case 15. partial-expressions moving across method/field boundaries
+    dubbo 70 d75ce73e94bf85acfbc284e9139d9f64c8cf99c6..94 dcee618463696494e1748b40e8d58e6e1f5ed19d
+        HeaderExchangeClient.java BooleanParameter L:65 -> L:48
+            https://github.com/apache/dubbo/compare/d75ce73e94bf85acfbc284e9139d9f64c8cf99c6..dcee618463696494e1748b40e8d58e6e1f5ed19d#diff-456035e093c8422b12ad6f7df3b92675f843e19d2537421ddd92b79f1fd61650L65
+            This one seems to be in particular a series of refactorings, where most likely it's the same diagnostic
+              just AST differencing has very little chance here. Perhaps refactoring inference might?
+
+    hazelcast 2 7e36e092c8066d9c28656abf8cc2c83cbf6f28b7..51 ad5251208122c5d0f27a3cff3881cda17f957c3a
+        Field initalized at declaration split into 2 constructs and initalized identical ways [JdkObsolete]
+        /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast-client/src/main/java/com/hazelcast/client/config/ClientConfig.java 90 52 3220 3220 3252
+        to:
+        /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast-client/src/main/java/com/hazelcast/client/config/ClientConfig.java 158 31 7329 7329 7365
+        /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast-client/src/main/java/com/hazelcast/client/config/ClientConfig.java 115 31 4699 4699 4735
 
 Perhaps useful things to write about or reference in report:
     Qualified names of the form 'X.Y' are now a root nodes with to children for X and Y respectively.
@@ -264,6 +367,17 @@ Perhaps useful things to write about or reference in report:
         ElementsTest.java UnncessaryParenthesis L:954 -> L:1065
             <similar to above>
 
+Weird: error prone generates two diagnostics:
+    mcMMO 170 f6c7049cac76a1c68348e9e570a7617c45747af0..177 500ab628dd6b2539d9be89659a0ad2a9b0b22e1b
+    372. double rollChanceHalfMax, graceChanceHalfMax, damageThreshold, chancePerLevel;
+    Roll.java 372 16 14867 14874 14892
+     [InitializeInline] Initializing variables in their declaring statement is clearer, where possible.
+      Did you mean 'graceChanceHalfMax, damageThreshold, chancePerLevel;'?
+    Roll.java 372 35 14867 14893 14912
+     [InitializeInline] Initializing variables in their declaring statement is clearer, where possible.
+      Did you mean 'damageThreshold, chancePerLevel;'?
+
 
 Possible questions to ask:
     Is there a relationship between the size of source code described by a diagnostic and how easily it's tracked
+    Is it better to track by specific position or [start, end] pos

@@ -139,11 +139,11 @@ public class DatasetDiagnostic {
                 && startPos == that.startPos
                 && pos == that.pos
                 && endPos == that.endPos
-                && type.equals(that.type);
+                && message.equals(that.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, type);
+        return Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, message);
     }
 }

@@ -134,16 +134,20 @@ public class DatasetDiagnostic {
         if (o == null || getClass() != o.getClass()) return false;
         // Assumption: this & that are in the same file.
         DatasetDiagnostic that = (DatasetDiagnostic) o;
-        return lineNumber == that.lineNumber
-                && columnNumber == that.columnNumber
-                && startPos == that.startPos
-                && pos == that.pos
-                && endPos == that.endPos
-                && message.equals(that.message);
+        return refersToSameSource(that) && fileName.equals(that.fileName);
+    }
+
+    public boolean refersToSameSource(DatasetDiagnostic other) {
+        return lineNumber == other.lineNumber
+                && columnNumber == other.columnNumber
+                && startPos == other.startPos
+                && pos == other.pos
+                && endPos == other.endPos
+                && message.equals(other.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, message);
+        return Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, message, fileName);
     }
 }

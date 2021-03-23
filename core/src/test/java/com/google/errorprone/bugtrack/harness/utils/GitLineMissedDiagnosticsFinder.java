@@ -17,10 +17,7 @@
 package com.google.errorprone.bugtrack.harness.utils;
 
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
-import com.google.errorprone.bugtrack.motion.GitDiagnosticDeltaManager;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.GuiceProject;
 import com.google.errorprone.bugtrack.utils.GitUtils;
@@ -30,14 +27,11 @@ import org.junit.Test;
 import org.openjdk.tools.javac.util.Pair;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-
-import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
 
 public final class GitLineMissedDiagnosticsFinder {
     private static double computeSimilarityFromString(String oldLine, String newLine) {

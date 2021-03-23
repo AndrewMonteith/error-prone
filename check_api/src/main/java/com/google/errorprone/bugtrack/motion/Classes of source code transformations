@@ -236,7 +236,7 @@ Case 11. IJM cannot track it
      Spaghetti conditionals, would have though identical subtree would match it but apparently not
 
     // TODO: investigate why these aren't matched?
-     91 fef9058e1698e7cfd09b045a79852c8909f68470..187 749c83ac59ab8a5c47a322759fd0ddf7e090b461
+     mcMMO 91 fef9058e1698e7cfd09b045a79852c8909f68470..187 749c83ac59ab8a5c47a322759fd0ddf7e090b461
      [UnnecessaryDefaultInEnumSwitch] Switch handles all enum values: move code from the default case to execute after the switch statement to enable checking for non-exhaustive switches. That is, prefer: `switch     (...) { ... } throw new AssertionError();` to `switch (...) { ... default: throw new AssertionError(); }`
      RandomChanceUtil.java 44 13 2250 2250 2288
      RandomChanceUtil.java 44 13 2271 2271 2309
@@ -245,6 +245,13 @@ Case 11. IJM cannot track it
      [CatchAndPrintStackTrace] Logging or rethrowing exceptions should usually be preferred to catching and calling printStackTrace
      WorldBlacklist.java 65 13 1722 1722 1742
      WorldBlacklist.java 77 17 2031 2031 2051
+
+     jsoup 36 0fc3d6728ae270fb38f9778ad7fa2663060b50c7 -> 93 3afde5830e5bc811dfaf214be86652e2c1f95489
+     (src/test/java/org/jsoup/integration/ConnectTest.java [UnusedVariable] 435 22 16139 16177)
+     should match to 466 but doesn't appear as "deleted", mismatched to something else?
+
+     jsoup 44 a8d431bad9575d5f32d7b87252962a8aae02d59f -> 83 77fcaf4dcdc8fd185e2f5d8eb6aa9c425a38bc9b
+     src/main/java/org/jsoup/internal/StringUtil.java [JdkObsolete] 232 58 8558 8571
 
 
 
@@ -355,6 +362,13 @@ Case 15. partial-expressions moving across method/field boundaries
         /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast-client/src/main/java/com/hazelcast/client/config/ClientConfig.java 158 31 7329 7329 7365
         /rds/user/am2857/hpc-work/java-corpus/hazelcast/hazelcast-client/src/main/java/com/hazelcast/client/config/ClientConfig.java 115 31 4699 4699 4735
 
+Case 16. Moves between files
+    jsoup 7 850a9cc02fb72cc450d1a9dc41912fa80fee9020 -> 82 5727d18a04df73982ce8e6d77e965cb768cfee7d
+    src/main/java/org/jsoup/safety/Whitelist.java [MethodCanBeStatic] 554 5 21396 21403
+    src/main/java/org/jsoup/safety/Safelist.java  [MethodCanBeStatic] 565 5 21677 21677 21684
+    Reason: The method is extracted into a superclass
+
+
 Perhaps useful things to write about or reference in report:
     Qualified names of the form 'X.Y' are now a root nodes with to children for X and Y respectively.
        mybatis3 28..57 /MonthTypeHandlerTest.java AndroidJdkLibsChecker were getting confused
@@ -366,6 +380,17 @@ Perhaps useful things to write about or reference in report:
             assertFalse(e0.hashCode() == (e2.hashCode())); -> assertNotEquals(e0.hashCode(), (e2.hashCode()));
         ElementsTest.java UnncessaryParenthesis L:954 -> L:1065
             <similar to above>
+
+    jsoup 25 7ff7c43e9fbf4bbaf2b4517b3d4f8a429d87d3bb -> 78 6e3c98c4a578fb7910241e72a5a33014bb8e85f1
+        Old (src/main/java/org/jsoup/select/Evaluator.java [OperatorPrecedence] 311 40 8321 8367)
+        New (src/main/java/org/jsoup/select/Evaluator.java [OperatorPrecedence] 316 67 8567 8613)
+        if statement condition extracted into a variable
+
+    Example of where AST differencing is much better than git differencing:
+        jsoup 7 850a9cc02fb72cc450d1a9dc41912fa80fee9020 -> 82 5727d18a04df73982ce8e6d77e965cb768cfee7d
+        Old (src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java [BooleanParameter] 392 49 17550 1755
+        New (src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java [BooleanParameter] 393 45 16362 1636
+
 
 Weird: error prone generates two diagnostics:
     mcMMO 170 f6c7049cac76a1c68348e9e570a7617c45747af0..177 500ab628dd6b2539d9be89659a0ad2a9b0b22e1b

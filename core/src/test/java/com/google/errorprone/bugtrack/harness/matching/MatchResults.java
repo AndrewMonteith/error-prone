@@ -20,7 +20,6 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -84,6 +83,7 @@ public final class MatchResults {
     public void save(Path p) throws IOException {
         StringBuilder result = new StringBuilder();
 
+        result.append("Total ").append(matchedDiagnostics.size()).append("\n");
         matchedDiagnostics.forEach((oldDiag, newDiag) -> {
             result.append("--------Matches\n");
             result.append(oldDiag.toString());
@@ -92,9 +92,11 @@ public final class MatchResults {
         });
 
         result.append("--------Unmatched old\n");
+        result.append("Total ").append(unmatchedOld.size()).append("\n");
         unmatchedOld.forEach(result::append);
 
         result.append("--------Unmatched new\n");
+        result.append("Total ").append(unmatchedNew.size()).append("\n");
         unmatchedNew.forEach(result::append);
 
         Files.write(result.toString().getBytes(StandardCharsets.UTF_8), p.toFile());

@@ -14,8 +14,19 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness.utils;
+package com.google.errorprone.bugtrack.util;
 
-public interface ThrowingBiFunction<K1, K2, V> {
-    V apply(K1 key1, K2 key2) throws Exception;
+import java.util.function.Function;
+
+@FunctionalInterface
+public interface ThrowingFunction<T, R> extends Function<T, R> {
+    default R apply(T t) {
+        try {
+            return applyThrows(t);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    R applyThrows(T t) throws Exception;
 }

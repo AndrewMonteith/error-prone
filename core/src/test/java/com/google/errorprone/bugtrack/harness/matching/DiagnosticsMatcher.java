@@ -30,18 +30,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public final class DiagnosticsMatcher {
+    private static final boolean printMultiMatches = false;
     private final Collection<DatasetDiagnostic> oldDiagnostics;
     private final Collection<DatasetDiagnostic> newDiagnostics;
     private final BugComparer comparer;
     private final PathsComparer pathsComparer;
 
-    private static final boolean printMultiMatches = false;
-    
     public DiagnosticsMatcher(Collection<DatasetDiagnostic> oldDiagnostics,
                               Collection<DatasetDiagnostic> newDiagnostics,
                               BugComparer comparer,
@@ -61,17 +63,6 @@ public final class DiagnosticsMatcher {
                 newDiagFile.diagnostics,
                 bugComparer,
                 new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
-    }
-
-    public static DiagnosticsMatcher fromFiles(CorpusProject project,
-                                               Path oldFile,
-                                               Path newFile,
-                                               BugComparer bugComparer) throws IOException, GitAPIException {
-        return fromFiles(
-                project,
-                DiagnosticsFile.load(project, oldFile),
-                DiagnosticsFile.load(project, newFile),
-                bugComparer);
     }
 
     public MatchResults getResults() {
@@ -103,25 +94,6 @@ public final class DiagnosticsMatcher {
                 }
             });
         });
-
-        // This code will regularly trigger OutOfMemoryError because of having to hold lots of AST's it's memory
-//        oldDiagnostics.forEach(oldDiagnostic -> {
-//            Collection<DatasetDiagnostic> matching = newDiagnostics.stream()
-//                    .filter(newDiagnostic -> !matchedDiagnostics.containsValue(newDiagnostic) && comparer.areSame(oldDiagnostic, newDiagnostic))
-//                    .collect(Collectors.toList());
-//
-//            if (matching.size() == 1) {
-//                matchedDiagnostics.put(oldDiagnostic, Iterables.getOnlyElement(matching));
-//            } else if (matching.size() > 1) {
-//                if (verbose == Verbosity.VERBOSE) {
-//                    System.out.println("A diagnostic matched with multiple diagnostics");
-//                    System.out.println("Old diagnostic:");
-//                    System.out.println(oldDiagnostic);
-//                    System.out.println("Candidate new:");
-//                    matching.forEach(System.out::println);
-//                }
-//            }
-//        });
 
         return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
     }

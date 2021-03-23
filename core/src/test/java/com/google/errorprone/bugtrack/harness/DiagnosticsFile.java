@@ -57,12 +57,12 @@ public class DiagnosticsFile {
         return load(project, Paths.get(file));
     }
 
-    private static String relativeProjectFile(CorpusProject project, String fileName) {
+    private static String giveFileNameCorrectRoot(CorpusProject project, String fileName) {
         // any project file will be <ROOT>/java-corpus/<PROJECT>/...
         // we want to append ... onto project root
         Path file = Paths.get(fileName);
         int corpusName = Iterables.indexOf(file, path -> path.equals(Paths.get("java-corpus")));
-        Path filePath = file.subpath(corpusName+2, file.getNameCount());
+        Path filePath = file.subpath(corpusName + 2, file.getNameCount());
 
         return project.getRoot().resolve(filePath).toString();
     }
@@ -70,7 +70,7 @@ public class DiagnosticsFile {
     private static DatasetDiagnostic loadDiagnostic(CorpusProject project, String[] locationDetails, String message) {
         long line = Long.parseLong(locationDetails[1]);
         long col = Long.parseLong(locationDetails[2]);
-        String fileName = relativeProjectFile(project, locationDetails[0]);
+        String fileName = giveFileNameCorrectRoot(project, locationDetails[0]);
 
         if (locationDetails.length == 6) { // old version without position
             return new DatasetDiagnostic(fileName, line, col,
@@ -137,5 +137,9 @@ public class DiagnosticsFile {
         fileOutput.append(commit.getName()).append(" ").append(Iterables.size(diagnostics)).append("\n");
         diagnostics.forEach(diag -> fileOutput.append(new DatasetDiagnostic(diag)));
         Files.write(output, fileOutput.toString().getBytes());
+    }
+
+    public int getSeqNum() {
+        return getSequenceNumberFromName(name);
     }
 }

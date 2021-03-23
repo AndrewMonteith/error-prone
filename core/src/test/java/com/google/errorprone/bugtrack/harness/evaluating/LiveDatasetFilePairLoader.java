@@ -61,7 +61,11 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
     }
 
     public static LiveDatasetFilePairLoader allFiles(String folderOfDiagnosticsFiles) {
-        return new LiveDatasetFilePairLoader(Paths.get(folderOfDiagnosticsFiles), diagnosticsFile -> true);
+        return allFiles(Paths.get(folderOfDiagnosticsFiles));
+    }
+
+    public static LiveDatasetFilePairLoader allFiles(Path folderOfDiagnosticsFiles) {
+        return new LiveDatasetFilePairLoader(folderOfDiagnosticsFiles, diagnosticsFile -> true);
     }
 
     private int getRandomId() {

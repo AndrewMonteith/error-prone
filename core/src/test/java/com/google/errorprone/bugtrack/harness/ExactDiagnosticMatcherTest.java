@@ -39,11 +39,11 @@ public final class ExactDiagnosticMatcherTest {
                 comparer,
                 (oldPath, newPath) -> true).getResults();
 
-        Assert.assertEquals(1, results.getMatchedDiagnostics().size());
+        Assert.assertEquals(3, results.getMatchedDiagnostics().size());
     }
 
     @Test
-    public void canDetectDiagnosticeEntering() {
+    public void canDetectDiagnosticsEntering() {
         TestUtils.DiagnosticsPair pair = TestUtils.compareDiagnostics(
                 "breaking_changes/no_line_old_removed.java",
                 "breaking_changes/no_line_new.java");
@@ -56,7 +56,7 @@ public final class ExactDiagnosticMatcherTest {
                 comparer,
                 (oldPath, newPath) -> true).getResults();
 
-        Assert.assertEquals(3, results.getUnmatchedNewDiagnostics().size());
+        Assert.assertEquals(2, results.getUnmatchedNewDiagnostics().size());
     }
 
     @Test
@@ -73,6 +73,6 @@ public final class ExactDiagnosticMatcherTest {
                 comparer,
                 (oldPath, newPath) -> true).getResults();
 
-        Assert.assertEquals(3, results.getUnmatchedOldDiagnostics().size());
+        Assert.assertEquals(2, results.getUnmatchedOldDiagnostics().size());
     }
 }

@@ -19,15 +19,12 @@ package com.google.errorprone.bugtrack.harness.evaluating;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.SrcFilePairLoader;
-import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
+import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.openjdk.tools.javac.util.Pair;
 
 import java.io.FileWriter;
@@ -91,7 +88,7 @@ public final class BugComparerEvaluator {
                 writer.write(entry.getKey().toString());
                 writer.write("  Comparer " + entryComparerId + " says:\n");
                 writer.write(entry.getValue().toString());
-                writer.write("  Comparer " +  otherComparerId + " says:\n");
+                writer.write("  Comparer " + otherComparerId + " says:\n");
                 writer.write(otherTracking.get().getValue().toString());
             } else {
                 // The other comparer could not track it
@@ -136,9 +133,6 @@ public final class BugComparerEvaluator {
         for (DatasetDiagnostic missedOldDiag : untrackedOldDiagnostics) {
             PriorityQueue<Pair<DatasetDiagnostic, Double>> likelyMatches = new PriorityQueue<>(
                     3, Comparator.comparing(pair -> pair.snd));
-
-//            double bestFoundLikelihood = -1;
-//            DatasetDiagnostic mostLikelyMatch = null;
 
             for (DatasetDiagnostic missedNewDiag : untrackedNewDiagnostics) {
                 if (!pathsComparer.inSameFile(missedOldDiag, missedNewDiag) || !missedOldDiag.isSameType(missedNewDiag)) {
@@ -197,23 +191,21 @@ public final class BugComparerEvaluator {
             DiagnosticsFilePairLoader.Pair oldAndNewDiagFiles = pairLoader.load(project);
             System.out.println("Comparing " + oldAndNewDiagFiles.oldFile.commitId + " to " + oldAndNewDiagFiles.newFile.commitId);
 
-            if (comparedFiles.contains(oldAndNewDiagFiles))  {
+            if (comparedFiles.contains(oldAndNewDiagFiles)) {
                 continue;
             }
             comparedFiles.add(oldAndNewDiagFiles);
 
             {
-                MatchResults comparer1Results = DiagnosticsMatcher.fromFiles(
-                        project,
-                        oldAndNewDiagFiles.oldFile,
-                        oldAndNewDiagFiles.newFile,
-                        config.createBugComparer1(oldAndNewDiagFiles)).getResults();
+                MatchResults comparer1Results = GitCommitMatcher.compareGit(
+                        project, oldAndNewDiagFiles.oldFile, oldAndNewDiagFiles.newFile)
+                        .track(config.createBugComparer1(oldAndNewDiagFiles))
+                        .match();
 
-                MatchResults comparer2Results = DiagnosticsMatcher.fromFiles(
-                        project,
-                        oldAndNewDiagFiles.oldFile,
-                        oldAndNewDiagFiles.newFile,
-                        config.createBugComparer2(oldAndNewDiagFiles)).getResults();
+                MatchResults comparer2Results = GitCommitMatcher.compareGit(
+                        project, oldAndNewDiagFiles.oldFile, oldAndNewDiagFiles.newFile)
+                        .track(config.createBugComparer2(oldAndNewDiagFiles))
+                        .match();
 
                 if (resultsAreDifferent(comparer1Results, comparer2Results)) {
                     writeResults(

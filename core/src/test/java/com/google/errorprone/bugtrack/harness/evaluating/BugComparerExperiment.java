@@ -19,7 +19,7 @@ package com.google.errorprone.bugtrack.harness.evaluating;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.SrcFilePairLoader;
-import com.google.errorprone.bugtrack.harness.utils.ThrowingTriFunction;
+import com.google.errorprone.bugtrack.util.ThrowingTriFunction;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.projects.CorpusProject;

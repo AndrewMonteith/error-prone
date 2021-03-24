@@ -1,5 +1,5 @@
 #!/bin/bash
-find . -name '*.java' -type f -exec bash -c 'expand -t 4 $0 | sponge $0' {} \; # normalize tabs
+find . -name "*.java" -exec java -jar "$ROOT/google-format.jar" -i {} +
 find . -name 'pom.xml' -exec sed -i '/\bmaven.install.skip\b/d' {} \; # no target should be skipped by install
 find . -name 'pom.xml' -exec sed -i '/\bmaven.deploy.skip\b/d' {} \; # no target should be skipped by install
 find . -name 'pom.xml' -exec sed -i '/\bskipIfEmpty\b/d' {} \; # no target should be skipped by install

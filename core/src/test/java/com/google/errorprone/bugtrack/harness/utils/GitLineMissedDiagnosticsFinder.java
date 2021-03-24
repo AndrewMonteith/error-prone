@@ -21,6 +21,7 @@ import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.GuiceProject;
 import com.google.errorprone.bugtrack.utils.GitUtils;
+import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Test;
@@ -48,7 +49,7 @@ public final class GitLineMissedDiagnosticsFinder {
         return (double) maxLen / newLine.length();
     }
 
-    private static Map<DatasetDiagnostic, String> loadDiagnosticLines(CorpusProject project, RevCommit commit, Iterable<DatasetDiagnostic> diagnostics) throws IOException {
+    private static Map<DatasetDiagnostic, String> loadDiagnosticLines(CorpusProject project, RevCommit commit, Iterable<DatasetDiagnostic> diagnostics) throws IOException, FormatterException {
         Map<DatasetDiagnostic, String> result = new HashMap<>();
         for (DatasetDiagnostic diagnostic : diagnostics) {
             result.put(diagnostic, GitUtils.loadJavaLine(project.loadRepo(), commit, diagnostic));
@@ -83,14 +84,19 @@ public final class GitLineMissedDiagnosticsFinder {
     public static void proposeMissedMatchesWithSubstringSimilarity(CorpusProject project,
                                                                    RevCommit oldCommit,
                                                                    RevCommit newCommit,
-                                                                   MatchResults results) throws IOException {
-        Map<DatasetDiagnostic, String> unmatchedOldDiagLines = loadDiagnosticLines(project, oldCommit, results.getUnmatchedOldDiagnostics());
-        Map<DatasetDiagnostic, String> unmatchedNewDiagLines = loadDiagnosticLines(project, newCommit, results.getUnmatchedNewDiagnostics());
+                                                                   MatchResults results) {
+        try {
+            Map<DatasetDiagnostic, String> unmatchedOldDiagLines = loadDiagnosticLines(project, oldCommit, results.getUnmatchedOldDiagnostics());
 
-        BiFunction<DatasetDiagnostic, DatasetDiagnostic, Double> computeSimilary = (oldDiag, newDiag) -> computeSimilarityFromString(
-                unmatchedOldDiagLines.get(oldDiag), unmatchedNewDiagLines.get(newDiag));
+            Map<DatasetDiagnostic, String> unmatchedNewDiagLines = loadDiagnosticLines(project, newCommit, results.getUnmatchedNewDiagnostics());
 
-        findLinkelyMissedDiagnostics(results, computeSimilary);
+            BiFunction<DatasetDiagnostic, DatasetDiagnostic, Double> computeSimilary = (oldDiag, newDiag) -> computeSimilarityFromString(
+                    unmatchedOldDiagLines.get(oldDiag), unmatchedNewDiagLines.get(newDiag));
+
+            findLinkelyMissedDiagnostics(results, computeSimilary);
+        } catch (IOException | FormatterException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void proposeMissedMatchesWithLineDistanceSimilarity(MatchResults results) throws IOException {

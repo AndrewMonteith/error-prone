@@ -20,6 +20,7 @@ import com.google.common.base.Splitter;
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -81,7 +82,7 @@ public class GitUtils {
         return path.startsWith(pathToProject) ? path.replaceFirst(pathToProject, "") : path;
     }
 
-    public static SrcFile loadSrcFile(Repository repo, RevCommit commit, String path) throws IOException {
+    public static SrcFile loadSrcFile(Repository repo, RevCommit commit, String path) throws IOException, FormatterException {
         RevTree tree = commit.getTree();
 
         String relativePath = makePathRelativeToRepo(repo, path);
@@ -101,11 +102,11 @@ public class GitUtils {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             repo.open(oId).copyTo(stream);
 
-            return new SrcFile(path, Splitter.on('\n').splitToList(stream.toString()));
+            return new SrcFile(path, stream.toString());
         }
     }
 
-    public static String loadJavaLine(Repository repo, RevCommit commit, DatasetDiagnostic diag) throws IOException {
+    public static String loadJavaLine(Repository repo, RevCommit commit, DatasetDiagnostic diag) throws IOException, FormatterException {
         return loadSrcFile(repo, commit, diag.getFileName()).getLines().get((int)diag.getLineNumber()-1);
     }
 

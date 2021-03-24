@@ -25,6 +25,7 @@ import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
+import com.google.googlejavaformat.java.FormatterException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,11 +46,11 @@ public final class TestUtils {
         }
     }
 
-    public static SrcFile readTestSrcFile(String file) throws IOException {
+    public static SrcFile readTestSrcFile(String file) throws IOException, FormatterException {
         return new SrcFile(file, readTestFile(file));
     }
 
-    public static SrcFilePair readTestSrcFilePair(String oldFile, String newFile) throws IOException {
+    public static SrcFilePair readTestSrcFilePair(String oldFile, String newFile) throws IOException, FormatterException {
         return new SrcFilePair(readTestSrcFile(oldFile), readTestSrcFile(newFile));
     }
 

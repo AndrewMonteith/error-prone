@@ -17,11 +17,13 @@
 package com.google.errorprone.bugtrack.motion;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.utils.JExpand;
+import com.google.googlejavaformat.java.FormatterException;
 import com.sun.tools.javac.util.Position;
+import com.google.googlejavaformat.java.Formatter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -52,9 +54,13 @@ public class SrcFile {
         return result.toString();
     }
 
-    public SrcFile(String fileName, List<String> src) {
+    public SrcFile(String fileName, List<String> src) throws FormatterException {
+        this(fileName, Joiner.on('\n').join(src));
+    }
+
+    public SrcFile(String fileName, String source) throws FormatterException {
         this.name = fileName;
-        this.src = ImmutableList.copyOf(JExpand.expand(src));
+        this.src = ImmutableList.copyOf(Splitter.on('\n').split(new Formatter().formatSource(source)));
         this.charBuf = Joiner.on('\n').join(this.src).toCharArray();
         this.lineMap = Position.makeLineMap(charBuf, charBuf.length, true);
     }

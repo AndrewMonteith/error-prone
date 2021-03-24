@@ -24,6 +24,7 @@ import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.motion.trackers.TrackersSharedState;
 import com.google.errorprone.bugtrack.utils.SingleKeyCell;
+import com.google.googlejavaformat.java.FormatterException;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -44,7 +45,7 @@ public class DiagnosticPositionMotionComparer implements BugComparer {
     }
 
     private DiagnosticPositionTracker createDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
-                                                                      DatasetDiagnostic newDiagnostic) throws DiffException, IOException {
+                                                                      DatasetDiagnostic newDiagnostic) throws DiffException, IOException, FormatterException {
         return trackerConstructor.create(srcFilePairLoader.load(oldDiagnostic, newDiagnostic), sharedState);
     }
 

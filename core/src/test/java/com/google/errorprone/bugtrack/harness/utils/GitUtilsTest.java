@@ -21,6 +21,7 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
+import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -67,7 +68,7 @@ public class GitUtilsTest {
 //    }
 
     @Test
-    public void canLoadLineFromDiagnostic() throws IOException {
+    public void canLoadLineFromDiagnostic() throws IOException, FormatterException {
         // GIVEN:
         Repository repo = new JSoupProject().loadRepo();
         RevCommit commit = GitUtils.parseCommit(repo, "b61a3e6b340b878b30c518e35c6066f559b5102e");

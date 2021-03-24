@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.googlejavaformat.java.FormatterException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +30,7 @@ import static com.google.errorprone.bugtrack.TestUtils.readTestFile;
 public class SrcFileTest {
 
     @Test
-    public void correctlyKnownsLinesAndColumns() throws IOException {
+    public void correctlyKnownsLinesAndColumns() throws IOException, FormatterException {
         // GIVEN:
         List<String> oldSrc = readTestFile("foo_1.java");
 
@@ -48,7 +49,7 @@ public class SrcFileTest {
     }
 
     @Test
-    public void correctExtractsFragments() throws IOException {
+    public void correctExtractsFragments() throws IOException, FormatterException {
         // GIVEN:
         List<String> oldSrc = readTestFile("foo_1.java");
 
@@ -61,7 +62,7 @@ public class SrcFileTest {
     }
 
     @Test
-    public void correctlyNormalisesWhitespace() throws IOException {
+    public void correctlyNormalisesWhitespace() throws IOException, FormatterException {
         // GIVEN:
         String lines = "\t\tclass Foobar {\n" +
                 "   \tpublic void foo() {}\n" +

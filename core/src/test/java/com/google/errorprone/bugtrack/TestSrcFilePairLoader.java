@@ -17,12 +17,13 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
+import com.google.googlejavaformat.java.FormatterException;
 
 import java.io.IOException;
 
 public class TestSrcFilePairLoader implements SrcFilePairLoader {
     @Override
-    public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException {
+    public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException, FormatterException {
         return TestUtils.readTestSrcFilePair(oldDiagnostic.getFileName(), newDiagnostic.getFileName());
     }
 }

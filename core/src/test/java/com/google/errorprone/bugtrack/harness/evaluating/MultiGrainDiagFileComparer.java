@@ -64,10 +64,16 @@ public final class MultiGrainDiagFileComparer {
             return resultsCache.get(cp);
         }
 
-        MatchResults results = GitCommitMatcher.compareGit(project, last, next)
-                .trackIdentical()
-                .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
-                .match();
+        MatchResults results;
+        try {
+            results = GitCommitMatcher.compareGit(project, last, next)
+                    .trackIdentical()
+                    .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+                    .match();
+        } catch (RuntimeException e) {
+            System.out.printf("Failed scanning %s -> %s\n", last.commitId, next.commitId);
+            throw new RuntimeException(e);
+        }
 
         resultsCache.put(cp, results);
 

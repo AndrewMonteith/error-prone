@@ -52,6 +52,12 @@
          are; assume anything else is not), please add the dependency to
          the Maven shade includes section below, so it will be packaged with
          the error-prone JAR file that we distribute.  -->
+    <dependency>
+      <!-- Apache 2.0 -->
+      <groupId>com.google.googlejavaformat</groupId>
+      <artifactId>google-java-format</artifactId>
+      <version>1.4</version>
+    </dependency>
 
     <dependency>
       <!-- Apache 2.0 -->

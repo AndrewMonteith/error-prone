@@ -17,10 +17,11 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
+import com.google.googlejavaformat.java.FormatterException;
 
 import java.io.IOException;
 
 @FunctionalInterface
 public interface SrcFilePairLoader {
-    SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+    SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException, FormatterException;
 }

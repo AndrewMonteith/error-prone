@@ -19,6 +19,7 @@ package com.google.errorprone.bugtrack;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.utils.GitUtils;
+import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -43,7 +44,7 @@ public class GitSrcFilePairLoader implements SrcFilePairLoader {
     }
 
     @Override
-    public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException {
+    public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException, FormatterException {
         SrcFile oldFile = GitUtils.loadSrcFile(repo, oldCommit, oldDiagnostic.getFileName());
         SrcFile newFile = GitUtils.loadSrcFile(repo, newCommit, newDiagnostic.getFileName());
 

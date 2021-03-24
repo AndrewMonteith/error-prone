@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack;
 
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.motion.trackers.*;
+import com.google.googlejavaformat.java.FormatterException;
 import com.sun.tools.javac.tree.JCTree;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +31,7 @@ import java.io.IOException;
 public class JDTToJCPosMapperTest {
 
     @Test
-    public void caseTrackingClassDeclModifiers() throws IOException {
+    public void caseTrackingClassDeclModifiers() throws IOException, FormatterException {
         /*
             JDT positions point to specific modifiers
                 Old: points to static
@@ -55,7 +56,7 @@ public class JDTToJCPosMapperTest {
     }
 
     @Test
-    public void caseMappingVariableNames() throws IOException {
+    public void caseMappingVariableNames() throws IOException, FormatterException {
         // Variables are represented by JcVariableDecl which has no children. Only the modifiers are visited
         // as a nested child. Hence positions are mapped to the start of the JcVariableDecl node.
 
@@ -76,7 +77,7 @@ public class JDTToJCPosMapperTest {
     }
 
     @Test
-    public void caseTrackingParameterIdentifier() throws IOException {
+    public void caseTrackingParameterIdentifier() throws IOException, FormatterException {
         // Java method parameters are mapped to JCVariableDecl so similar case to variable declarations.
         // Positions from the JDT tree are mapped to positions at the start of the VariableDeclarations
 
@@ -97,7 +98,7 @@ public class JDTToJCPosMapperTest {
     }
 
     @Test
-    public void caseTrackingMethodReturnType() throws IOException {
+    public void caseTrackingMethodReturnType() throws IOException, FormatterException {
         // Return types are their own node in the AST. This makes relatively easy translation between JDT and JC
 
         // GIVEN:

@@ -25,6 +25,7 @@ import com.google.errorprone.bugtrack.SrcFilePairLoader;
 import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.googlejavaformat.java.FormatterException;
 import org.openjdk.tools.javac.util.Pair;
 
 import java.io.FileWriter;
@@ -117,7 +118,7 @@ public final class BugComparerEvaluator {
                                                       SrcFilePairLoader srcFilePairLoader,
                                                       PathsComparer pathsComparer,
                                                       MatchResults results1,
-                                                      MatchResults results2) throws IOException {
+                                                      MatchResults results2) throws IOException, FormatterException {
         // Old diagnostics that weren't tracked by any comparer
         Set<DatasetDiagnostic> untrackedOldDiagnostics = Sets.difference(
                 results1.getOldDiagnostics(), // same as results2 old diagnostics
@@ -160,7 +161,7 @@ public final class BugComparerEvaluator {
                               SrcFilePairLoader srcFilePairLoader,
                               PathsComparer pathsComparer,
                               MatchResults results1,
-                              MatchResults results2) throws IOException {
+                              MatchResults results2) throws IOException, FormatterException {
         Path output = outputDir.resolve(oldAndNewDiagFile.oldFile.name + ".." + oldAndNewDiagFile.newFile.name);
         if (output.toFile().exists()) {
             Files.delete(output);

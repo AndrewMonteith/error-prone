@@ -23,10 +23,7 @@ import com.google.errorprone.bugtrack.GitSrcFilePairLoader;
 import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
-import com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment;
-import com.google.errorprone.bugtrack.harness.evaluating.IntRanges;
-import com.google.errorprone.bugtrack.harness.evaluating.LiveDatasetFilePairLoader;
-import com.google.errorprone.bugtrack.harness.evaluating.MissedLikelihoodCalculatorFactory;
+import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -47,7 +44,6 @@ import java.util.Map;
 
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
 import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
-import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.newIJMStartAndEndTracker;
 
 public final class HPCCode {
     private static final Map<String, CorpusProject> projects;
@@ -64,8 +60,23 @@ public final class HPCCode {
         projs.put("jetty.project", new JettyProject());
         projs.put("hazelcast", new HazelcastProject());
         projs.put("zxing", new ZXingProject());
+        projs.put("mcMMO", new McMMOProject());
+        projs.put("cobertura", new CoberturaProject());
+        projs.put("jruby", new JRubyProject());
 
         projects = ImmutableMap.copyOf(projs);
+    }
+
+    public static void main(String[] args) throws GitAPIException, IOException {
+        Repository repo = new JRubyProject().loadRepo();
+        CommitRange range = new CommitRange("77d1af438a16fc8795446b63644cc63a25b32e06", "45a5f884a1a001493a67c240180182c646ff8a38");
+
+        System.out.println(GitUtils.expandCommitRange(repo, range).size());
+
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 200)
+                .filterCommits(GitUtils.expandCommitRange(repo, range));
+
+        System.out.println("Total commits  " + filteredCommits.size());
     }
 
     @Before
@@ -111,7 +122,7 @@ public final class HPCCode {
         Repository repo = projects.get(System.getProperty("project")).loadRepo();
         CommitRange range = new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
 
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), Integer.valueOf(System.getProperty("linesChanged")))
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), Integer.parseInt(System.getProperty("linesChanged")))
                 .filterCommits(GitUtils.expandCommitRange(repo, range));
 
         System.out.println("Total commits  " + filteredCommits.size());
@@ -128,7 +139,7 @@ public final class HPCCode {
 
         int linesChangedThreshold = System.getProperty("linesChanged") == null ? 50 : Integer.parseInt(System.getProperty("linesChanged"));
 
-        System.out.println("Lines changed threshold "+ linesChangedThreshold);
+        System.out.println("Lines changed threshold " + linesChangedThreshold);
         System.out.println("Number of cores " + Runtime.getRuntime().availableProcessors());
 
         new ProjectHarness(project).serialiseCommits(range,
@@ -154,19 +165,21 @@ public final class HPCCode {
                 .run(ProjectFiles.get("comparisons/dubbo").toString());
     }
 
-    public static void main(String[] args) throws GitAPIException, IOException {
-        Repository repo = new JenkinsProject().loadRepo();
-        CommitRange range = new CommitRange("a544cb79f8d102228fbb5929fad44712a8c9fc76", "7eae00a5a5c82bfc34c066ff8bc2db24d0aa2e52");
+    @Test
+    public void performSequentialComparisons() throws Exception {
+        String projectName = System.getProperty("project");
+        CorpusProject project = loadProject();
 
-        System.out.println(GitUtils.expandCommitRange(repo, range).size());
-        
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 1000)
-                .filterCommits(GitUtils.expandCommitRange(repo, range));
+        List<GrainDiagFile> grainFiles = GrainDiagFile.loadSortedFiles(
+                project, ProjectFiles.get("diagnostics/").resolve(projectName + "_full"));
 
-        System.out.println("Total commits  " + filteredCommits.size());
+        Path output = ProjectFiles.get("comparison_data/").resolve(projectName);
 
-//        for (int i = 0; i < filteredCommits.size(); ++i) {
-//            System.out.println(i + " " + filteredCommits.get(i).getName());
-//        }
+        if (System.getProperty("inParallel") != null) {
+            MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles);
+        } else {
+            MultiGrainDiagFileComparer.compareFilesInParallel(project, output, grainFiles);
+        }
     }
+
 }

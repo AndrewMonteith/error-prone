@@ -308,11 +308,11 @@ public class ProjectTests {
     }
 
     @Test
-    public void trackProject() throws IOException, GitAPIException {
-        CorpusProject project = new GuiceProject();
-        Path output = ProjectFiles.get("java-corpus/comparison_data/guice");
+    public void trackProject() throws IOException {
+        CorpusProject project = new JSoupProject();
+        Path output = ProjectFiles.get("java-corpus/comparison_data/jsoup");
         List<GrainDiagFile> grainFiles = GrainDiagFile.loadSortedFiles(
-                project, ProjectFiles.get("java-corpus/diagnostics/guice_full"));
+                project, ProjectFiles.get("java-corpus/diagnostics/jsoup_full"));
 
         MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles);
     }

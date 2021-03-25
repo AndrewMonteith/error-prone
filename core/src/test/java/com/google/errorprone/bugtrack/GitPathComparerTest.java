@@ -37,7 +37,7 @@ public final class GitPathComparerTest {
         PathsComparer comparer = new GitPathComparer(testProject.loadRepo(), oldCommit, newCommit);
 
         // THEN:
-        Assert.assertTrue(comparer.inSameFile("src/main/java/com/mycompany/app/Test3.java", "src/main/java/com/mycompany/app/Test3.java"));
+        Assert.assertTrue(comparer.isSameFile("src/main/java/com/mycompany/app/Test3.java", "src/main/java/com/mycompany/app/Test3.java"));
     }
 
     @Test
@@ -51,7 +51,7 @@ public final class GitPathComparerTest {
         PathsComparer comparer = new GitPathComparer(testProject.loadRepo(), oldCommit, newCommit);
 
         // THEN:
-        Assert.assertTrue(comparer.inSameFile("src/main/java/com/mycompany/app/Test2.java", "src/main/java/com/mycompany/app/Test3.java"));
+        Assert.assertTrue(comparer.isSameFile("src/main/java/com/mycompany/app/Test2.java", "src/main/java/com/mycompany/app/Test3.java"));
     }
 
     @Test
@@ -65,7 +65,7 @@ public final class GitPathComparerTest {
         PathsComparer comparer = new GitPathComparer(testProject.loadRepo(), oldCommit, newCommit);
 
         // THEN:
-        Assert.assertTrue(comparer.inSameFile(
+        Assert.assertTrue(comparer.isSameFile(
                 "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo/src/main/java/com/mycompany/app/Test2.java",
                 "/home/monty/IdeaProjects/error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo/src/main/java/com/mycompany/app/Test3.java"));
     }

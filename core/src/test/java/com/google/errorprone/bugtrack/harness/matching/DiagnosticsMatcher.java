@@ -30,10 +30,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -77,7 +74,7 @@ public final class DiagnosticsMatcher {
                 }
 
                 Collection<DatasetDiagnostic> matching = newDiagnostics.stream()
-                        .filter(newDiag -> pathsComparer.inSameFile(oldDiag, newDiag))
+                        .filter(newDiag -> pathsComparer.isSameFile(oldDiag, newDiag))
                         .filter(newDiag -> !matchedDiagnostics.containsValue(newDiag) && comparer.areSame(oldDiag, newDiag))
                         .collect(Collectors.toList());
 
@@ -97,6 +94,7 @@ public final class DiagnosticsMatcher {
 
         return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
     }
+
 
     public void writeToStdout() {
         System.out.println(getResults());

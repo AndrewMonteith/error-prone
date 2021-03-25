@@ -61,6 +61,7 @@ public class SrcFile {
     public SrcFile(String fileName, String source) throws FormatterException {
         this.name = fileName;
         this.src = ImmutableList.copyOf(Splitter.on('\n').split(new Formatter().formatSource(source)));
+//        this.src = ImmutableList.copyOf(JExpand.expand(Splitter.on('\n').splitToList(source)));
         this.charBuf = Joiner.on('\n').join(this.src).toCharArray();
         this.lineMap = Position.makeLineMap(charBuf, charBuf.length, true);
     }

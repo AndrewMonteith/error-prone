@@ -36,7 +36,7 @@ import java.nio.file.Paths;
  */
 public final class BugComparerExperiment {
     private final CorpusProject project;
-    private LiveDatasetFilePairLoader dataLoader;
+    private DiagnosticsFilePairLoader dataLoader;
     private DiagnosticsFilePairMapper<BugComparer> bugComparer1;
     private DiagnosticsFilePairMapper<BugComparer> bugComparer2;
     private DiagnosticsFilePairMapper<SrcFilePairLoader> srcDiagLoader;
@@ -63,7 +63,7 @@ public final class BugComparerExperiment {
         return new BugComparerExperiment(project);
     }
 
-    public BugComparerExperiment withData(LiveDatasetFilePairLoader dataLoader) {
+    public BugComparerExperiment withData(DiagnosticsFilePairLoader dataLoader) {
         this.dataLoader = dataLoader;
 
         return this;

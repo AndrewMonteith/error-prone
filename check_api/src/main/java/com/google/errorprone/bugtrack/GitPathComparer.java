@@ -52,7 +52,7 @@ public class GitPathComparer implements PathsComparer {
     }
 
     @Override
-    public boolean inSameFile(Path oldPath, Path newPath) {
+    public boolean isSameFile(Path oldPath, Path newPath) {
         if (oldPath.equals(newPath)) {
             return true;
         }

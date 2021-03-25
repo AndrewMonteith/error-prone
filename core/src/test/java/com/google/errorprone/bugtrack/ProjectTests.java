@@ -279,13 +279,24 @@ public class ProjectTests {
         IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127);
 
         BugComparerExperiment.forProject(project)
-                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
+//                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
+                .withData(LiveDatasetFilePairLoader.specificPairs(diagFolders,
+                        11, 13,
+                        16, 93,
+                        22, 123,
+                        24, 124,
+                        28, 111,
+                        43, 114,
+                        44, 75,
+                        45, 120,
+                        59, 80,
+                        65, 118))
                 .comparePaths(withGit(project, GitPathComparer::new))
                 .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-                .makeBugComparer1(any(newTokenizedLineTracker(), newIJMStartPosTracker()))
+                .makeBugComparer1(any(newTokenizedLineTracker(), newIJMPosTracker()))
                 .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
                 .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-                .trials(25)
+                .trials(10)
                 .run("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3");
     }
 

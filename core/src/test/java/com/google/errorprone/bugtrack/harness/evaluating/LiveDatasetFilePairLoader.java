@@ -68,6 +68,23 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
         return new LiveDatasetFilePairLoader(folderOfDiagnosticsFiles, diagnosticsFile -> true);
     }
 
+    public static DiagnosticsFilePairLoader specificPairs(String folderOfDiagnosticsFiles, int... pairs) {
+        if (pairs.length % 2 == 1) {
+            throw new RuntimeException("mismatched pairs");
+        }
+
+        LiveDatasetFilePairLoader loader = new LiveDatasetFilePairLoader(Paths.get(folderOfDiagnosticsFiles), diagnosticFile -> true);
+        final int[] pairNum = {0}; // workaround needed to mutate in a lambda
+
+        return project -> {
+            int i1 = pairs[pairNum[0]];
+            int i2 = pairs[pairNum[0] +1];
+            pairNum[0] += 2;
+
+            return loader.load(project, i1, i2);
+        };
+    }
+
     private int getRandomId() {
         return rnd.nextInt(validFiles.size());
     }
@@ -80,6 +97,10 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
             i2 = getRandomId();
         }
 
+        return load(project, i1, i2);
+    }
+
+    private Pair load(CorpusProject project, int i1, int i2) throws IOException {
         DiagnosticsFile oldFile = DiagnosticsFile.load(project, validFiles.get(i1).toPath());
         DiagnosticsFile newFile = DiagnosticsFile.load(project, validFiles.get(i2).toPath());
 

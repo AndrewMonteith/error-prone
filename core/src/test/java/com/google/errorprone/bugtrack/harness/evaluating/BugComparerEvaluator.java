@@ -136,7 +136,7 @@ public final class BugComparerEvaluator {
                     3, Comparator.comparing(pair -> pair.snd));
 
             for (DatasetDiagnostic missedNewDiag : untrackedNewDiagnostics) {
-                if (!pathsComparer.inSameFile(missedOldDiag, missedNewDiag) || !missedOldDiag.isSameType(missedNewDiag)) {
+                if (!pathsComparer.isSameFile(missedOldDiag, missedNewDiag) || !missedOldDiag.isSameType(missedNewDiag)) {
                     continue;
                 }
 
@@ -198,15 +198,21 @@ public final class BugComparerEvaluator {
             comparedFiles.add(oldAndNewDiagFiles);
 
             {
+                final long now = System.nanoTime();
                 MatchResults comparer1Results = GitCommitMatcher.compareGit(
                         project, oldAndNewDiagFiles.oldFile, oldAndNewDiagFiles.newFile)
                         .track(config.createBugComparer1(oldAndNewDiagFiles))
                         .match();
+                final long now2 = System.nanoTime();
+                System.out.println("comparer 1 match took " + (now2-now));
 
+                final long now22 = System.nanoTime();
                 MatchResults comparer2Results = GitCommitMatcher.compareGit(
                         project, oldAndNewDiagFiles.oldFile, oldAndNewDiagFiles.newFile)
                         .track(config.createBugComparer2(oldAndNewDiagFiles))
                         .match();
+                final long now23 = System.nanoTime();
+                System.out.println("comparer 2 match took " + (now23-now22));
 
                 if (resultsAreDifferent(comparer1Results, comparer2Results)) {
                     writeResults(

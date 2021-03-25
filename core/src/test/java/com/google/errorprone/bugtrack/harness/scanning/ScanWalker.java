@@ -18,15 +18,19 @@ package com.google.errorprone.bugtrack.harness.scanning;
 
 import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, Iterator<Collection<DiagnosticsScan>> {
     private final CorpusProject project;
@@ -68,6 +72,20 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
         return commits.hasNext();
     }
 
+    private void sanitiseFilesInScans(Collection<DiagnosticsScan> scans) throws IOException, InterruptedException {
+        List<String> cmdToRun = scans.stream()
+                .map(scan -> scan.files)
+                .flatMap(Collection::stream)
+                .map(ProjectFile::toString).collect(Collectors.toList());
+
+        cmdToRun.add(0, ProjectFiles.find("error-prone", "sanitise_files.sh").toString());
+        cmdToRun.add(0, "/bin/bash");
+
+        ShellUtils.runCommand(
+                project.getRoot(),
+                cmdToRun.toArray(new String[0]));
+    }
+
     @Override
     public Collection<DiagnosticsScan> next() {
         try {
@@ -84,11 +102,16 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
             System.out.println("running shell cmds");
             // Normalize the whitespace in all files
             ShellUtils.runCommand(project.getRoot(),
-                ProjectFiles.find("error-prone", "shell_cmds.sh").toString());
+                ProjectFiles.find("error-prone", "sanitise_project.sh").toString());
 
             // Collect the scans
             System.out.println("scanning");
-            return projectScanner.getScans(project);
+            Collection<DiagnosticsScan> scans = projectScanner.getScans(project);
+
+            System.out.println("sanitising scans");
+            sanitiseFilesInScans(scans);
+
+            return scans;
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -21,13 +21,13 @@ import java.nio.file.Paths;
 
 @FunctionalInterface
 public interface PathsComparer {
-    boolean inSameFile(Path path1, Path path2);
+    boolean isSameFile(Path path1, Path path2);
 
-    default boolean inSameFile(String path1, String path2) {
-        return inSameFile(Paths.get(path1), Paths.get(path2));
+    default boolean isSameFile(String path1, String path2) {
+        return isSameFile(Paths.get(path1), Paths.get(path2));
     }
 
-    default boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
-        return inSameFile(oldDiagnostic.getFileName(), newDiagnostic.getFileName());
+    default boolean isSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
+        return isSameFile(oldDiagnostic.getFileName(), newDiagnostic.getFileName());
     }
 }

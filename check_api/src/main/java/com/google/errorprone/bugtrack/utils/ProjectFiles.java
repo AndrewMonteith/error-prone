@@ -49,7 +49,9 @@ public class ProjectFiles {
                 new NameFileFilter(fileName),
                 TrueFileFilter.TRUE);
 
-        if (files.size() != 1) {
+        if (files.isEmpty()) {
+            throw new RuntimeException("could not find file");
+        } else if (files.size() != 1) {
             throw new RuntimeException("non-unique file requested");
         }
 

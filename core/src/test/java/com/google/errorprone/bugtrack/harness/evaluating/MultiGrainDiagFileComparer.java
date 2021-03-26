@@ -108,8 +108,10 @@ public final class MultiGrainDiagFileComparer {
                 );
     }
 
-    private Iterable<GrainDiagFile> filterGrainFiles(Iterable<GrainDiagFile> grainFiles, int grain) {
-        return Iterables.filter(grainFiles, grainFile -> grainFile.hasGrain(0) || grainFile.hasGrain(grain));
+    private Iterable<GrainDiagFile> filterGrainFiles(Iterable<GrainDiagFile> grainFiles,
+                                                     final int maxGrain,
+                                                     final int grain) {
+        return Iterables.filter(grainFiles, grainFile -> grainFile.hasGrain(maxGrain) || grainFile.hasGrain(grain));
     }
 
     private void compare(Path output, List<GrainDiagFile> grainFiles) {
@@ -117,9 +119,11 @@ public final class MultiGrainDiagFileComparer {
 
         makeGrainFolders(output, grains);
 
+        final int maxGrain = Collections.max(grains);
+
         for (int grain : grains) {
             System.out.println("scanning grain " + grain);
-            scanWalk(output.resolve("grain-" + grain), filterGrainFiles(grainFiles, grain));
+            scanWalk(output.resolve("grain-" + grain), filterGrainFiles(grainFiles, maxGrain, grain));
         }
     }
 
@@ -152,11 +156,13 @@ public final class MultiGrainDiagFileComparer {
 
         makeGrainFolders(output, grains);
 
+        final int maxGrain = Collections.max(grains);
+
         // Create task for each pair of files. Record which grains need the results of the comparisons
         Map<CommitPair, CompareTask> commitPairsTasks = new HashMap<>();
         for (int grain : grains) {
             Path grainOutput = output.resolve("grain-" + grain);
-            consecutivePairs(filterGrainFiles(grainFiles, grain), (oldGrainFile, newGrainFile) -> {
+            consecutivePairs(filterGrainFiles(grainFiles, maxGrain, grain), (oldGrainFile, newGrainFile) -> {
                 DiagnosticsFile oldFile = oldGrainFile.getDiagFile();
                 DiagnosticsFile newFile = newGrainFile.getDiagFile();
 

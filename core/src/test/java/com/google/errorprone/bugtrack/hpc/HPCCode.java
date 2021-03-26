@@ -175,7 +175,7 @@ public final class HPCCode {
 
         Path output = ProjectFiles.get("comparison_data/").resolve(projectName);
 
-        if (System.getProperty("inParallel") != null) {
+        if (System.getProperty("inParallel").equals("true")) {
             MultiGrainDiagFileComparer.compareFilesInParallel(project, output, grainFiles);
         } else {
             MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles);

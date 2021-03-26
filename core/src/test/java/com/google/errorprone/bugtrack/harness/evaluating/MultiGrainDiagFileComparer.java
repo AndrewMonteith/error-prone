@@ -29,6 +29,7 @@ import com.google.errorprone.bugtrack.util.ThrowingConsumer;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
@@ -112,7 +113,11 @@ public final class MultiGrainDiagFileComparer {
     }
 
     private void compare(Path output, List<GrainDiagFile> grainFiles) {
-        for (int grain : getAllGrains(grainFiles)) {
+        Set<Integer> grains = getAllGrains(grainFiles);
+
+        makeGrainFolders(output, grains);
+
+        for (int grain : grains) {
             System.out.println("scanning grain " + grain);
             scanWalk(output.resolve("grain-" + grain), filterGrainFiles(grainFiles, grain));
         }
@@ -129,8 +134,23 @@ public final class MultiGrainDiagFileComparer {
         }
     }
 
+    private void makeGrainFolders(Path output, Iterable<Integer> grains) {
+        for (int grain : grains) {
+            Path grainOutput = output.resolve("grain-" + grain);
+            if (!grainOutput.toFile().exists()) {
+                try {
+                    Files.createDirectory(grainOutput);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
     private void compareParallel(Path output, List<GrainDiagFile> grainFiles) {
         Set<Integer> grains = getAllGrains(grainFiles);
+
+        makeGrainFolders(output, grains);
 
         // Create task for each pair of files. Record which grains need the results of the comparisons
         Map<CommitPair, CompareTask> commitPairsTasks = new HashMap<>();

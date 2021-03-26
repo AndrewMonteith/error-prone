@@ -246,12 +246,12 @@ public class ProjectTests {
 
     @Test
     public void example_serialiseSpecificCommit() throws IOException {
-        CorpusProject project = new JSoupProject();
-        String oldCommit = "8e432a5f5fde4694834ce23c5ac1503ce8d381bc";
+        CorpusProject project = new GuiceProject();
+        String oldCommit = "2712230640393acdd00f70640c44ae739d4103ec";
 
         new ProjectHarness(project, Verbosity.VERBOSE)
                 .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
-                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup1"));
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/95 2712230640393acdd00f70640c44ae739d4103ec"));
     }
 
     @Test
@@ -274,42 +274,32 @@ public class ProjectTests {
     @Test
     public void compareTokenizedWithTokenizedAndIJM() throws Exception {
         // GIVEN:
-        CorpusProject project = new MyBatis3Project();
-        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/mybatis3";
-        IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127);
+        CorpusProject project = new GuiceProject();
+        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/guice";
+//        IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127);
 
         BugComparerExperiment.forProject(project)
-//                .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
-                .withData(LiveDatasetFilePairLoader.specificPairs(diagFolders,
-                        11, 13,
-                        16, 93,
-                        22, 123,
-                        24, 124,
-                        28, 111,
-                        43, 114,
-                        44, 75,
-                        45, 120,
-                        59, 80,
-                        65, 118))
+//                .withData(LiveDatasetFilePairLoader.allFiles(diagFolders))
+                .withData(LiveDatasetFilePairLoader.specificPairs(diagFolders, 0, 1))
                 .comparePaths(withGit(project, GitPathComparer::new))
                 .loadDiags(withGit(project, GitSrcFilePairLoader::new))
                 .makeBugComparer1(any(newTokenizedLineTracker(), newIJMPosTracker()))
                 .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
                 .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-                .trials(10)
-                .run("/home/monty/IdeaProjects/java-corpus/comparisons/mybatis3");
+                .trials(1)
+                .run("/home/monty/IdeaProjects/java-corpus/comparisons/guice");
     }
 
 
     @Test
     public void compareSinglePair() throws IOException, GitAPIException {
-        CorpusProject project = new McMMOProject();
+        CorpusProject project = new GuiceProject();
 
         DiagnosticsFile oldFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO/old");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/old");
 
         DiagnosticsFile newFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO/new");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/new");
 
         MatchResults results = GitCommitMatcher.compareGit(project, oldFile, newFile)
                 .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))

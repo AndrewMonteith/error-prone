@@ -368,6 +368,19 @@ Case 16. Moves between files
     src/main/java/org/jsoup/safety/Safelist.java  [MethodCanBeStatic] 565 5 21677 21677 21684
     Reason: The method is extracted into a superclass
 
+Case 17. Diagnostics moving even though code is unchanged
+    jsoup 37 468c5369b52ca45de3c7e54a3d2ddae352495851..54 e02085409f0bdd7e71441fc62448192720305444
+    /home/monty/IdeaProjects/java-corpus/jsoup/src/test/java/org/jsoup/integration/ConnectTest.java 13 1 483 483 531
+    [RemoveUnusedImports] Unused imports: org.jsoup.integration.servlets.SlowRider, org.junit.Ignore, java.net.SocketTimeoutException
+    /home/monty/IdeaProjects/java-corpus/jsoup/src/test/java/org/jsoup/integration/ConnectTest.java 6 1 123 123 161
+    [RemoveUnusedImports] Unused imports: org.jsoup.UncheckedIOException, org.jsoup.integration.servlets.SlowRider, org.junit.Ignore, java.net.SocketTimeoutException
+
+    Changing code below these import blocks, but import blocks remain unchaged so things move around
+
+    Junit checks use a whitelist of known classes containing assert methods
+    jsoup moves from org.junit.Assert to org.junit.jupiter.api.Assertions
+    which means import statemetns suddenly nuke all junit diagnostics
+
 
 Perhaps useful things to write about or reference in report:
     Qualified names of the form 'X.Y' are now a root nodes with to children for X and Y respectively.

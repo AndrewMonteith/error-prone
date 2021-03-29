@@ -171,6 +171,10 @@ public class ForEachIterable extends BugChecker implements VariableTreeMatcher {
     if (elementType.hasTag(TypeTag.WILDCARD)) {
       elementType = getUpperBound(elementType, state.getTypes());
     }
+
+    Tree iterableExprNode = getReceiver(tree.getInitializer());
+    String iterableExpr = iterableExprNode != null ? state.getSourceForNode(iterableExprNode) : "this";
+
     fix.replace(
         startPosition,
         getStartPosition(body),
@@ -178,7 +182,7 @@ public class ForEachIterable extends BugChecker implements VariableTreeMatcher {
             "for (%s %s : %s) ",
             SuggestedFixes.prettyType(state, fix, elementType),
             replacement,
-            state.getSourceForNode(getReceiver(tree.getInitializer()))));
+            iterableExpr));
     return describeMatch(tree, fix.build());
   }
 

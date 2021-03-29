@@ -20,7 +20,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.utils.JExpand;
 import com.google.googlejavaformat.java.FormatterException;
 import com.sun.tools.javac.util.Position;
 import com.google.googlejavaformat.java.Formatter;
@@ -34,25 +33,6 @@ public class SrcFile {
 
     private final char[] charBuf;
     private final Position.LineMap lineMap;
-
-    private static String expandTabs(String line) {
-        if (line.isEmpty()) {
-            return "";
-        }
-
-        StringBuilder result = new StringBuilder();
-
-        int i = 0;
-        while (i < line.length() && (line.charAt(i) == '\t' || line.charAt(i) == ' ')) {
-            char c = line.charAt(i);
-            result.append(c == '\t' ? "    " : " ");
-            ++i;
-        }
-
-        result.append(line.substring(i));
-
-        return result.toString();
-    }
 
     public SrcFile(String fileName, List<String> src) throws FormatterException {
         this(fileName, Joiner.on('\n').join(src));

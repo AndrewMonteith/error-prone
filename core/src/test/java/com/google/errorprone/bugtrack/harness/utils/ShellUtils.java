@@ -50,8 +50,9 @@ public final class ShellUtils {
         } while (process.isAlive());
 
         if (process.exitValue() != 0) {
-            System.out.println(output);
-            throw new IOException("failed to run command " + Joiner.on(' ').join(command));
+            String errorMsg = "Failed to run command " + Joiner.on(' ').join(command) + "\n";
+            errorMsg += new InputStreamReader(process.getErrorStream()).toString();
+            throw new IOException(errorMsg);
         }
 
         return output.toString();

@@ -303,13 +303,13 @@ public class CompilationTestHelper {
         return this;
     }
 
-    public List<Diagnostic<? extends JavaFileObject>> collectDiagnostics() {
-        checkState(!sources.isEmpty(), "No source files to compile");
-        checkState(!run, "doTest should only be called once");
-        this.run = true;
-
-        System.out.println(compile());
-
+    public List<Diagnostic<? extends JavaFileObject>> getDiagnostics() {
+//        checkState(!sources.isEmpty(), "No source files to compile");
+//        checkState(!run, "doTest should only be called once");
+//        this.run = true;
+//
+//        compile();
+//
         Predicate<Diagnostic<? extends JavaFileObject>> isErrorProneDiagnostic =
                 diagnostic -> diagnostic.getMessage(null).startsWith("[");
 
@@ -374,7 +374,15 @@ public class CompilationTestHelper {
                                 .isEqualTo(expected));
     }
 
-    private Result compile() {
+    public String getOutput() {
+        return outputStream.toString();
+    }
+
+    public Result compile() {
+        checkState(!sources.isEmpty(), "No source files to compile");
+        checkState(!run, "doTest should only be called once");
+        this.run = true;
+
         List<String> processedArgs = buildArguments(overrideClasspath, extraArgs);
         if (checkWellFormed) {
             checkWellFormed(sources, processedArgs);

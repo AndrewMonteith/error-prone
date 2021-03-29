@@ -20,7 +20,9 @@ import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
+import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
+import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
 import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 
 import java.io.IOException;
@@ -29,7 +31,7 @@ import java.util.Optional;
 public final class IJMPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
     public IJMPosTracker(SrcFilePair srcFilePair,
                          TrackersSharedState sharedState,
-                         IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
+                         IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
         super(srcFilePair, sharedState, jdtVisitorSupplier);
     }
 

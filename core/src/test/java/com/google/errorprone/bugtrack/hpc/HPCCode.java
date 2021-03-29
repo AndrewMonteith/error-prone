@@ -159,7 +159,11 @@ public final class HPCCode {
                 .comparePaths(withGit(project, GitPathComparer::new))
                 .loadDiags(withGit(project, GitSrcFilePairLoader::new))
                 .makeBugComparer1(any(newTokenizedLineTracker(), newIJMStartPosTracker()))
-                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+                .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker())//        files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
+//        helper.setArgs(ImmutableList.copyOf(Iterables.concat(scan.cmdLineArguments, ImmutableList.of("-Xjcov"))));
+//
+//        return ListUtils.distinct(helper.collectDiagnostics());
+)
                 .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
                 .trials(Integer.parseInt(System.getProperty("trials")))
                 .run(ProjectFiles.get("comparisons/dubbo").toString());
@@ -182,4 +186,18 @@ public final class HPCCode {
         }
     }
 
+    @Test
+    public void test() throws IOException {
+        String oldCommit = "24393f7a05ec7304e744d62a90c781156e37d7e3";
+        CorpusProject project = new HazelcastProject();
+
+        new ProjectHarness(project, Verbosity.VERBOSE)
+                .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/foo"));
+
+//        oldCommit = "c8f6e190252beec44760fac401b61ebe90388f34";
+//        new ProjectHarness(project, Verbosity.VERBOSE)
+//                .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
+//                        Paths.get("/rds/user/am2857/hpc-work/diagnostics/hazelcast500/16 c8f6e190252beec44760fac401b61ebe90388f34.2"));
+    }
 }

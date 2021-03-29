@@ -381,6 +381,30 @@ Case 17. Diagnostics moving even though code is unchanged
     jsoup moves from org.junit.Assert to org.junit.jupiter.api.Assertions
     which means import statemetns suddenly nuke all junit diagnostics
 
+Example of "bad" positioning, ie appears halfway in a node
+    875868e7263491291d4f8bdc1332bfea746ad673 1
+    ----DIAGNOSTIC
+    /home/monty/IdeaProjects/java-corpus/guice/extensions/servlet/test/com/google/inject/servlet/ServletTestUtils.java 73 14 2230 2230 2233
+    [MutableMethodReturnType] Method return type should use the immutable type (such as ImmutableList) instead of the general collection interface type (such as List). Note that it is legal to narrow the     return type when overriding a parent method. And because this method cannot be overridden, doing so cannot cause problems for any subclasses.
+    (see https://errorprone.info/bugpattern/MutableMethodReturnType)
+    Did you mean 'public ImmutableMap getParameterMap() {'?
+    a81072df067e4ab811ab01bda34e4b2722a66988 1
+    ----DIAGNOSTIC
+    /home/monty/IdeaProjects/java-corpus/guice/extensions/servlet/test/com/google/inject/servlet/ServletTestUtils.java 73 17 2233 2236 2254
+    [MutableMethodReturnType] Method return type should use the immutable type (such as ImmutableList) instead of the general collection interface type (such as List). Note that it is legal to narrow the     return type when overriding a parent method. And because this method cannot be overridden, doing so cannot cause problems for any subclasses.
+    (see https://errorprone.info/bugpattern/MutableMethodReturnType)
+    Did you mean 'public ImmutableMap<String, String[]> getParameterMap() {'?
+    2236 points into a middle of a node who's offset is difficult to maintain since the gap may not be uniform
+
+Example of lower resolution missing diagnostics:
+    mybatis3 348c9123f2be0dd015ed29fabfafa5ac7e7c7601 -> 1add4b47ed4313d08e8de2821c55fae1d4b4c8bd -> a382a685cae5aff08922399dc2cda63f64860b83 -> 36984dcc37c017f19873d790f3db4f2ddc30501d
+               ^ Start of 50                                 ^ Enters in 12                              ^ Leaves in 12                            ^ End of 50
+    Following diagnostic lost by 21 348c9123f2be0dd015ed29fabfafa5ac7e7c7601 -> 24 36984dcc37c017f19873d790f3db4f2ddc30501d
+    ----DIAGNOSTIC
+    /rds/user/am2857/hpc-work/java-corpus/23439/src/main/java/org/apache/ibatis/cache/NullCacheKey.java 16 5 658 658 658
+    [MissingSummary] A summary line is required on public/protected Javadocs.
+
+
 
 Perhaps useful things to write about or reference in report:
     Qualified names of the form 'X.Y' are now a root nodes with to children for X and Y respectively.
@@ -403,7 +427,6 @@ Perhaps useful things to write about or reference in report:
         jsoup 7 850a9cc02fb72cc450d1a9dc41912fa80fee9020 -> 82 5727d18a04df73982ce8e6d77e965cb768cfee7d
         Old (src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java [BooleanParameter] 392 49 17550 1755
         New (src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java [BooleanParameter] 393 45 16362 1636
-
 
 Weird: error prone generates two diagnostics:
     mcMMO 170 f6c7049cac76a1c68348e9e570a7617c45747af0..177 500ab628dd6b2539d9be89659a0ad2a9b0b22e1b

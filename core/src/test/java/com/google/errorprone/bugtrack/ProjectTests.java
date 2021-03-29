@@ -246,12 +246,12 @@ public class ProjectTests {
 
     @Test
     public void example_serialiseSpecificCommit() throws IOException {
-        CorpusProject project = new GuiceProject();
-        String oldCommit = "2712230640393acdd00f70640c44ae739d4103ec";
+        CorpusProject project = new HazelcastProject();
+        String oldCommit = "ad7bb8210bf4812f48fa630bad924ef07f90e596";
 
         new ProjectHarness(project, Verbosity.VERBOSE)
                 .serialiseCommit(GitUtils.parseCommit(project.loadRepo(), oldCommit),
-                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/guice/95 2712230640393acdd00f70640c44ae739d4103ec"));
+                        Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics/hazelcast500/21 ad7bb8210bf4812f48fa630bad924ef07f90e596.skip2"));
     }
 
     @Test
@@ -275,18 +275,18 @@ public class ProjectTests {
     public void compareTokenizedWithTokenizedAndIJM() throws Exception {
         // GIVEN:
         CorpusProject project = new GuiceProject();
-        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/guice";
+        String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/guice50";
 //        IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97, 117, 119, 122, 127);
 
         BugComparerExperiment.forProject(project)
-//                .withData(LiveDatasetFilePairLoader.allFiles(diagFolders))
-                .withData(LiveDatasetFilePairLoader.specificPairs(diagFolders, 0, 1))
+                .withData(LiveDatasetFilePairLoader.allFiles(diagFolders))
+//                .withData(LiveDatasetFilePairLoader.specificPairs(diagFolders, 0, 1))
                 .comparePaths(withGit(project, GitPathComparer::new))
                 .loadDiags(withGit(project, GitSrcFilePairLoader::new))
                 .makeBugComparer1(any(newTokenizedLineTracker(), newIJMPosTracker()))
                 .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
                 .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-                .trials(1)
+                .trials(9)
                 .run("/home/monty/IdeaProjects/java-corpus/comparisons/guice");
     }
 
@@ -296,13 +296,13 @@ public class ProjectTests {
         CorpusProject project = new GuiceProject();
 
         DiagnosticsFile oldFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/old");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice50/old");
 
         DiagnosticsFile newFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/new");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice50/new");
 
         MatchResults results = GitCommitMatcher.compareGit(project, oldFile, newFile)
-                .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+                .trackPosition(any(newTokenizedLineTracker(), newIJMPosTracker()))
                 .match();
 
         System.out.println(results);

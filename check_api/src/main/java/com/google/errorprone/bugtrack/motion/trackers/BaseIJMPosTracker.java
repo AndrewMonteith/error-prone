@@ -24,7 +24,7 @@ import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
+import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
 import com.sun.tools.javac.tree.JCTree;
 
 import java.io.IOException;
@@ -42,11 +42,11 @@ public abstract class BaseIJMPosTracker {
 
     protected BaseIJMPosTracker(SrcFilePair srcFilePair,
                                 TrackersSharedState sharedState,
-                                IOThrowingSupplier<AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
+                                IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
         this.sharedState = sharedState;
         this.srcFilePair = srcFilePair;
-        this.oldSrcTree = parseFileWithVisitor(srcFilePair.oldFile, jdtVisitorSupplier.get());
-        this.newSrcTree = parseFileWithVisitor(srcFilePair.newFile, jdtVisitorSupplier.get());
+        this.oldSrcTree = parseFileWithVisitor(srcFilePair.oldFile, jdtVisitorSupplier.apply(srcFilePair.oldFile));
+        this.newSrcTree = parseFileWithVisitor(srcFilePair.newFile, jdtVisitorSupplier.apply(srcFilePair.newFile));
         this.mappings = new MappingStore();
 
         new JavaMatchers.IterativeJavaMatcher_V2(
@@ -55,7 +55,20 @@ public abstract class BaseIJMPosTracker {
 
 
     public BaseIJMPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState) throws IOException {
-        this(srcFilePair, sharedState, StaticImportPreservingJdtVisitor::new);
+        this(srcFilePair, sharedState, BetterJdtVisitor::new);
+    }
+
+    private static TreeContext parseFileWithVisitor(SrcFile file, AbstractJdtVisitor visitor) throws IOException {
+        String src = file.getSrc();
+
+        AbstractJdtTreeGenerator treeGenerator = new AbstractJdtTreeGenerator() {
+            @Override
+            protected AbstractJdtVisitor createVisitor() {
+                return visitor;
+            }
+        };
+
+        return treeGenerator.generateFromString(src);
     }
 
     private Optional<ITree> findClosestMatchingJDTNode(final long pos) {
@@ -145,19 +158,6 @@ public abstract class BaseIJMPosTracker {
 
                     return locations;
                 });
-    }
-
-    private static TreeContext parseFileWithVisitor(SrcFile file, AbstractJdtVisitor visitor) throws IOException {
-        String src = file.getSrc();
-
-        AbstractJdtTreeGenerator treeGenerator = new AbstractJdtTreeGenerator() {
-            @Override
-            protected AbstractJdtVisitor createVisitor() {
-                return visitor;
-            }
-        };
-
-        return treeGenerator.generateFromString(src);
     }
 
     protected static class NodeLocation {

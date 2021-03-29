@@ -18,6 +18,7 @@ package com.google.errorprone.bugpatterns;
 
 import com.google.errorprone.BugCheckerRefactoringTestHelper;
 import com.google.errorprone.CompilationTestHelper;
+import com.google.testing.compile.Compilation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -178,6 +179,42 @@ public class ForEachIterableTest {
             "  }",
             "}")
         .doTest();
+  }
+
+  @Test
+  public void iteratorMemberMethod() {
+    BugCheckerRefactoringTestHelper.newInstance(new ForEachIterable(), getClass())
+            .addInputLines(
+                    "in/Test.java",
+                    "import java.util.Iterator;",
+                    "import java.lang.Iterable;",
+                    "class Test<V> implements Iterable<V> {",
+                    "  @Override",
+                    "  public Iterator<V> iterator() {",
+                    "    return null;",
+                    "  }",
+                    "  void test() {",
+                    "    Iterator<V> iter = iterator();",
+                    "    while (iter.hasNext()) {",
+                    "      iter.next();",
+                    "    }",
+                    "  }",
+                    "}")
+            .addOutputLines(
+                    "out/Test.java",
+                    "import java.util.Iterator;",
+                    "import java.lang.Iterable;",
+                    "class Test<V> implements Iterable<V> {",
+                    "  @Override",
+                    "  public Iterator<V> iterator() {",
+                    "    return null;",
+                    "  }",
+                    "  void test() {",
+                    "    for (V element : this) {",
+                    "    }",
+                    "  }",
+                    "}")
+            .doTest();
   }
 
   @Test

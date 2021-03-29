@@ -24,6 +24,7 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.utils.ListUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.errorprone.bugtrack.projects.HazelcastProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.scanner.BuiltInCheckerSuppliers;
@@ -59,10 +60,9 @@ public final class DiagnosticsCollector {
                 BuiltInCheckerSuppliers.DISABLED_CHECKS),
                 check -> !check.canonicalName().equals("Var"));
 
-        CompilationTestHelper helper = CompilationTestHelper.newInstance(ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker), DiagnosticsCollector.class);
-//        CompilationTestHelper helper = CompilationTestHelper.newInstance(BuiltInCheckerSuppliers.defaultChecks(), DiagnosticsCollector.class);
+        ScannerSupplier scannerSupplier = ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker);
 
-        Collection<ProjectFile> files = scan.files.stream()
+        List<ProjectFile> files = scan.files.stream()
                 .filter(ProjectFile::exists)
                 .collect(Collectors.toList());
 
@@ -70,10 +70,16 @@ public final class DiagnosticsCollector {
             return Collections.emptyList();
         }
 
+        CompilationTestHelper helper = CompilationTestHelper.newInstance(scannerSupplier, DiagnosticsCollector.class);
         files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
         helper.setArgs(ImmutableList.copyOf(Iterables.concat(scan.cmdLineArguments, ImmutableList.of("-Xjcov"))));
 
-        return ListUtils.distinct(helper.collectDiagnostics());
+        if (!helper.compile().isOK()) {
+            System.out.println("failed to compile " + scan.name);
+            System.out.println(helper.getOutput());
+        }
+
+        return ListUtils.distinct(helper.getDiagnostics());
     }
 
     private static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(Iterable<DiagnosticsScan> scans) {
@@ -87,11 +93,11 @@ public final class DiagnosticsCollector {
         // Split scans apart to ensure each one has at most files
         final Collection<DiagnosticsScan> partitionedScans = StreamSupport.stream(scans.spliterator(), false)
                 .map(scan -> {
-                    if (scan.files.size() <= 400) {
+                    if (scan.files.size() <= 200) {
                         return ImmutableList.of(scan);
                     } else {
                         System.out.println("Chunked big scan");
-                        return DiagnosticsScanUtil.chunkScan(scan, 400);
+                        return DiagnosticsScanUtil.chunkScan(scan, 200);
                     }
                 }).flatMap(Collection::stream)
                 .collect(Collectors.toList());

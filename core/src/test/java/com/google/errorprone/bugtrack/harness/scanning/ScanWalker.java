@@ -95,6 +95,8 @@ public final class ScanWalker implements Iterable<Collection<DiagnosticsScan>>, 
 
             System.out.println("forwarding repo");
             // Forward to the next commit
+//            ShellUtils.runCommand(project.getRoot(), "git", "checkout", ".");
+//            ShellUtils.runCommand(project.getRoot(), "git", "checkout", commits.next().getName());
             Repository repo = project.loadRepo();
             new Git(repo).checkout().setAllPaths(true).call();
             new Git(repo).checkout().setName(commits.next().getName()).call();

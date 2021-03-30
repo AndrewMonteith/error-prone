@@ -45,7 +45,10 @@ public abstract class ProjectScanner {
         String[] individualArgs = rawCmdLineArgs.split(" ");
         for (int i = 0; i < individualArgs.length; ++i) {
             if (singleArgBlockList.contains(individualArgs[i])) { continue; }
-            else if (individualArgs[i].equals("-d")) { ++i; continue; }
+            else if (individualArgs[i].equals("-d")) {
+                ++i;
+                continue;
+            }
             else if (individualArgs[i].startsWith("(") || individualArgs[i].startsWith("[")) { continue; }
             else if (isJavaFile(individualArgs[i])) { continue; }
             else if (individualArgs[i].equals("-target") || individualArgs[i].equals("-source")) {

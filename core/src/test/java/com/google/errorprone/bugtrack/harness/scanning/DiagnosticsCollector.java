@@ -20,6 +20,25 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
+import com.google.errorprone.bugpatterns.*;
+import com.google.errorprone.bugpatterns.android.*;
+import com.google.errorprone.bugpatterns.argumentselectiondefects.AutoValueConstructorOrderChecker;
+import com.google.errorprone.bugpatterns.collectionincompatibletype.CollectionIncompatibleType;
+import com.google.errorprone.bugpatterns.collectionincompatibletype.CompatibleWithMisuse;
+import com.google.errorprone.bugpatterns.collectionincompatibletype.IncompatibleArgumentType;
+import com.google.errorprone.bugpatterns.flogger.FloggerFormatString;
+import com.google.errorprone.bugpatterns.flogger.FloggerLogVarargs;
+import com.google.errorprone.bugpatterns.flogger.FloggerSplitLogStatement;
+import com.google.errorprone.bugpatterns.formatstring.FormatString;
+import com.google.errorprone.bugpatterns.formatstring.FormatStringAnnotationChecker;
+import com.google.errorprone.bugpatterns.inject.*;
+import com.google.errorprone.bugpatterns.inject.dagger.AndroidInjectionBeforeSuper;
+import com.google.errorprone.bugpatterns.inject.dagger.ProvidesNull;
+import com.google.errorprone.bugpatterns.inject.guice.*;
+import com.google.errorprone.bugpatterns.nullness.UnnecessaryCheckNotNull;
+import com.google.errorprone.bugpatterns.threadsafety.GuardedByChecker;
+import com.google.errorprone.bugpatterns.threadsafety.ImmutableChecker;
+import com.google.errorprone.bugpatterns.time.*;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.utils.ListUtils;
@@ -29,6 +48,7 @@ import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.scanner.BuiltInCheckerSuppliers;
 import com.google.errorprone.scanner.ScannerSupplier;
+import com.sun.tools.javac.main.Main;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import javax.tools.Diagnostic;
@@ -50,7 +70,11 @@ public final class DiagnosticsCollector {
     }
 
     public static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(DiagnosticsScan scan) {
-        if (scan.files.isEmpty()) {
+        List<ProjectFile> files = scan.files.stream()
+                .filter(ProjectFile::exists)
+                .collect(Collectors.toList());
+
+        if (files.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -62,21 +86,17 @@ public final class DiagnosticsCollector {
 
         ScannerSupplier scannerSupplier = ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker);
 
-        List<ProjectFile> files = scan.files.stream()
-                .filter(ProjectFile::exists)
-                .collect(Collectors.toList());
-
-        if (files.isEmpty()) {
-            return Collections.emptyList();
-        }
-
         CompilationTestHelper helper = CompilationTestHelper.newInstance(scannerSupplier, DiagnosticsCollector.class);
         files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
-        helper.setArgs(ImmutableList.copyOf(Iterables.concat(scan.cmdLineArguments, ImmutableList.of("-Xjcov"))));
+        helper.setArgs(ImmutableList.copyOf(Iterables.concat(scan.cmdLineArguments, ImmutableList.of("-Xjcov", "-XDshould-stop.ifError=FLOW"))));
 
         if (!helper.compile().isOK()) {
-            System.out.println("failed to compile " + scan.name);
-            System.out.println(helper.getOutput());
+            String output = helper.getOutput();
+            if (!output.trim().isEmpty()) {
+                System.out.println("non-ok result");
+                System.out.println(scan);
+                System.out.println(output);
+            }
         }
 
         return ListUtils.distinct(helper.getDiagnostics());
@@ -96,7 +116,6 @@ public final class DiagnosticsCollector {
                     if (scan.files.size() <= 200) {
                         return ImmutableList.of(scan);
                     } else {
-                        System.out.println("Chunked big scan");
                         return DiagnosticsScanUtil.chunkScan(scan, 200);
                     }
                 }).flatMap(Collection::stream)
@@ -169,7 +188,7 @@ public final class DiagnosticsCollector {
         return diagnostics;
     }
 
-    private static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnosticsFromScans(Iterable<DiagnosticsScan> scans, Verbosity verbose) {
+    public static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnosticsFromScans(Iterable<DiagnosticsScan> scans, Verbosity verbose) {
         if (collectInParallel) {
             return scanInParallel(scans, verbose);
         } else {

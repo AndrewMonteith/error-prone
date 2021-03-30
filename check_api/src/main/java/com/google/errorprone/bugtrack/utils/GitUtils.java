@@ -54,11 +54,12 @@ public class GitUtils {
                         "git", "log", "--ancestry-path", "--oneline", range.startCommit + ".." + range.finalCommit));
 
         Set<String> partialIds = gitLogLines.stream().map(s -> s.split(" ")[0]).collect(ImmutableSet.toImmutableSet());
+        final int fragmentSize = partialIds.stream().mapToInt(String::length).max().getAsInt();
 
         try (RevWalk walk = new RevWalk(repo)) {
             walk.markStart(walk.parseCommit(ObjectId.fromString(range.finalCommit)));
             for (RevCommit commit : walk) {
-                if (!partialIds.contains(commit.getName().substring(0, 10))) {
+                if (!partialIds.contains(commit.getName().substring(0, fragmentSize))) {
                     continue;
                 }
                 if (isMatchingCommit(commit, range.startCommit)) {

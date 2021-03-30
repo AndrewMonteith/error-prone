@@ -14,7 +14,8 @@ stdout_file = "stdout_" + str(random.randint(1, 10000))
 with open(stdout_file, "w") as f:
     # Parse mvn install for command line options
     install_proc = subprocess.run(["mvn", "-X", "-e", "-T", "1C", "clean", "install", "-Dmaven.javadoc.skip=true", "-DskipTests",
-                                   "-Dcheckstyle.skip=true", "-Drat.skip=true", "-Dcheckbugs.skip=true", "-Dspotbugs.skip=true"],
+                                   "-Dcheckstyle.skip=true", "-Drat.skip=true", "-Dcheckbugs.skip=true", "-Dspotbugs.skip=true",
+                                   "-Denforcer.skip=true"],
                                   stdout=f)
 
 def escape_ansi(line):

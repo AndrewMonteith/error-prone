@@ -16,8 +16,11 @@
 
 package com.google.errorprone.bugtrack.harness;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import com.google.errorprone.bugtrack.util.ThrowingFunction;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -28,7 +31,17 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static com.google.errorprone.bugtrack.harness.utils.ListUtils.consecutivePairs;
+import static com.google.errorprone.bugtrack.harness.utils.ListUtils.enumerate;
 
 public class LinesChangedCommitFilter implements CommitRangeFilter {
     private final int javaLinesChangedThreshold;
@@ -39,15 +52,14 @@ public class LinesChangedCommitFilter implements CommitRangeFilter {
         this.git = git;
     }
 
-    private int computeJavaLinesChanged(Git git, RevCommit earlierCommit, RevCommit laterCommit) throws IOException, GitAPIException {
+    private static int computeJavaLinesChanged(Git git, RevCommit earlierCommit, RevCommit laterCommit) throws IOException, GitAPIException {
         List<DiffEntry> diffs = GitUtils.computeDiffs(git, earlierCommit, laterCommit);
 
         DiffFormatter formatter = new DiffFormatter(null);
         formatter.setRepository(git.getRepository());
         formatter.setDetectRenames(true);
 
-        int totalLinesChanged = 0
-;
+        int totalLinesChanged = 0;
         for (DiffEntry diff : diffs) {
             if (!Files.getFileExtension(diff.getNewPath()).equals("java")) {
                 continue;
@@ -65,23 +77,83 @@ public class LinesChangedCommitFilter implements CommitRangeFilter {
 
     @Override
     public List<RevCommit> filterCommits(List<RevCommit> commits) throws IOException, GitAPIException {
-        List<RevCommit> filteredCommits = new ArrayList<RevCommit>();
-        filteredCommits.add(commits.get(0));
+        return filterCommitsParallel(commits);
+    }
 
-        RevCommit currentCommit = commits.get(0);
-        for (int i = 1; i < commits.size(); ++i) {
-            RevCommit commit = commits.get(i);
+    public List<RevCommit> filterCommitsParallel(List<RevCommit> commits) {
+        List<CompareTask> compareTasks = new ArrayList<>();
+        consecutivePairs(commits, (oldCommit, newCommit) -> compareTasks.add(new CompareTask(git, oldCommit, newCommit)));
 
-            if (computeJavaLinesChanged(git, currentCommit, commit) >= javaLinesChangedThreshold) {
-                filteredCommits.add(commit);
-                currentCommit = commit;
+        final int processors = Runtime.getRuntime().availableProcessors();
+        final int grainSize = compareTasks.size() / processors / 8; // some comparisons are harder than others
+
+        // Split pairs evenly across all processors
+        List<Callable<CompareResult>> compareThreadTasks = new ArrayList<>();
+        enumerate(Lists.partition(compareTasks, grainSize), (chunkId, tasks) ->
+                compareThreadTasks.add(() -> new CompareResult(chunkId, tasks.stream()
+                        .map((ThrowingFunction<CompareTask, Integer>) CompareTask::computeDiff)
+                        .collect(ImmutableList.toImmutableList()))));
+
+        ExecutorService executor = new ForkJoinPool();
+        try {
+            // Compute java lines changed between each commit pair
+            List<Integer> diffs =
+                    executor.invokeAll(compareThreadTasks).stream()
+                            .map((ThrowingFunction<Future<CompareResult>, CompareResult>) Future::get)
+                            .sorted(Comparator.comparingInt(result -> result.id))
+                            .map(result -> result.diffs)
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toList());
+
+            List<RevCommit> result = new ArrayList<>();
+            result.add(commits.get(0));
+
+            // Walk through the the diffs taking a commit every threshold amount
+            int totalLinesChanged = 0;
+            for (int i = 0; i < diffs.size(); ++i) {
+                totalLinesChanged += diffs.get(i);
+
+                if (totalLinesChanged >= javaLinesChangedThreshold) {
+                    result.add(commits.get(i + 1));
+                    totalLinesChanged = 0;
+                }
             }
+
+            if (!Iterables.getLast(result).equals(Iterables.getLast(commits))) {
+                result.add(Iterables.getLast(commits));
+            }
+
+            return result;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    private static class CompareTask {
+        private final Git git;
+        private final RevCommit oldCommit;
+        private final RevCommit newCommit;
+
+        CompareTask(final Git git, final RevCommit oldCommit, final RevCommit newCommit) {
+            this.git = git;
+            this.oldCommit = oldCommit;
+            this.newCommit = newCommit;
         }
 
-        if (Iterables.getLast(filteredCommits) != Iterables.getLast(commits)) {
-            filteredCommits.add(Iterables.getLast(commits));
+        public int computeDiff() throws IOException, GitAPIException {
+            return computeJavaLinesChanged(git, oldCommit, newCommit);
         }
+    }
 
-        return filteredCommits;
+    private static class CompareResult {
+        public final int id;
+        public final ImmutableList<Integer> diffs;
+
+        CompareResult(final int id, final ImmutableList<Integer> diffs) {
+            this.id = id;
+            this.diffs = diffs;
+        }
     }
 }

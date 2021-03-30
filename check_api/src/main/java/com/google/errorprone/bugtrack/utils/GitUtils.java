@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.utils;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.SrcFile;
@@ -36,21 +37,34 @@ import org.eclipse.jgit.treewalk.filter.PathFilter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GitUtils {
     private static boolean isMatchingCommit(RevCommit commit, String commitId) {
         return commit.getName().startsWith(commitId);
     }
 
-    public static List<RevCommit> expandCommitRange(Repository repo, CommitRange range) throws GitAPIException, IOException {
+    public static List<RevCommit> expandCommitRange(Repository repo, CommitRange range) throws GitAPIException, IOException, InterruptedException {
         Deque<RevCommit> commits = new LinkedList<>();
+
+        // Can't be bothered to fall around with JGit
+        List<String> gitLogLines = Splitter.on('\n').splitToList(
+                ShellUtils.runCommand(
+                        repo.getDirectory(),
+                        "git", "log", "--ancestry-path", "--oneline", range.startCommit + ".." + range.finalCommit));
+
+        Set<String> partialIds = gitLogLines.stream().map(s -> s.split(" ")[0]).collect(ImmutableSet.toImmutableSet());
 
         try (RevWalk walk = new RevWalk(repo)) {
             walk.markStart(walk.parseCommit(ObjectId.fromString(range.finalCommit)));
             for (RevCommit commit : walk) {
+                if (!partialIds.contains(commit.getName().substring(0, 10))) {
+                    continue;
+                }
                 if (isMatchingCommit(commit, range.startCommit)) {
                     break;
                 }
+
                 commits.addFirst(commit);
             }
 

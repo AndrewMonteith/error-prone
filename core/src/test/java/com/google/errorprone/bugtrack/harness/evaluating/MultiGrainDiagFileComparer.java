@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
+import static com.google.errorprone.bugtrack.harness.utils.ListUtils.consecutivePairs;
 import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
 
 public final class MultiGrainDiagFileComparer {
@@ -127,17 +128,6 @@ public final class MultiGrainDiagFileComparer {
         }
     }
 
-    private <T> void consecutivePairs(Iterable<T> items, BiConsumer<T, T> biConsumer) {
-        Iterator<T> iter = items.iterator();
-
-        T current = iter.next();
-        while (iter.hasNext()) {
-            T next = iter.next();
-            biConsumer.accept(current, next);
-            current = next;
-        }
-    }
-
     private void makeGrainFolders(Path output, Iterable<Integer> grains) {
         for (int grain : grains) {
             Path grainOutput = output.resolve("grain-" + grain);
@@ -175,8 +165,6 @@ public final class MultiGrainDiagFileComparer {
                         .outputs.add(grainOutput.resolve(fileName));
             });
         }
-
-        System.out.println("Total tasks " + commitPairsTasks.values().size());
 
         final int processors = Runtime.getRuntime().availableProcessors();
         final int grainSize = commitPairsTasks.values().size() / processors;

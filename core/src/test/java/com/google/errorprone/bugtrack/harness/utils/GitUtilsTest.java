@@ -20,7 +20,6 @@ import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.projects.HazelcastProject;
 import com.google.errorprone.bugtrack.utils.GitUtils;
-import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -37,7 +36,7 @@ import java.util.List;
 @RunWith(JUnit4.class)
 public class GitUtilsTest {
     @Test
-    public void canExpandValidCommitRange() throws GitAPIException, IOException {
+    public void canExpandValidCommitRange() throws GitAPIException, IOException, InterruptedException {
         // GIVEN:
         Repository repo = new HazelcastProject().loadRepo();
         CommitRange range = new CommitRange("6a5bc11894e312366e82d4c808df31c2d441d0fc","b78ce05074c5c482873165749c4a32053352282f");
@@ -45,8 +44,10 @@ public class GitUtilsTest {
         // WHEN:
         List<RevCommit> expandedRange = GitUtils.expandCommitRange(repo, range);
 
+        expandedRange.forEach(c -> System.out.println(c.getName()));
+
         // EXPECT:
-        Assert.assertEquals(2852, expandedRange.size());
+        Assert.assertEquals(2788, expandedRange.size());
         Assert.assertEquals(range.startCommit, expandedRange.get(0).getName());
         Assert.assertEquals(range.finalCommit, expandedRange.get(expandedRange.size()-1).getName());
     }

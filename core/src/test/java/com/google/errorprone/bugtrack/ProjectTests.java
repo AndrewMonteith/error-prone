@@ -105,7 +105,7 @@ public class ProjectTests {
     }
 
     @Test
-    public void serialiseDiagnostics() throws IOException, GitAPIException {
+    public void serialiseDiagnostics() throws IOException, GitAPIException, InterruptedException {
         CorpusProject project = new JSoupProject();
         CommitRange range = new CommitRange("f1110a9021c2caa28cbe3177c0c3a0f5ae326eb4", "ae9a18c9e1382b5d8bad14d09279eda725490c25");
 

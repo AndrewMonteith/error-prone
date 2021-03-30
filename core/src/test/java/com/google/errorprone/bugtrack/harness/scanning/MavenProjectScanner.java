@@ -16,7 +16,7 @@
 
 package com.google.errorprone.bugtrack.harness.scanning;
 
-import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
+import com.google.errorprone.bugtrack.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;

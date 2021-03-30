@@ -16,10 +16,7 @@
 
 package com.google.errorprone.bugtrack.hpc;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.GitPathComparer;
 import com.google.errorprone.bugtrack.GitSrcFilePairLoader;
@@ -27,8 +24,6 @@ import com.google.errorprone.bugtrack.harness.LinesChangedCommitFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.evaluating.*;
-import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
-import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -40,12 +35,9 @@ import org.eclipse.jgit.util.FS;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +67,7 @@ public final class HPCCode {
         projects = ImmutableMap.copyOf(projs);
     }
 
-    public static void main(String[] args) throws GitAPIException, IOException {
+    public static void main(String[] args) throws GitAPIException, IOException, InterruptedException {
         Repository repo = new JRubyProject().loadRepo();
         CommitRange range = new CommitRange("77d1af438a16fc8795446b63644cc63a25b32e06", "45a5f884a1a001493a67c240180182c646ff8a38");
 
@@ -126,7 +118,7 @@ public final class HPCCode {
     }
 
     @Test
-    public void genCommits() throws GitAPIException, IOException {
+    public void genCommits() throws GitAPIException, IOException, InterruptedException {
         Repository repo = projects.get(System.getProperty("project")).loadRepo();
         CommitRange range = new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
 
@@ -141,7 +133,22 @@ public final class HPCCode {
     }
 
     @Test
-    public void betweenCommits() throws GitAPIException, IOException {
+    public void foo() throws GitAPIException, IOException, InterruptedException {
+        Repository repo = projects.get("hazelcast").loadRepo();
+        CommitRange range = new CommitRange("6a5bc11894e312366e82d4c808df31c2d441d0fc", "1d86daea33db15b04bc1da84325f2bda17b44cfb");
+
+        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(repo), 500)
+                .filterCommits(GitUtils.expandCommitRange(repo, range));
+
+        System.out.println("Total commits  " + filteredCommits.size());
+
+        for (int i = 0; i < filteredCommits.size(); ++i) {
+            System.out.println(i + " " + filteredCommits.get(i).getName());
+        }
+    }
+
+    @Test
+    public void betweenCommits() throws GitAPIException, IOException, InterruptedException {
         CorpusProject project = loadProject();
         CommitRange range = new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
 

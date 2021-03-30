@@ -113,11 +113,11 @@ public final class ProjectHarness {
         DiagnosticsFile.save(output, commit, diagnostics);
     }
 
-    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output) throws GitAPIException, IOException {
+    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output) throws GitAPIException, IOException, InterruptedException {
         serialiseCommits(range, filter, output, 0);
     }
 
-    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output, int commitNum) throws GitAPIException, IOException {
+    public void serialiseCommits(CommitRange range, CommitRangeFilter filter, Path output, int commitNum) throws GitAPIException, IOException, InterruptedException {
         if (!output.toFile().isDirectory()) {
             throw new RuntimeException(output + " is not a directory.");
         }

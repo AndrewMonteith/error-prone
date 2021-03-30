@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.harness.utils;
+package com.google.errorprone.bugtrack.utils;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -31,9 +31,13 @@ import java.util.concurrent.TimeUnit;
 public final class ShellUtils {
 
     public static String runCommand(Path directory, String... command) throws IOException, InterruptedException {
+        return runCommand(directory.toFile(), command);
+    }
+
+    public static String runCommand(File directory, String... command) throws IOException, InterruptedException {
         Process process = new ProcessBuilder()
                 .command(command)
-                .directory(directory.toFile())
+                .directory(directory)
                 .start();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));

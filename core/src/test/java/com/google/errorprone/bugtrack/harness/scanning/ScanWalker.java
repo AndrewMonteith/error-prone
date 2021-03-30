@@ -16,7 +16,7 @@
 
 package com.google.errorprone.bugtrack.harness.scanning;
 
-import com.google.errorprone.bugtrack.harness.utils.ShellUtils;
+import com.google.errorprone.bugtrack.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -24,7 +24,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;

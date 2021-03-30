@@ -34,7 +34,7 @@ import java.util.List;
 @RunWith(JUnit4.class)
 public final class LinesChangedCommitFilterTest {
     @Test
-    public void lineChangeFilterNotTriggeredUnderThreshold() throws IOException, GitAPIException {
+    public void lineChangeFilterNotTriggeredUnderThreshold() throws IOException, GitAPIException, InterruptedException {
         // GIVEN:
         Repository jsoupRepo = new JSoupProject().loadRepo();
         CommitRange range = new CommitRange("c0b275361ce8409f85de3573d89f6a617f0084d5", "62f5035bc6b466f59231c59a7ed414db8783c0c3");
@@ -50,7 +50,7 @@ public final class LinesChangedCommitFilterTest {
     }
 
     @Test
-    public void lineChangeFilterTriggeredOverThreshold() throws IOException, GitAPIException {
+    public void lineChangeFilterTriggeredOverThreshold() throws IOException, GitAPIException, InterruptedException {
         // GIVEN:
         Repository jsoupRepo = new JSoupProject().loadRepo();
         CommitRange range = new CommitRange("c0b275361ce8409f85de3573d89f6a617f0084d5", "f6388656f6c1ce111bc2dd158bf5a3732bda0605");

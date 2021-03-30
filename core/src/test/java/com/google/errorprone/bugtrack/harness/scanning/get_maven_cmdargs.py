@@ -41,9 +41,6 @@ for i in cmdline_options:
     proj_line = next(build_output[i] for i in range(i, 0, -1)
                      if proj_re.match(build_output[i])).strip()
 
-    if "src/main/java/com/hazelcast/config/FlakeIdGeneratorConfigReadOnly.java" not in cmdline_args:
-        continue
-
     (target, name) = proj_name_re.match(proj_line).groups()
     print(target, name)
     print(cmdline_args)

@@ -30,7 +30,7 @@ public final class HazelcastProject implements CorpusProject {
 
     @Override
     public boolean shouldScanFile(Path file) {
-        return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources");
+        return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources") && !file.getFileName().toString().contains("module-info.java");
     }
 
     @Override

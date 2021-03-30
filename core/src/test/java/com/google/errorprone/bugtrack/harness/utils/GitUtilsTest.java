@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.harness.utils;
 
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.projects.HazelcastProject;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
@@ -36,19 +37,18 @@ import java.util.List;
 @RunWith(JUnit4.class)
 public class GitUtilsTest {
     @Test
-    public void canExpandValidCommitRange() throws GitAPIException {
+    public void canExpandValidCommitRange() throws GitAPIException, IOException {
         // GIVEN:
-        Repository project = new JSoupProject().loadRepo();
-        CommitRange range = new CommitRange("3c37bffe", "690d6019");
+        Repository repo = new HazelcastProject().loadRepo();
+        CommitRange range = new CommitRange("6a5bc11894e312366e82d4c808df31c2d441d0fc","b78ce05074c5c482873165749c4a32053352282f");
 
         // WHEN:
-        List<RevCommit> expandedRange = GitUtils.expandCommitRange(project, range);
+        List<RevCommit> expandedRange = GitUtils.expandCommitRange(repo, range);
 
         // EXPECT:
-        final String[] expectedHashes = new String[]{"3c37bffe", "afd73606", "724b2c5b", "690d6019"};
-        for (int i = 0; i < expectedHashes.length; ++i) {
-            Assert.assertTrue(expandedRange.get(i).getName().startsWith(expectedHashes[i]));
-        }
+        Assert.assertEquals(2852, expandedRange.size());
+        Assert.assertEquals(range.startCommit, expandedRange.get(0).getName());
+        Assert.assertEquals(range.finalCommit, expandedRange.get(expandedRange.size()-1).getName());
     }
 
 //    @Test

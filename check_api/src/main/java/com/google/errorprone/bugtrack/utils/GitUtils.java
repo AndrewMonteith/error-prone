@@ -42,21 +42,19 @@ public class GitUtils {
         return commit.getName().startsWith(commitId);
     }
 
-    public static List<RevCommit> expandCommitRange(Repository repo, CommitRange range) throws GitAPIException {
+    public static List<RevCommit> expandCommitRange(Repository repo, CommitRange range) throws GitAPIException, IOException {
         Deque<RevCommit> commits = new LinkedList<>();
 
-        boolean inCommitRange = false;
-        for (RevCommit commit : new Git(repo).log().call()) {
-            if (isMatchingCommit(commit, range.startCommit)) {
+        try (RevWalk walk = new RevWalk(repo)) {
+            walk.markStart(walk.parseCommit(ObjectId.fromString(range.finalCommit)));
+            for (RevCommit commit : walk) {
+                if (isMatchingCommit(commit, range.startCommit)) {
+                    break;
+                }
                 commits.addFirst(commit);
-                break;
-            } else if (isMatchingCommit(commit, range.finalCommit)) {
-                inCommitRange = true;
             }
 
-            if (inCommitRange) {
-                commits.addFirst(commit);
-            }
+            commits.addFirst(walk.parseCommit(ObjectId.fromString(range.startCommit)));
         }
 
         return new ArrayList<>(commits);

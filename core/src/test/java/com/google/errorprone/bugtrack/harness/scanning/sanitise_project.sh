@@ -14,6 +14,7 @@ find . -name "pom.xml" -exec bash -c 'xml ed -d "//plugin[artifactId=\"findbugs-
 find . -name "pom.xml" -exec bash -c 'xml ed -d "//plugin[artifactId=\"spotbugs-maven-plugin\"]" "$0" | sponge "$0"' {} \; # early versions can't be disabled via cmdline
 
 # Ensure all symbols are preserved in class files
+find . -name "pom.xml" -exec bash -c 'xml ed -s "//plugin[artifactId=\"maven-compiler-plugin\" and not(configuration)]" -t elem -n "configuration" "$0" | sponge "$0"' {} \; # insert compilerArgs node
 find . -name "pom.xml" -exec bash -c 'xml ed -s "//plugin[artifactId=\"maven-compiler-plugin\"]/configuration[not(compilerArgs)]" -t elem -n "compilerArgs" "$0" | sponge "$0"' {} \; # insert compilerArgs node
 find . -name "pom.xml" -exec bash -c 'xml ed -s "//plugin[artifactId=\"maven-compiler-plugin\"]/configuration/compilerArgs" -t elem -n "arg" -v "-parameters" "$0" | sponge "$0"' {} \;  # keep parameters
 find . -name "pom.xml" -exec bash -c 'xml ed -s "//plugin[artifactId=\"maven-compiler-plugin\"]/configuration[not(compilerArguments)]" -t elem -n "compilerArguments" "$0" | sponge "$0"' {} \; # insert compilerArgs node

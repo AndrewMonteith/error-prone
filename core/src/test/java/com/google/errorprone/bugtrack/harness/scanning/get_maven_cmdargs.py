@@ -1,6 +1,5 @@
 #!/bin/python3
 import re
-import random
 import sys
 import os
 import subprocess
@@ -8,7 +7,12 @@ import subprocess
 # Collect output from mvn install
 os.chdir(sys.argv[1])
 
-stdout_file = "stdout_" + str(random.randint(1, 10000))
+def get_current_commit():
+    git_query = subprocess.run(["git", "log", "-1", "--oneline"], stdout=subprocess.PIPE)
+    output = git_query.stdout.decode("utf-8").split(" ")
+    return output[0]
+
+stdout_file = "stdout_" + get_current_commit()
 
 # subprocess.PIPE can hang for sufficient large outputs, so we pipe everything into text files
 with open(stdout_file, "w") as f:
@@ -25,24 +29,36 @@ def escape_ansi(line):
 build_output = [escape_ansi(line)
                 for line in open(stdout_file, "r").readlines()]
 
-# build_output = [escape_ansi(line)
-#                 for line in open("build_output", "r").readlines()]
+i = 0
 
-proj_re = re.compile(r"^.*\[.*INFO.*\].* @ .*")
-proj_name_re = re.compile(r"^\[INFO\] (?:\-\-\-|\>\>\>) .* \((.*)\).*@.*(.*) .*$")
-
-cmdline_options = [i for (i, line) in enumerate(build_output)
-                     if "Command line options:" in line]
-
-for i in cmdline_options:
-    if "-d" not in build_output[i+1]:
+for line in build_output:
+    # We assume every command line blob has this, and look forward to being proved wrong otherwise.
+    if not (" -d " in line and "-parameters" in line):
         continue
 
-    cmdline_args = build_output[i+1][7:].strip()
-    proj_line = next(build_output[i] for i in range(i, 0, -1)
-                     if proj_re.match(build_output[i])).strip()
+    print("blob", i) # (target, name)
+    print(line[7:].strip()) # command line args
+    i += 1
 
-    (target, name) = proj_name_re.match(proj_line).groups()
-    print(target, name)
-    print(cmdline_args)
-    
+
+# When using parallel builds there's a change lines could be put between "Command line options"
+# So technically scraping the output is a race condition.
+# proj_re = re.compile(r"^.*\[.*INFO.*\].* @ .*")
+# proj_name_re = re.compile(r"^\[INFO\] (?:\-\-\-|\>\>\>) .* \((.*)\).*@.*(.*) .*$")
+#
+# cmdline_options = [i for (i, line) in enumerate(build_output)
+#                      if "Command line options:" in line]
+#
+# for i in cmdline_options:
+#     if "-d" not in build_output[i+1]:
+#         # Try and find the '-d' line a few below
+#         continue
+#
+#     cmdline_args = build_output[i+1][7:].strip()
+#     proj_line = next(build_output[i] for i in range(i, 0, -1)
+#                      if proj_re.match(build_output[i])).strip()
+#
+#     (target, name) = proj_name_re.match(proj_line).groups()
+#     print(target, name)
+#     print(cmdline_args)
+#

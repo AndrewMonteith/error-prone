@@ -80,12 +80,21 @@ public class LinesChangedCommitFilter implements CommitRangeFilter {
         return filterCommitsParallel(commits);
     }
 
+    private int computeGrainSize(final int compareTasks) {
+        final int processors = Runtime.getRuntime().availableProcessors();
+
+        if (compareTasks / processors == 0) {
+            return 4;
+        } else {
+            return Math.max(compareTasks / processors / 4, 1);
+        }
+    }
+
     public List<RevCommit> filterCommitsParallel(List<RevCommit> commits) {
         List<CompareTask> compareTasks = new ArrayList<>();
         consecutivePairs(commits, (oldCommit, newCommit) -> compareTasks.add(new CompareTask(git, oldCommit, newCommit)));
 
-        final int processors = Runtime.getRuntime().availableProcessors();
-        final int grainSize = compareTasks.size() / processors / 8; // some comparisons are harder than others
+        final int grainSize = computeGrainSize(compareTasks.size());
 
         // Split pairs evenly across all processors
         List<Callable<CompareResult>> compareThreadTasks = new ArrayList<>();

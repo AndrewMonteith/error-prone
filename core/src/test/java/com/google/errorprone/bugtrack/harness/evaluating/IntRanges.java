@@ -16,69 +16,70 @@
 
 package com.google.errorprone.bugtrack.harness.evaluating;
 
-import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 public final class IntRanges {
-    private final Range entireRange;
-    private final List<Range> excludes;
+  private final Range entireRange;
+  private final List<Range> excludes;
 
-    private IntRanges(final int start, final int end) {
-        this.entireRange = new Range(start, end);
-        this.excludes = new ArrayList<>();
+  private IntRanges(final int start, final int end) {
+    this.entireRange = new Range(start, end);
+    this.excludes = new ArrayList<>();
+  }
+
+  public static IntRanges include(final int start, final int end) {
+    return new IntRanges(start, end);
+  }
+
+  public static IntRanges specific(int... numbers) {
+    List<Integer> numList = Ints.asList(Arrays.stream(numbers).sorted().toArray());
+
+    int min = numList.stream().min(Comparator.naturalOrder()).get();
+    int max = numList.stream().max(Comparator.naturalOrder()).get();
+
+    IntRanges range = IntRanges.include(min, max);
+    for (int i = min; i < max; ++i) {
+      if (!numList.contains(i)) {
+        range.exclude(i);
+      }
     }
 
-    public static IntRanges include(final int start, final int end) {
-        return new IntRanges(start, end);
+    return range;
+  }
+
+  public IntRanges excludeRange(int start, int end) {
+    this.excludes.add(new Range(start, end));
+    return this;
+  }
+
+  public boolean contains(int val) {
+    return entireRange.isIn(val) && excludes.stream().noneMatch(r -> r.isIn(val));
+  }
+
+  public IntRanges exclude(int... numbers) {
+    for (int i : numbers) {
+      excludeRange(i, i);
     }
 
-    public static IntRanges specific(int... numbers) {
-        List<Integer> numList = Ints.asList(Arrays.stream(numbers).sorted().toArray());
+    return this;
+  }
 
-        int min = numList.stream().min(Comparator.naturalOrder()).get();
-        int max = numList.stream().max(Comparator.naturalOrder()).get();
+  private class Range {
+    final int start;
+    final int end;
 
-        IntRanges range = IntRanges.include(min, max);
-        for (int i = min; i < max; ++i) {
-            if (!numList.contains(i)) {
-                range.exclude(i);
-            }
-        }
-
-        return range;
+    Range(final int start, final int end) {
+      this.start = start;
+      this.end = end;
     }
 
-    public IntRanges excludeRange(int start, int end) {
-        this.excludes.add(new Range(start, end));
-        return this;
+    public boolean isIn(int i) {
+      return start <= i && i <= end;
     }
-
-    public boolean contains(int val) {
-        return entireRange.isIn(val) && excludes.stream().noneMatch(r -> r.isIn(val));
-    }
-
-    public IntRanges exclude(int... numbers) {
-        for (int i : numbers) {
-            excludeRange(i, i);
-        }
-
-        return this;
-    }
-
-    private class Range {
-        final int start;
-        final int end;
-
-        Range(final int start, final int end) {
-            this.start = start;
-            this.end = end;
-        }
-
-        public boolean isIn(int i) {
-            return start <= i && i <= end;
-        }
-    }
-
+  }
 }

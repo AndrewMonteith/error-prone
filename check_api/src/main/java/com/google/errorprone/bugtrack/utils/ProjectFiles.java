@@ -27,34 +27,36 @@ import java.nio.file.Paths;
 import java.util.Collection;
 
 public class ProjectFiles {
-    private static final String projRoot;
-    
-    static {
-        String root = System.getenv("ROOT");
-        if (root == null || root.isEmpty()) {
-            projRoot = "/home/monty/IdeaProjects/";
-        } else {
-            projRoot = root;
-        }
+  private static final String projRoot;
 
-        System.out.println("Initialised project root to " + projRoot);
+  static {
+    String root = System.getenv("ROOT");
+    if (root == null || root.isEmpty()) {
+      projRoot = "/home/monty/IdeaProjects/";
+    } else {
+      projRoot = root;
     }
 
-    public static Path get(String path) {
-        return Paths.get(projRoot, path);
+    System.out.println("Initialised project root to " + projRoot);
+  }
+
+  public static Path get(String path) {
+    return Paths.get(projRoot, path);
+  }
+
+  public static Path find(String prefix, String fileName) {
+    Collection<File> files =
+        FileUtils.listFiles(
+            Paths.get(projRoot, prefix).toFile(),
+            new NameFileFilter(fileName),
+            TrueFileFilter.TRUE);
+
+    if (files.isEmpty()) {
+      throw new RuntimeException("could not find file");
+    } else if (files.size() != 1) {
+      throw new RuntimeException("non-unique file requested");
     }
 
-    public static Path find(String prefix, String fileName) {
-        Collection<File> files = FileUtils.listFiles(Paths.get(projRoot, prefix).toFile(),
-                new NameFileFilter(fileName),
-                TrueFileFilter.TRUE);
-
-        if (files.isEmpty()) {
-            throw new RuntimeException("could not find file");
-        } else if (files.size() != 1) {
-            throw new RuntimeException("non-unique file requested");
-        }
-
-        return Iterables.getLast(files).toPath();
-    }
+    return Iterables.getLast(files).toPath();
+  }
 }

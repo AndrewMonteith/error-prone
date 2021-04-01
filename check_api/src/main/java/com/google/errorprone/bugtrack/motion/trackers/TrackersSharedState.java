@@ -36,58 +36,61 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class TrackersSharedState {
-    private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> oldAstAndContextCell;
-    private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> newAstAndContextCell;
+  private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> oldAstAndContextCell;
+  private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> newAstAndContextCell;
 
-    private final ErrorProneInMemoryFileManagerForCheckApi fileManager;
+  private final ErrorProneInMemoryFileManagerForCheckApi fileManager;
 
-    public TrackersSharedState() {
-        this.fileManager = new ErrorProneInMemoryFileManagerForCheckApi();
-        this.oldAstAndContextCell = new SingleKeyCell<>();
-        this.newAstAndContextCell = new SingleKeyCell<>();
+  public TrackersSharedState() {
+    this.fileManager = new ErrorProneInMemoryFileManagerForCheckApi();
+    this.oldAstAndContextCell = new SingleKeyCell<>();
+    this.newAstAndContextCell = new SingleKeyCell<>();
+  }
+
+  private Pair<JCTree.JCCompilationUnit, Context> parseFileWithJavac(
+      String fileName, List<String> fileSrc) {
+    JavacTaskImpl task =
+        (JavacTaskImpl)
+            JavacTool.create()
+                .getTask(
+                    new PrintWriter(
+                        new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
+                    fileManager,
+                    null,
+                    ImmutableList.of("-Xjcov"), // remember end positions of source ranges
+                    null,
+                    ImmutableList.of(fileManager.forSourceLines(fileName, fileSrc)));
+
+    JCTree.JCCompilationUnit tree =
+        (JCTree.JCCompilationUnit) Iterables.getFirst(task.parse(), null);
+
+    if (tree == null) {
+      throw new RuntimeException("failed to parse ast for " + fileName);
     }
 
-    private Pair<JCTree.JCCompilationUnit, Context> parseFileWithJavac(String fileName, List<String> fileSrc) {
-        JavacTaskImpl task =
-                (JavacTaskImpl)
-                        JavacTool.create().getTask(
-                                new PrintWriter(
-                                        new BufferedWriter(new OutputStreamWriter(System.err, UTF_8)), true),
-                                fileManager,
-                                null,
-                                ImmutableList.of("-Xjcov"), // remember end positions of source ranges
-                                null,
-                                ImmutableList.of(fileManager.forSourceLines(fileName, fileSrc)));
+    return new Pair<>(tree, task.getContext());
+  }
 
-        JCTree.JCCompilationUnit tree = (JCTree.JCCompilationUnit) Iterables.getFirst(task.parse(), null);
+  private Pair<JCTree.JCCompilationUnit, Context> loadJavacInfo(SrcFile file, String suffixId) {
+    String fileNameId = file.getName() + suffixId;
 
-        if (tree == null) {
-            throw new RuntimeException("failed to parse ast for " + fileName);
-        }
+    return (suffixId.equals("_old.java") ? oldAstAndContextCell : newAstAndContextCell)
+        .get(fileNameId, () -> parseFileWithJavac(fileNameId, file.getLines()));
+  }
 
-        return new Pair<>(tree, task.getContext());
-    }
+  public JCTree.JCCompilationUnit loadOldJavacAST(SrcFilePair srcFilePair) {
+    return loadJavacInfo(srcFilePair.oldFile, "_old.java").fst;
+  }
 
-    private Pair<JCTree.JCCompilationUnit, Context> loadJavacInfo(SrcFile file, String suffixId) {
-        String fileNameId = file.getName() + suffixId;
+  public Context loadOldJavacContext(SrcFilePair srcFilePair) {
+    return loadJavacInfo(srcFilePair.oldFile, "_old.java").snd;
+  }
 
-        return (suffixId.equals("_old.java") ? oldAstAndContextCell : newAstAndContextCell)
-                    .get(fileNameId, () -> parseFileWithJavac(fileNameId, file.getLines()));
-    }
+  public JCTree.JCCompilationUnit loadNewJavacAST(SrcFilePair srcFilePair) {
+    return loadJavacInfo(srcFilePair.newFile, "_new.java").fst;
+  }
 
-    public JCTree.JCCompilationUnit loadOldJavacAST(SrcFilePair srcFilePair) {
-        return loadJavacInfo(srcFilePair.oldFile, "_old.java").fst;
-    }
-
-    public Context loadOldJavacContext(SrcFilePair srcFilePair) {
-        return loadJavacInfo(srcFilePair.oldFile, "_old.java").snd;
-    }
-
-    public JCTree.JCCompilationUnit loadNewJavacAST(SrcFilePair srcFilePair) {
-        return loadJavacInfo(srcFilePair.newFile, "_new.java").fst;
-    }
-
-    public Context loadNewJavacContext(SrcFilePair srcFilePair) {
-        return loadJavacInfo(srcFilePair.newFile, "_new.java").snd;
-    }
+  public Context loadNewJavacContext(SrcFilePair srcFilePair) {
+    return loadJavacInfo(srcFilePair.newFile, "_new.java").snd;
+  }
 }

@@ -25,108 +25,117 @@ import org.eclipse.jdt.core.dom.*;
 import java.util.regex.Pattern;
 
 public class BetterJdtVisitor extends JdtVisitor {
-    private static final Pattern X_DOT_Y = Pattern.compile("^[a-zA-Z_]\\w*\\.[a-zA-Z_]\\w*$");
+  private static final Pattern X_DOT_Y = Pattern.compile("^[a-zA-Z_]\\w*\\.[a-zA-Z_]\\w*$");
 
-    private final SrcFile srcFile;
+  private final SrcFile srcFile;
 
-    public BetterJdtVisitor(SrcFile srcFile) {
-        this.srcFile = srcFile;
+  public BetterJdtVisitor(SrcFile srcFile) {
+    this.srcFile = srcFile;
+  }
+
+  @Override
+  protected String getLabel(ASTNode node) {
+    if (node instanceof ImportDeclaration) {
+      ImportDeclaration importDecl = (ImportDeclaration) node;
+      String labelPrefix = importDecl.isStatic() ? "static " : "";
+      return labelPrefix + importDecl.getName().getFullyQualifiedName();
+    } else {
+      return super.getLabel(node);
+    }
+  }
+
+  @Override
+  public boolean visit(QualifiedName qualName) {
+    if (X_DOT_Y.matcher(qualName.getFullyQualifiedName()).matches()) {
+      pushNode(qualName.getQualifier(), qualName.getQualifier().toString());
+      popNode();
+      pushNode(qualName.getName(), qualName.getName().toString());
+      popNode();
     }
 
-    @Override
-    protected String getLabel(ASTNode node) {
-        if (node instanceof ImportDeclaration) {
-            ImportDeclaration importDecl = (ImportDeclaration) node;
-            String labelPrefix = importDecl.isStatic() ? "static " : "";
-            return labelPrefix + importDecl.getName().getFullyQualifiedName();
-        } else {
-            return super.getLabel(node);
-        }
+    return false;
+  }
+
+  @Override
+  public boolean visit(TryStatement tryStatement) {
+    pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 3);
+    getCurrentParent().setLabel("try-sig");
+
+    pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 3);
+    getCurrentParent().setLabel("try-sig");
+    popNode();
+
+    pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 4);
+    getCurrentParent().setLabel("try-sig");
+    popNode();
+
+    popNode();
+
+    return super.visit(tryStatement);
+  }
+
+  //    @Override
+  //    public boolean visit(TypeDeclaration typeDecl) {
+  //        String label = typeDecl.isInterface() ? "interface" : "class";
+  //        // No easy way to find the source region of the 'interface' or 'class' label
+  //        List<IExtendedModifier> modifiers = (List<IExtendedModifier>) typeDecl.modifiers();
+  //
+  //
+  //    }
+
+  private long findStartOfTypeDeclToken(final long start, String token) {
+    // start can point to either the beginning of a comment, modifiers, or the actual token
+    ImmutableList<String> lines = srcFile.getLines();
+    int lineIndex = (int) srcFile.getLineNumber(start) - 1;
+
+    // skip javadoc is present
+    if (lines.get(lineIndex).trim().startsWith("/*")) {
+      while (!lines.get(lineIndex).trim().endsWith("*/")) {
+        ++lineIndex;
+      }
+      ++lineIndex;
     }
 
-    @Override
-    public boolean visit(QualifiedName qualName) {
-        if (X_DOT_Y.matcher(qualName.getFullyQualifiedName()).matches()) {
-            pushNode(qualName.getQualifier(), qualName.getQualifier().toString());
-            popNode();
-            pushNode(qualName.getName(), qualName.getName().toString());
-            popNode();
-        }
-
-        return false;
+    // we should now be on the <modifiers> <token> <identifier> line
+    final int column = lines.get(lineIndex).indexOf(token) + 1;
+    if (column == 0) {
+      throw new RuntimeException(
+          "requested wrong token type."
+              + srcFile.getName()
+              + " "
+              + (lineIndex + 1)
+              + " "
+              + lines.get(lineIndex)
+              + " "
+              + token);
     }
 
-    @Override
-    public boolean visit(TryStatement tryStatement) {
-        pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 3);
-        getCurrentParent().setLabel("try-sig");
+    return srcFile.getPosition((lineIndex + 1), column);
+  }
 
-        pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 3);
-        getCurrentParent().setLabel("try-sig");
-        popNode();
+  @Override
+  public boolean visit(TypeDeclaration typeDecl) {
+    //        Added for guice since position points to class keyword which was not included in the
+    // AST
+    //        a533bf26c612003a99996f07f64148ddd1602d06 1
+    //        ----DIAGNOSTIC
+    //
+    // /rds/user/am2857/hpc-work/java-corpus/16933/core/test/com/google/inject/internal/ProxyFactoryTest.java 159 10 4705 4712 4825
+    //        [ClassNamedLikeTypeParameter] This class's name looks like a Type Parameter.
+    //        (see https://errorprone.info/bugpattern/ClassNamedLikeTypeParameter)
+    //        ffb154d0304e7c226e1495e5bf0344ff9313a29c 1
+    //        ----DIAGNOSTIC
+    //
+    // /rds/user/am2857/hpc-work/java-corpus/16933/core/test/com/google/inject/internal/ProxyFactoryTest.java 159 17 4756 4770 4883
+    //        [ClassNamedLikeTypeParameter] This class's name looks like a Type Parameter.
+    //        (see https://errorprone.info/bugpattern/ClassNamedLikeTypeParameter)
+    String label = typeDecl.isInterface() ? "interface" : "class";
+    final long labelStartPos = findStartOfTypeDeclToken(typeDecl.getStartPosition(), label);
 
-        pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 4);
-        getCurrentParent().setLabel("try-sig");
-        popNode();
+    pushFakeNode(EntityType.SIMPLE_NAME, (int) labelStartPos, label.length());
+    getCurrentParent().setLabel(label);
+    popNode();
 
-        popNode();
-
-        return super.visit(tryStatement);
-    }
-
-//    @Override
-//    public boolean visit(TypeDeclaration typeDecl) {
-//        String label = typeDecl.isInterface() ? "interface" : "class";
-//        // No easy way to find the source region of the 'interface' or 'class' label
-//        List<IExtendedModifier> modifiers = (List<IExtendedModifier>) typeDecl.modifiers();
-//
-//
-//    }
-
-    private long findStartOfTypeDeclToken(final long start, String token) {
-        // start can point to either the beginning of a comment, modifiers, or the actual token
-        ImmutableList<String> lines = srcFile.getLines();
-        int lineIndex = (int) srcFile.getLineNumber(start) - 1;
-
-        // skip javadoc is present
-        if (lines.get(lineIndex).trim().startsWith("/*")) {
-            while (!lines.get(lineIndex).trim().endsWith("*/")) {
-                ++lineIndex;
-            }
-            ++lineIndex;
-        }
-
-        // we should now be on the <modifiers> <token> <identifier> line
-        final int column = lines.get(lineIndex).indexOf(token) + 1;
-        if (column == 0) {
-            throw new RuntimeException("requested wrong token type." +
-                    srcFile.getName() + " " + (lineIndex+1) + " " + lines.get(lineIndex) + " " + token);
-        }
-
-        return srcFile.getPosition((lineIndex+1), column);
-    }
-
-    @Override
-    public boolean visit(TypeDeclaration typeDecl) {
-//        Added for guice since position points to class keyword which was not included in the AST
-//        a533bf26c612003a99996f07f64148ddd1602d06 1
-//        ----DIAGNOSTIC
-//        /rds/user/am2857/hpc-work/java-corpus/16933/core/test/com/google/inject/internal/ProxyFactoryTest.java 159 10 4705 4712 4825
-//        [ClassNamedLikeTypeParameter] This class's name looks like a Type Parameter.
-//        (see https://errorprone.info/bugpattern/ClassNamedLikeTypeParameter)
-//        ffb154d0304e7c226e1495e5bf0344ff9313a29c 1
-//        ----DIAGNOSTIC
-//        /rds/user/am2857/hpc-work/java-corpus/16933/core/test/com/google/inject/internal/ProxyFactoryTest.java 159 17 4756 4770 4883
-//        [ClassNamedLikeTypeParameter] This class's name looks like a Type Parameter.
-//        (see https://errorprone.info/bugpattern/ClassNamedLikeTypeParameter)
-        String label = typeDecl.isInterface() ? "interface" : "class";
-        final long labelStartPos = findStartOfTypeDeclToken(typeDecl.getStartPosition(), label);
-
-        pushFakeNode(EntityType.SIMPLE_NAME, (int)labelStartPos, label.length());
-        getCurrentParent().setLabel(label);
-        popNode();
-
-        return super.visit(typeDecl);
-    }
-
+    return super.visit(typeDecl);
+  }
 }

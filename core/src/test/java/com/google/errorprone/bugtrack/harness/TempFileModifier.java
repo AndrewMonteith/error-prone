@@ -22,21 +22,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class TempFileModifier extends java.io.File implements AutoCloseable {
-    private final Path originalFile;
-    private final File tempFile;
+  private final Path originalFile;
+  private final File tempFile;
 
-    public TempFileModifier(Path originalFile) throws IOException {
-        super(originalFile.toString());
+  public TempFileModifier(Path originalFile) throws IOException {
+    super(originalFile.toString());
 
-        this.originalFile = originalFile;
-        this.tempFile = new File(originalFile.toAbsolutePath() + ".temp");
+    this.originalFile = originalFile;
+    this.tempFile = new File(originalFile.toAbsolutePath() + ".temp");
 
-        Files.copy(originalFile, tempFile.toPath());
-    }
+    Files.copy(originalFile, tempFile.toPath());
+  }
 
-    @Override
-    public void close() throws Exception {
-        Files.delete(originalFile);
-        tempFile.renameTo(originalFile.toFile());
-    }
+  @Override
+  public void close() throws Exception {
+    Files.delete(originalFile);
+    tempFile.renameTo(originalFile.toFile());
+  }
 }

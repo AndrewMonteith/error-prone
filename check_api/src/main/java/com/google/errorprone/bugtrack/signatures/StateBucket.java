@@ -25,24 +25,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
-    Deep copies information from the VisitorState we want to use later to consturct signatures.
- */
+   Deep copies information from the VisitorState we want to use later to consturct signatures.
+*/
 public final class StateBucket {
-    public ImmutableList<Tree.Kind> path;
+  public ImmutableList<Tree.Kind> path;
 
-    private ImmutableList<Tree.Kind> copyPath(TreePath path) {
-        List<Tree.Kind> pathFromNodeToRoot = new ArrayList<>();
+  public StateBucket(VisitorState state) {
+    this.path = copyPath(state.getPath());
+  }
 
-        while (path != null) {
-            pathFromNodeToRoot.add(path.getLeaf().getKind());
-            path = path.getParentPath();
-        }
+  private ImmutableList<Tree.Kind> copyPath(TreePath path) {
+    List<Tree.Kind> pathFromNodeToRoot = new ArrayList<>();
 
-        return ImmutableList.copyOf(pathFromNodeToRoot);
+    while (path != null) {
+      pathFromNodeToRoot.add(path.getLeaf().getKind());
+      path = path.getParentPath();
     }
 
-    public StateBucket(VisitorState state) {
-        this.path = copyPath(state.getPath());
-    }
-
+    return ImmutableList.copyOf(pathFromNodeToRoot);
+  }
 }

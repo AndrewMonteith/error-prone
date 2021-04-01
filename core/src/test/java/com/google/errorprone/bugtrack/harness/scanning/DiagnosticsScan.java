@@ -22,20 +22,26 @@ import com.google.errorprone.bugtrack.projects.ProjectFile;
 import java.util.List;
 
 public class DiagnosticsScan {
-    public final String name;
-    public final List<ProjectFile> files;
-    public final List<String> cmdLineArguments;
+  public final String name;
+  public final List<ProjectFile> files;
+  public final List<String> cmdLineArguments;
 
-    public DiagnosticsScan(String name, List<ProjectFile> files, List<String> cmdLineArguments) {
-        this.name = name;
-        this.files = files;
-        this.cmdLineArguments = cmdLineArguments;
-    }
+  public DiagnosticsScan(String name, List<ProjectFile> files, List<String> cmdLineArguments) {
+    this.name = name;
+    this.files = files;
+    this.cmdLineArguments = cmdLineArguments;
+  }
 
-    @Override
-    public String toString() {
-        return "Name " + name + "\n" +
-                "Files:\n  " + Joiner.on("  \n").join(files) + "\n" +
-                "Args: " + Joiner.on(' ').join(cmdLineArguments) + "\n";
-    }
+  @Override
+  public String toString() {
+    return "Name "
+        + name
+        + "\n"
+        + "Files:\n  "
+        + Joiner.on("  \n").join(files)
+        + "\n"
+        + "Args: "
+        + Joiner.on(' ').join(cmdLineArguments)
+        + "\n";
+  }
 }

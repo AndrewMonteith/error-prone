@@ -19,7 +19,6 @@ package com.google.errorprone.bugtrack;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
-import com.google.errorprone.bugtrack.motion.DiagnosticsDeltaManager;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
@@ -79,14 +78,16 @@ public final class TestUtils {
         }
     }
 
-    private static CorpusProject TEST_PROJECT = new CorpusProject() {
+    private static final CorpusProject TEST_PROJECT = new CorpusProject() {
         @Override
         public Path getRoot() {
             return ProjectFiles.get("error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata");
         }
 
         @Override
-        public boolean shouldScanFile(Path file) {  return true; }
+        public boolean shouldScanFile(Path file) {
+            return true;
+        }
 
         @Override
         public BuildSystem getBuildSystem() {

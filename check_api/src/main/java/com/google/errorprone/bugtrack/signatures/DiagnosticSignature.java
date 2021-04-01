@@ -17,8 +17,8 @@
 package com.google.errorprone.bugtrack.signatures;
 
 public interface DiagnosticSignature {
-    boolean areSame(DiagnosticSignature other);
-        // Returns true if, and only if the specified 'other' signature is the same as the caller object.
-        // This interface does not enforce the symmetric, transitive, reflexive properties of equality
-        // but we'll make do.
+  boolean areSame(DiagnosticSignature other);
+  // Returns true if, and only if the specified 'other' signature is the same as the caller object.
+  // This interface does not enforce the symmetric, transitive, reflexive properties of equality
+  // but we'll make do.
 }

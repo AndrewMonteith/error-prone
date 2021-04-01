@@ -21,5 +21,6 @@ import com.google.errorprone.bugtrack.motion.SrcFilePair;
 
 @FunctionalInterface
 public interface MissedLikelihoodCalculator {
-    double compute(SrcFilePair srcFilePair, DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
+  double compute(
+      SrcFilePair srcFilePair, DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
 }

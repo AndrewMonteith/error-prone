@@ -19,23 +19,22 @@ package com.google.errorprone.bugtrack.projects;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 
 public class JUnitProject implements CorpusProject {
-    @Override
-    public Path getRoot() {
-        return ProjectFiles.get("java-corpus/junit4");
-    }
+  @Override
+  public Path getRoot() {
+    return ProjectFiles.get("java-corpus/junit4");
+  }
 
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return isJavaFile(file);
-    }
+  @Override
+  public boolean shouldScanFile(Path file) {
+    return isJavaFile(file);
+  }
 
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Maven;
-    }
+  @Override
+  public BuildSystem getBuildSystem() {
+    return BuildSystem.Maven;
+  }
 }

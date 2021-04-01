@@ -19,21 +19,20 @@ package com.google.errorprone.bugtrack.projects;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public final class OkHttpProject implements CorpusProject {
-    @Override
-    public Path getRoot() {
-        return ProjectFiles.get("java-corpus/okhttp");
-    }
+  @Override
+  public Path getRoot() {
+    return ProjectFiles.get("java-corpus/okhttp");
+  }
 
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return ShouldScanUtils.isJavaFile(file);
-    }
+  @Override
+  public boolean shouldScanFile(Path file) {
+    return ShouldScanUtils.isJavaFile(file);
+  }
 
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Gradle;
-    }
+  @Override
+  public BuildSystem getBuildSystem() {
+    return BuildSystem.Gradle;
+  }
 }

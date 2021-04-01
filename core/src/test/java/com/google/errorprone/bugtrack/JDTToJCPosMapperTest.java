@@ -17,7 +17,8 @@
 package com.google.errorprone.bugtrack;
 
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.motion.trackers.*;
+import com.google.errorprone.bugtrack.motion.trackers.JDTToJCPosMapper;
+import com.google.errorprone.bugtrack.motion.trackers.TrackersSharedState;
 import com.google.googlejavaformat.java.FormatterException;
 import com.sun.tools.javac.tree.JCTree;
 import org.junit.Assert;

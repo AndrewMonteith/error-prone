@@ -30,51 +30,55 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class DiagnosticPositionMotionComparer implements BugComparer {
-    private final SrcFilePairLoader srcFilePairLoader;
-    private final DiagnosticPositionTrackerConstructor trackerConstructor;
+  private final SrcFilePairLoader srcFilePairLoader;
+  private final DiagnosticPositionTrackerConstructor trackerConstructor;
 
-    private final SingleKeyCell<String, DiagnosticPositionTracker> positionTrackerCell;
-    private final TrackersSharedState sharedState;
+  private final SingleKeyCell<String, DiagnosticPositionTracker> positionTrackerCell;
+  private final TrackersSharedState sharedState;
 
-    public DiagnosticPositionMotionComparer(SrcFilePairLoader srcFilePairLoader,
-                                            DiagnosticPositionTrackerConstructor trackerConstructor) {
-        this.srcFilePairLoader = srcFilePairLoader;
-        this.trackerConstructor = trackerConstructor;
-        this.positionTrackerCell = new SingleKeyCell<>();
-        this.sharedState = new TrackersSharedState();
+  public DiagnosticPositionMotionComparer(
+      SrcFilePairLoader srcFilePairLoader,
+      DiagnosticPositionTrackerConstructor trackerConstructor) {
+    this.srcFilePairLoader = srcFilePairLoader;
+    this.trackerConstructor = trackerConstructor;
+    this.positionTrackerCell = new SingleKeyCell<>();
+    this.sharedState = new TrackersSharedState();
+  }
+
+  private DiagnosticPositionTracker createDiagnosticPositionTracker(
+      DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
+      throws DiffException, IOException, FormatterException {
+    return trackerConstructor.create(
+        srcFilePairLoader.load(oldDiagnostic, newDiagnostic), sharedState);
+  }
+
+  private DiagnosticPositionTracker getDiagnosticPositionTracker(
+      DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws Exception {
+    return positionTrackerCell.throwableGet(
+        oldDiagnostic.getFileName(),
+        () -> createDiagnosticPositionTracker(oldDiagnostic, newDiagnostic));
+  }
+
+  @Override
+  public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
+    if (!oldDiagnostic.isSameType(newDiagnostic)) {
+      return false;
     }
 
-    private DiagnosticPositionTracker createDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
-                                                                      DatasetDiagnostic newDiagnostic) throws DiffException, IOException, FormatterException {
-        return trackerConstructor.create(srcFilePairLoader.load(oldDiagnostic, newDiagnostic), sharedState);
+    if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
+      return false;
     }
 
-    private DiagnosticPositionTracker getDiagnosticPositionTracker(DatasetDiagnostic oldDiagnostic,
-                                                                   DatasetDiagnostic newDiagnostic) throws Exception {
-        return positionTrackerCell.throwableGet(oldDiagnostic.getFileName(),
-                () -> createDiagnosticPositionTracker(oldDiagnostic, newDiagnostic));
+    try {
+      DiagnosticPositionTracker posTracker =
+          getDiagnosticPositionTracker(oldDiagnostic, newDiagnostic);
+
+      Optional<DiagPosEqualityOracle> posEqOracle = posTracker.track(oldDiagnostic);
+
+      return posEqOracle.isPresent() && posEqOracle.get().hasSamePosition(newDiagnostic);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
     }
-
-    @Override
-    public boolean areSame(DatasetDiagnostic oldDiagnostic,
-                           DatasetDiagnostic newDiagnostic) {
-        if (!oldDiagnostic.isSameType(newDiagnostic)) {
-            return false;
-        }
-
-        if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
-            return false;
-        }
-
-        try {
-            DiagnosticPositionTracker posTracker = getDiagnosticPositionTracker(oldDiagnostic, newDiagnostic);
-
-            Optional<DiagPosEqualityOracle> posEqOracle = posTracker.track(oldDiagnostic);
-
-            return posEqOracle.isPresent() && posEqOracle.get().hasSamePosition(newDiagnostic);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+  }
 }

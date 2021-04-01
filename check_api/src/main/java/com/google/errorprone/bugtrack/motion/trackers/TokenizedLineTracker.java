@@ -26,30 +26,34 @@ import java.util.List;
 import java.util.Optional;
 
 public class TokenizedLineTracker implements DiagnosticPositionTracker {
-    private final SrcLineTracker<TokenizedLine> srcTracker;
+  private final SrcLineTracker<TokenizedLine> srcTracker;
 
-    public TokenizedLineTracker(List<TokenizedLine> oldTokens,
-                                List<TokenizedLine> newTokens) throws DiffException {
-        this.srcTracker = new SrcLineTracker<>(oldTokens, newTokens);
-    }
+  public TokenizedLineTracker(List<TokenizedLine> oldTokens, List<TokenizedLine> newTokens)
+      throws DiffException {
+    this.srcTracker = new SrcLineTracker<>(oldTokens, newTokens);
+  }
 
-    private long getNewColumn(final long oldLineNum, final long oldColumn, final long newLineNum) {
-        TokenizedLine oldLine = srcTracker.getOldLine(oldLineNum);
-        TokenizedLine newLine = srcTracker.getNewLine(newLineNum);
+  private long getNewColumn(final long oldLineNum, final long oldColumn, final long newLineNum) {
+    TokenizedLine oldLine = srcTracker.getOldLine(oldLineNum);
+    TokenizedLine newLine = srcTracker.getNewLine(newLineNum);
 
-        int oldTokenIndex = oldLine.getTokenIndexForColumn(oldColumn);
-        ErrorProneToken oldToken = oldLine.getToken(oldTokenIndex);
-        ErrorProneToken newToken = newLine.getToken(oldTokenIndex);
+    int oldTokenIndex = oldLine.getTokenIndexForColumn(oldColumn);
+    ErrorProneToken oldToken = oldLine.getToken(oldTokenIndex);
+    ErrorProneToken newToken = newLine.getToken(oldTokenIndex);
 
-        return newToken.pos() + (oldColumn-oldToken.pos());
-    }
+    return newToken.pos() + (oldColumn - oldToken.pos());
+  }
 
-    @Override
-    public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic diag) {
-        final long lineNum = diag.getLineNumber();
-        final long col = diag.getColumnNumber();
+  @Override
+  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic diag) {
+    final long lineNum = diag.getLineNumber();
+    final long col = diag.getColumnNumber();
 
-        return srcTracker.getNewLineNumber(lineNum).map(newLineNum ->
-                DiagSrcPosEqualityOracle.byLineCol(newLineNum, getNewColumn(lineNum, col, newLineNum)));
-    }
+    return srcTracker
+        .getNewLineNumber(lineNum)
+        .map(
+            newLineNum ->
+                DiagSrcPosEqualityOracle.byLineCol(
+                    newLineNum, getNewColumn(lineNum, col, newLineNum)));
+  }
 }

@@ -31,56 +31,61 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class GitCommitMatcher {
-    private final CorpusProject project;
-    private final DiagnosticsFile oldDiagFile;
-    private final DiagnosticsFile newDiagFile;
-    private final SrcFilePairLoader srcFilePairLoader;
+  private final CorpusProject project;
+  private final DiagnosticsFile oldDiagFile;
+  private final DiagnosticsFile newDiagFile;
+  private final SrcFilePairLoader srcFilePairLoader;
 
-    private final List<BugComparer> comparers;
+  private final List<BugComparer> comparers;
 
-    private GitCommitMatcher(CorpusProject project,
-                             DiagnosticsFile oldDiagFile,
-                             DiagnosticsFile newDiagFile,
-                             SrcFilePairLoader srcFilePairLoader) {
-        this.project = project;
-        this.oldDiagFile = oldDiagFile;
-        this.newDiagFile = newDiagFile;
-        this.srcFilePairLoader = srcFilePairLoader;
-        this.comparers = new ArrayList<>();
-    }
+  private GitCommitMatcher(
+      CorpusProject project,
+      DiagnosticsFile oldDiagFile,
+      DiagnosticsFile newDiagFile,
+      SrcFilePairLoader srcFilePairLoader) {
+    this.project = project;
+    this.oldDiagFile = oldDiagFile;
+    this.newDiagFile = newDiagFile;
+    this.srcFilePairLoader = srcFilePairLoader;
+    this.comparers = new ArrayList<>();
+  }
 
-    public static GitCommitMatcher compareGit(CorpusProject project,
-                                              DiagnosticsFile oldDiagFile,
-                                              DiagnosticsFile newDiagFile) throws IOException {
-        return new GitCommitMatcher(project,
-                oldDiagFile,
-                newDiagFile,
-                new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
-    }
+  public static GitCommitMatcher compareGit(
+      CorpusProject project, DiagnosticsFile oldDiagFile, DiagnosticsFile newDiagFile)
+      throws IOException {
+    return new GitCommitMatcher(
+        project,
+        oldDiagFile,
+        newDiagFile,
+        new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
+  }
 
-    public GitCommitMatcher trackPosition(DiagnosticPositionTrackerConstructor posCtor) throws IOException {
-        this.comparers.add(new DiagnosticPositionMotionComparer(srcFilePairLoader, posCtor));
-        return this;
-    }
+  public GitCommitMatcher trackPosition(DiagnosticPositionTrackerConstructor posCtor)
+      throws IOException {
+    this.comparers.add(new DiagnosticPositionMotionComparer(srcFilePairLoader, posCtor));
+    return this;
+  }
 
-    public GitCommitMatcher trackIdentical() {
-        this.comparers.add(new ExactDiagnosticMatcher());
-        return this;
-    }
+  public GitCommitMatcher trackIdentical() {
+    this.comparers.add(new ExactDiagnosticMatcher());
+    return this;
+  }
 
-    public MatchResults match() throws IOException, GitAPIException {
-        MatchResults results = DiagnosticsMatcher.fromFiles(
+  public MatchResults match() throws IOException, GitAPIException {
+    MatchResults results =
+        DiagnosticsMatcher.fromFiles(
                 project,
                 oldDiagFile,
                 newDiagFile,
-                BugComparer.any(comparers.toArray(new BugComparer[0]))).getResults();
+                BugComparer.any(comparers.toArray(new BugComparer[0])))
+            .getResults();
 
-        System.gc();
-        return results;
-    }
+    System.gc();
+    return results;
+  }
 
-    public GitCommitMatcher track(BugComparer comparer) {
-        this.comparers.add(comparer);
-        return this;
-    }
+  public GitCommitMatcher track(BugComparer comparer) {
+    this.comparers.add(comparer);
+    return this;
+  }
 }

@@ -23,26 +23,28 @@ import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
-import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 
 import java.io.IOException;
 import java.util.Optional;
 
-public final class IJMStartPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
-    public IJMStartPosTracker(SrcFilePair srcFilePair,
-                              TrackersSharedState sharedState,
-                              IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
-        super(srcFilePair, sharedState, jdtVisitorSupplier);
-    }
+public final class IJMStartPosTracker extends BaseIJMPosTracker
+    implements DiagnosticPositionTracker {
+  public IJMStartPosTracker(
+      SrcFilePair srcFilePair,
+      TrackersSharedState sharedState,
+      IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier)
+      throws IOException {
+    super(srcFilePair, sharedState, jdtVisitorSupplier);
+  }
 
-    public IJMStartPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState) throws IOException {
-        super(srcFilePair, sharedState);
-    }
+  public IJMStartPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState)
+      throws IOException {
+    super(srcFilePair, sharedState);
+  }
 
-    @Override
-    public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-        return trackPosition(oldDiag.getStartPos())
-                .map(srcBufferRange -> DiagSrcPosEqualityOracle.byStartPos(srcBufferRange.start));
-    }
+  @Override
+  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
+    return trackPosition(oldDiag.getStartPos())
+        .map(srcBufferRange -> DiagSrcPosEqualityOracle.byStartPos(srcBufferRange.start));
+  }
 }
-

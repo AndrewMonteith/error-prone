@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Set;
 
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;

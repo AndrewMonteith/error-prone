@@ -20,15 +20,17 @@ import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
 public class ExactDiagnosticMatcher implements BugComparer {
-    @Override
-    public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
-        if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
-            return false;
-        }
-
-        // We don't use .equals since that accounts for the same file name but the file could have been renamed
-        // since matching guarentees we only match diagnostics in the same file then we need only compare
-        // everything else for equality
-        return oldDiagnostic.refersToSameSource(newDiagnostic);
+  @Override
+  public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
+    if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
+      return false;
     }
+
+    // We don't use .equals since that accounts for the same file name but the file could have been
+    // renamed
+    // since matching guarentees we only match diagnostics in the same file then we need only
+    // compare
+    // everything else for equality
+    return oldDiagnostic.refersToSameSource(newDiagnostic);
+  }
 }

@@ -23,6 +23,6 @@ import java.io.IOException;
 
 @FunctionalInterface
 public interface DiagnosticPositionTrackerConstructor {
-    DiagnosticPositionTracker create(SrcFilePair files,
-                                     TrackersSharedState sharedState) throws DiffException, IOException;
+  DiagnosticPositionTracker create(SrcFilePair files, TrackersSharedState sharedState)
+      throws DiffException, IOException;
 }

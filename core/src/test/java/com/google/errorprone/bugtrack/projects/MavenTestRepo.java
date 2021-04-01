@@ -19,21 +19,21 @@ package com.google.errorprone.bugtrack.projects;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class MavenTestRepo implements CorpusProject {
-    @Override
-    public Path getRoot() {
-        return ProjectFiles.get("error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo");
-    }
+  @Override
+  public Path getRoot() {
+    return ProjectFiles.get(
+        "error-prone/core/src/test/java/com/google/errorprone/bugtrack/testdata/maven_test_repo");
+  }
 
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return false;
-    }
+  @Override
+  public boolean shouldScanFile(Path file) {
+    return false;
+  }
 
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Maven;
-    }
+  @Override
+  public BuildSystem getBuildSystem() {
+    return BuildSystem.Maven;
+  }
 }

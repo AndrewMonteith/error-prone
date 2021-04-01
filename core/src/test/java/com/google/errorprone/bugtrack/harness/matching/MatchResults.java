@@ -28,77 +28,89 @@ import java.util.Map;
 import java.util.Set;
 
 public final class MatchResults {
-    private final Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics;
-    private final Set<DatasetDiagnostic> unmatchedOld;
-    private final Set<DatasetDiagnostic> unmatchedNew;
+  private final Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics;
+  private final Set<DatasetDiagnostic> unmatchedOld;
+  private final Set<DatasetDiagnostic> unmatchedNew;
 
-    public MatchResults(Collection<DatasetDiagnostic> oldDiagnostics,
-                        Collection<DatasetDiagnostic> newDiagnostics,
-                        Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics) {
-        this.matchedDiagnostics = matchedDiagnostics;
-        this.unmatchedOld = Sets.difference(Sets.newHashSet(oldDiagnostics), matchedDiagnostics.keySet());
-        this.unmatchedNew = Sets.difference(Sets.newHashSet(newDiagnostics), Sets.newHashSet(matchedDiagnostics.values()));
+  public MatchResults(
+      Collection<DatasetDiagnostic> oldDiagnostics,
+      Collection<DatasetDiagnostic> newDiagnostics,
+      Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics) {
+    this.matchedDiagnostics = matchedDiagnostics;
+    this.unmatchedOld =
+        Sets.difference(Sets.newHashSet(oldDiagnostics), matchedDiagnostics.keySet());
+    this.unmatchedNew =
+        Sets.difference(
+            Sets.newHashSet(newDiagnostics), Sets.newHashSet(matchedDiagnostics.values()));
+  }
+
+  public Set<DatasetDiagnostic> getOldDiagnostics() {
+    return Sets.union(unmatchedOld, matchedDiagnostics.keySet());
+  }
+
+  public Set<DatasetDiagnostic> getNewDiagnostics() {
+    return Sets.union(unmatchedNew, Sets.newHashSet(matchedDiagnostics.values()));
+  }
+
+  public Map<DatasetDiagnostic, DatasetDiagnostic> getMatchedDiagnostics() {
+    return matchedDiagnostics;
+  }
+
+  public Collection<DatasetDiagnostic> getUnmatchedOldDiagnostics() {
+    return unmatchedOld;
+  }
+
+  public Collection<DatasetDiagnostic> getUnmatchedNewDiagnostics() {
+    return unmatchedNew;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder result = new StringBuilder();
+
+    result.append(
+        String.format(
+            "There are %d old and %d new diagnostics\n",
+            getOldDiagnostics().size(), getNewDiagnostics().size()));
+    result.append(
+        String.format("We matched %d old diagnostics\n", matchedDiagnostics.keySet().size()));
+    result.append(
+        String.format(
+            "We could not match %d old and %d new diagnostics\n",
+            unmatchedOld.size(), unmatchedNew.size()));
+
+    if (!unmatchedOld.isEmpty()) {
+      result.append("Unmatched old diagnostics:\n");
+      unmatchedOld.forEach(diag -> result.append(diag).append("\n"));
+      result.append("\n");
     }
 
-    public Set<DatasetDiagnostic> getOldDiagnostics() {
-        return Sets.union(unmatchedOld, matchedDiagnostics.keySet());
-    }
+    result.append("Unmatched new diagnostics:\n");
+    unmatchedNew.forEach(diag -> result.append(diag).append("\n"));
 
-    public Set<DatasetDiagnostic> getNewDiagnostics() {
-        return Sets.union(unmatchedNew, Sets.newHashSet(matchedDiagnostics.values()));
-    }
+    return result.toString();
+  }
 
-    public Map<DatasetDiagnostic, DatasetDiagnostic> getMatchedDiagnostics() {
-        return matchedDiagnostics;
-    }
+  public void save(Path p) throws IOException {
+    StringBuilder result = new StringBuilder();
 
-    public Collection<DatasetDiagnostic> getUnmatchedOldDiagnostics() {
-        return unmatchedOld;
-    }
-
-    public Collection<DatasetDiagnostic> getUnmatchedNewDiagnostics() {
-        return unmatchedNew;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-
-        result.append(String.format("There are %d old and %d new diagnostics\n", getOldDiagnostics().size(), getNewDiagnostics().size()));
-        result.append(String.format("We matched %d old diagnostics\n", matchedDiagnostics.keySet().size()));
-        result.append(String.format("We could not match %d old and %d new diagnostics\n", unmatchedOld.size(), unmatchedNew.size()));
-
-        if (!unmatchedOld.isEmpty()) {
-            result.append("Unmatched old diagnostics:\n");
-            unmatchedOld.forEach(diag -> result.append(diag).append("\n"));
-            result.append("\n");
-        }
-
-        result.append("Unmatched new diagnostics:\n");
-        unmatchedNew.forEach(diag -> result.append(diag).append("\n"));
-
-        return result.toString();
-    }
-
-    public void save(Path p) throws IOException {
-        StringBuilder result = new StringBuilder();
-
-        result.append("Total ").append(matchedDiagnostics.size()).append("\n");
-        matchedDiagnostics.forEach((oldDiag, newDiag) -> {
-            result.append("--------Matches\n");
-            result.append(oldDiag.toString());
-            result.append("  to\n");
-            result.append(newDiag.toString());
+    result.append("Total ").append(matchedDiagnostics.size()).append("\n");
+    matchedDiagnostics.forEach(
+        (oldDiag, newDiag) -> {
+          result.append("--------Matches\n");
+          result.append(oldDiag.toString());
+          result.append("  to\n");
+          result.append(newDiag.toString());
         });
 
-        result.append("--------Unmatched old\n");
-        result.append("Total ").append(unmatchedOld.size()).append("\n");
-        unmatchedOld.forEach(result::append);
+    result.append("--------Unmatched old\n");
+    result.append("Total ").append(unmatchedOld.size()).append("\n");
+    unmatchedOld.forEach(result::append);
 
-        result.append("--------Unmatched new\n");
-        result.append("Total ").append(unmatchedNew.size()).append("\n");
-        unmatchedNew.forEach(result::append);
+    result.append("--------Unmatched new\n");
+    result.append("Total ").append(unmatchedNew.size()).append("\n");
+    unmatchedNew.forEach(result::append);
 
-        Files.write(result.toString().getBytes(StandardCharsets.UTF_8), p.toFile());
-    }
+    Files.write(result.toString().getBytes(StandardCharsets.UTF_8), p.toFile());
+  }
 }

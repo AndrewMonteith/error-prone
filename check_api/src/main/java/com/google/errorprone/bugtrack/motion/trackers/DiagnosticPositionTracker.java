@@ -18,14 +18,11 @@ package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
-import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 
 import java.util.Optional;
 
-/**
- * @param <T> Position type we're tracking. Currently either DiagnosticPosition or long
- */
+/** @param <T> Position type we're tracking. Currently either DiagnosticPosition or long */
 @FunctionalInterface
 public interface DiagnosticPositionTracker {
-    Optional<DiagPosEqualityOracle> track(DatasetDiagnostic t);
+  Optional<DiagPosEqualityOracle> track(DatasetDiagnostic t);
 }

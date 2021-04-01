@@ -23,18 +23,18 @@ import java.nio.file.Path;
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
 
 public final class JRubyProject implements CorpusProject {
-    @Override
-    public Path getRoot() {
-        return ProjectFiles.get("java-corpus/jruby");
-    }
+  @Override
+  public Path getRoot() {
+    return ProjectFiles.get("java-corpus/jruby");
+  }
 
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources");
-    }
+  @Override
+  public boolean shouldScanFile(Path file) {
+    return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources");
+  }
 
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Maven;
-    }
+  @Override
+  public BuildSystem getBuildSystem() {
+    return BuildSystem.Maven;
+  }
 }

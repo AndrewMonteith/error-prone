@@ -53,7 +53,7 @@ public class ErrorProneInMemoryFileManagerForCheckApi extends JavacFileManager {
    * use the {@link #ErrorProneInMemoryFileManager(Class)} constructor instead.
    */
   public ErrorProneInMemoryFileManagerForCheckApi() {
-    this(Optional.<Class<?>>absent());
+    this(Optional.absent());
   }
 
   /**
@@ -63,7 +63,7 @@ public class ErrorProneInMemoryFileManagerForCheckApi extends JavacFileManager {
    * @param clazz the class to use to locate file resources
    */
   public ErrorProneInMemoryFileManagerForCheckApi(Class<?> clazz) {
-    this(Optional.<Class<?>>of(clazz));
+    this(Optional.of(clazz));
   }
 
   private ErrorProneInMemoryFileManagerForCheckApi(Optional<Class<?>> clazz) {
@@ -155,10 +155,11 @@ public class ErrorProneInMemoryFileManagerForCheckApi extends JavacFileManager {
       Files.createDirectories(path.getParent());
       if (Files.exists(path)) {
         return Iterables.getOnlyElement(getJavaFileObjects(path));
-//        if (!Iterables.elementsEqual(Files.readAllLines(path), lines)) {
-//          throw new AssertionError(
-//                  "Refusing to overwrite an existing file (all results from that file would be lost)");
-//        }
+        //        if (!Iterables.elementsEqual(Files.readAllLines(path), lines)) {
+        //          throw new AssertionError(
+        //                  "Refusing to overwrite an existing file (all results from that file
+        // would be lost)");
+        //        }
       } else {
         Files.write(path, Joiner.on('\n').join(lines).getBytes(UTF_8));
       }

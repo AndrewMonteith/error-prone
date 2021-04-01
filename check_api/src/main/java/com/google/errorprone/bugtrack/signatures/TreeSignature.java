@@ -19,7 +19,6 @@ package com.google.errorprone.bugtrack.signatures;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.errorprone.VisitorState;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 
@@ -27,39 +26,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TreeSignature implements DiagnosticSignature {
-    private final ImmutableList<Tree.Kind> pathFromNodeToRoot;
+  private final ImmutableList<Tree.Kind> pathFromNodeToRoot;
 
-    private List<Tree.Kind> getKindsFromNodeToRoot(TreePath path) {
-        List<Tree.Kind> kindPath = new ArrayList<>();
+  public TreeSignature(StateBucket state) {
+    this.pathFromNodeToRoot = state.path;
+  }
 
-        while (path != null) {
-            kindPath.add(path.getLeaf().getKind());
-            path = path.getParentPath();
-        }
+  public TreeSignature(Iterable<Integer> treeKindOrdinals) {
+    this.pathFromNodeToRoot =
+        ImmutableList.copyOf(
+            Iterables.transform(treeKindOrdinals, ordinal -> Tree.Kind.values()[ordinal]));
+  }
 
-        return kindPath;
+  private List<Tree.Kind> getKindsFromNodeToRoot(TreePath path) {
+    List<Tree.Kind> kindPath = new ArrayList<>();
+
+    while (path != null) {
+      kindPath.add(path.getLeaf().getKind());
+      path = path.getParentPath();
     }
 
-    public TreeSignature(StateBucket state) {
-        this.pathFromNodeToRoot = state.path;
+    return kindPath;
+  }
+
+  @Override
+  public boolean areSame(DiagnosticSignature other) {
+    if (!(other instanceof TreeSignature)) {
+      return false;
     }
 
-    public TreeSignature(Iterable<Integer> treeKindOrdinals) {
-        this.pathFromNodeToRoot = ImmutableList.copyOf(
-                Iterables.transform(treeKindOrdinals, ordinal -> Tree.Kind.values()[ordinal]));
-    }
+    return Iterables.elementsEqual(pathFromNodeToRoot, ((TreeSignature) other).pathFromNodeToRoot);
+  }
 
-    @Override
-    public boolean areSame(DiagnosticSignature other) {
-       if (!(other instanceof TreeSignature)) {
-           return false;
-       }
-
-       return Iterables.elementsEqual(pathFromNodeToRoot, ((TreeSignature) other).pathFromNodeToRoot);
-    }
-
-    @Override
-    public String toString() {
-        return "TreeSignature:" + Joiner.on(',').join(Iterables.transform(pathFromNodeToRoot, Enum::ordinal));
-    }
+  @Override
+  public String toString() {
+    return "TreeSignature:"
+        + Joiner.on(',').join(Iterables.transform(pathFromNodeToRoot, Enum::ordinal));
+  }
 }

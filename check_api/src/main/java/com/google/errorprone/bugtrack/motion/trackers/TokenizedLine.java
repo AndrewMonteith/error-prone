@@ -26,54 +26,54 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public final class TokenizedLine {
-    private final ImmutableList<ErrorProneToken> tokens;
-    private final ErrorProneTokens errorProneTokens;
-    private final String srcLine;
-    private final int hash;
+  private final ImmutableList<ErrorProneToken> tokens;
+  private final ErrorProneTokens errorProneTokens;
+  private final String srcLine;
+  private final int hash;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TokenizedLine that = (TokenizedLine) o;
-        return hash == that.hash;
+  public TokenizedLine(String srcLine, Context context) {
+    this.srcLine = srcLine;
+    this.errorProneTokens = new ErrorProneTokens(srcLine, context);
+    this.tokens = ErrorProneTokens.getTokens(srcLine, context);
+    this.hash = Arrays.hashCode(tokens.stream().map(this::readTokenSrc).toArray());
+  }
+
+  public static List<TokenizedLine> tokenizeSrc(List<String> src, Context context) {
+    return src.stream().map(line -> new TokenizedLine(line, context)).collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TokenizedLine that = (TokenizedLine) o;
+    return hash == that.hash;
+  }
+
+  @Override
+  public int hashCode() {
+    return hash;
+  }
+
+  private String readTokenSrc(ErrorProneToken token) {
+    if (token.pos() >= token.endPos()) {
+      return "";
     }
 
-    @Override
-    public int hashCode() {
-        return hash;
+    return srcLine.substring(token.pos(), token.endPos());
+  }
+
+  public int getTokenIndexForColumn(final long column) {
+    for (int i = 0; i < tokens.size(); ++i) {
+      if (column <= tokens.get(i).pos()) {
+        return i;
+      }
     }
 
-    private String readTokenSrc(ErrorProneToken token) {
-        if (token.pos() >= token.endPos()) {
-            return "";
-        }
+    throw new IllegalArgumentException("column was outside tokens");
+  }
 
-        return srcLine.substring(token.pos(), token.endPos());
-    }
-
-    public int getTokenIndexForColumn(final long column) {
-        for (int i = 0; i < tokens.size(); ++i) {
-            if (column <= tokens.get(i).pos()) {
-                return i;
-            }
-        }
-
-        throw new IllegalArgumentException("column was outside tokens");
-    }
-
-    public ErrorProneToken getToken(final int index) {
-        return tokens.get(index);
-    }
-
-    public TokenizedLine(String srcLine, Context context) {
-        this.srcLine = srcLine;
-        this.errorProneTokens = new ErrorProneTokens(srcLine, context);
-        this.tokens = ErrorProneTokens.getTokens(srcLine, context);
-        this.hash = Arrays.hashCode(tokens.stream().map(this::readTokenSrc).toArray());
-    }
-
-    public static List<TokenizedLine> tokenizeSrc(List<String> src, Context context) {
-        return src.stream().map(line -> new TokenizedLine(line, context)).collect(Collectors.toList());
-    }
+  public ErrorProneToken getToken(final int index) {
+    return tokens.get(index);
+  }
 }

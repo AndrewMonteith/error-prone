@@ -30,84 +30,87 @@ import java.util.Collection;
 import java.util.List;
 
 public class DiagnosticsScanUtil {
-    public static void save(Collection<DiagnosticsScan> scan, String output) throws IOException {
-        save(scan, Paths.get(output));
-    }
+  public static void save(Collection<DiagnosticsScan> scan, String output) throws IOException {
+    save(scan, Paths.get(output));
+  }
 
-    public static Collection<DiagnosticsScan> chunkScan(DiagnosticsScan scan, int maxFiles) {
-        Collection<DiagnosticsScan> scans = new ArrayList<>();
+  public static Collection<DiagnosticsScan> chunkScan(DiagnosticsScan scan, int maxFiles) {
+    Collection<DiagnosticsScan> scans = new ArrayList<>();
 
-        Lists.partition(scan.files, maxFiles).forEach(chunkOfFiles ->
+    Lists.partition(scan.files, maxFiles)
+        .forEach(
+            chunkOfFiles ->
                 scans.add(new DiagnosticsScan(scan.name, chunkOfFiles, scan.cmdLineArguments)));
 
-        return scans;
-    }
+    return scans;
+  }
 
-    public static void save(Collection<DiagnosticsScan> scans, Path path) throws IOException {
-        try (FileWriter output = new FileWriter(path.toFile())) {
-            output.write(String.valueOf(scans.size()));
-            output.write('\n');
+  public static void save(Collection<DiagnosticsScan> scans, Path path) throws IOException {
+    try (FileWriter output = new FileWriter(path.toFile())) {
+      output.write(String.valueOf(scans.size()));
+      output.write('\n');
 
-            for (DiagnosticsScan scan : scans) {
-                output.write("Name:\n");
-                output.write(scan.name);
-                output.write('\n');
+      for (DiagnosticsScan scan : scans) {
+        output.write("Name:\n");
+        output.write(scan.name);
+        output.write('\n');
 
-                output.write("Files:\n");
-                for (ProjectFile projFile : scan.files) {
-                    output.write(projFile.getProjectPath().toString());
-                    output.write('\n');
-                }
-
-                output.write("Args:\n");
-                for (String cmdLineArg : scan.cmdLineArguments) {
-                    output.write(cmdLineArg);
-                    output.write('\n');
-                }
-
-                output.write("---\n");
-            }
-        }
-    }
-
-    public static Collection<DiagnosticsScan> load(CorpusProject project, Path path) throws IOException {
-        List<DiagnosticsScan> scans = new ArrayList<>();
-        List<String> lines = Files.readAllLines(path);
-
-        final int numberOfScans = Integer.parseInt(lines.get(0));
-        for (int i = 1; i < lines.size(); ) {
-            String name = lines.get(++i); // Skip Name: and read
-
-            i += 2; // name and Files:
-
-            List<ProjectFile> files = new ArrayList<>();
-            while (!lines.get(i).equals("Args:")) {
-                files.add(new ProjectFile(project, lines.get(i)));
-                ++i;
-            }
-
-            ++i; // Name:
-
-            List<String> args = new ArrayList<>();
-            while (!lines.get(i).equals("---")) {
-                args.add(lines.get(i));
-                ++i;
-            }
-
-            ++i; // ---
-
-            scans.add(new DiagnosticsScan(name, files, args));
+        output.write("Files:\n");
+        for (ProjectFile projFile : scan.files) {
+          output.write(projFile.getProjectPath().toString());
+          output.write('\n');
         }
 
-        if (scans.size() != numberOfScans) {
-            throw new RuntimeException("failed to read " + path.toString());
+        output.write("Args:\n");
+        for (String cmdLineArg : scan.cmdLineArguments) {
+          output.write(cmdLineArg);
+          output.write('\n');
         }
 
-        return scans;
+        output.write("---\n");
+      }
+    }
+  }
+
+  public static Collection<DiagnosticsScan> load(CorpusProject project, Path path)
+      throws IOException {
+    List<DiagnosticsScan> scans = new ArrayList<>();
+    List<String> lines = Files.readAllLines(path);
+
+    final int numberOfScans = Integer.parseInt(lines.get(0));
+    for (int i = 1; i < lines.size(); ) {
+      String name = lines.get(++i); // Skip Name: and read
+
+      i += 2; // name and Files:
+
+      List<ProjectFile> files = new ArrayList<>();
+      while (!lines.get(i).equals("Args:")) {
+        files.add(new ProjectFile(project, lines.get(i)));
+        ++i;
+      }
+
+      ++i; // Name:
+
+      List<String> args = new ArrayList<>();
+      while (!lines.get(i).equals("---")) {
+        args.add(lines.get(i));
+        ++i;
+      }
+
+      ++i; // ---
+
+      scans.add(new DiagnosticsScan(name, files, args));
     }
 
-    public static Collection<DiagnosticsScan> load(CorpusProject project, String file) throws IOException {
-        return load(project, Paths.get(file));
+    if (scans.size() != numberOfScans) {
+      throw new RuntimeException("failed to read " + path.toString());
     }
 
+    return scans;
+  }
+
+  public static Collection<DiagnosticsScan> load(CorpusProject project, String file)
+      throws IOException {
+    return load(project, Paths.get(file));
+  }
 }

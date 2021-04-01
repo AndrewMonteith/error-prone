@@ -25,66 +25,69 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-// This is a necessary class to get around the design of error prone. Their design is good but I just need to abuse
-// it slightly for my needs. May this code never see the light of day bar the mellow dim of my rooms lightbulb.
+// This is a necessary class to get around the design of error prone. Their design is good but I
+// just need to abuse
+// it slightly for my needs. May this code never see the light of day bar the mellow dim of my rooms
+// lightbulb.
 
 public class SignatureBucket {
-    private static StringHasherMap<Diagnostic<? extends JavaFileObject>, DiagnosticSignature> DIAGNOSTIC_SIGNATURES =
-        new StringHasherMap<>(Object::toString);
+  private static final StringHasherMap<Diagnostic<? extends JavaFileObject>, DiagnosticSignature>
+      DIAGNOSTIC_SIGNATURES = new StringHasherMap<>(Object::toString);
+  private static final StringHasherMap<Description, StateBucket> DESCRIPTION_STATES =
+      new StringHasherMap<>(
+          description -> description.checkName + " " + description.getRawMessage());
 
-    public static DiagnosticSignature getSignature(Diagnostic<? extends JavaFileObject> diagnostic) {
-        return DIAGNOSTIC_SIGNATURES.get(diagnostic);
+  public static DiagnosticSignature getSignature(Diagnostic<? extends JavaFileObject> diagnostic) {
+    return DIAGNOSTIC_SIGNATURES.get(diagnostic);
+  }
+
+  public static void recordSignature(
+      Diagnostic<? extends JavaFileObject> diagnostic, Description description) {
+    if (!DESCRIPTION_STATES.containsKey(description)) {
+      return;
     }
+    DIAGNOSTIC_SIGNATURES.put(diagnostic, new TreeSignature(DESCRIPTION_STATES.get(description)));
+  }
 
-    private static StringHasherMap<Description, StateBucket> DESCRIPTION_STATES =
-            new StringHasherMap<>(description -> description.checkName + " " + description.getRawMessage());
+  public static void putState(Description description, VisitorState state) {
+    DESCRIPTION_STATES.put(description, new StateBucket(state));
+  }
 
-    public static void recordSignature(Diagnostic<? extends JavaFileObject> diagnostic, Description description) {
-        if (!DESCRIPTION_STATES.containsKey(description)) {
-            return;
-        }
-        DIAGNOSTIC_SIGNATURES.put(diagnostic, new TreeSignature(DESCRIPTION_STATES.get(description)));
-    }
-
-    public static void putState(Description description, VisitorState state) {
-        DESCRIPTION_STATES.put(description, new StateBucket(state));
-    }
-
-    public static void clear() {
-        DESCRIPTION_STATES.clear();
-        DIAGNOSTIC_SIGNATURES.clear();
-    }
+  public static void clear() {
+    DESCRIPTION_STATES.clear();
+    DIAGNOSTIC_SIGNATURES.clear();
+  }
 }
 
 class StringHasherMap<K, V> {
-    private final Function<K, String> hashFunction;
-    private final Map<String, V> hashMap;
+  private final Function<K, String> hashFunction;
+  private final Map<String, V> hashMap;
 
-    public StringHasherMap(Function<K, String> hashFunction) {
-        this.hashFunction = hashFunction;
-        this.hashMap = new HashMap<>();
-    }
+  public StringHasherMap(Function<K, String> hashFunction) {
+    this.hashFunction = hashFunction;
+    this.hashMap = new HashMap<>();
+  }
 
-    public V get(K key) {
-        return hashMap.get(hashFunction.apply(key));
-    }
+  public V get(K key) {
+    return hashMap.get(hashFunction.apply(key));
+  }
 
-    public V take(K key) {
-        String stringKey = hashFunction.apply(key);
-        V object = hashMap.get(stringKey);
-        hashMap.remove(stringKey);
-        return object;
-    }
+  public V take(K key) {
+    String stringKey = hashFunction.apply(key);
+    V object = hashMap.get(stringKey);
+    hashMap.remove(stringKey);
+    return object;
+  }
 
-    public boolean containsKey(K key) {
-        return hashMap.containsKey(hashFunction.apply(key));
-    }
+  public boolean containsKey(K key) {
+    return hashMap.containsKey(hashFunction.apply(key));
+  }
 
-    public void put(K key, V value) {
-        hashMap.put(hashFunction.apply(key), value);
-    }
+  public void put(K key, V value) {
+    hashMap.put(hashFunction.apply(key), value);
+  }
 
-    public void clear() {
-        hashMap.clear();
-    }
+  public void clear() {
+    hashMap.clear();
+  }
 }

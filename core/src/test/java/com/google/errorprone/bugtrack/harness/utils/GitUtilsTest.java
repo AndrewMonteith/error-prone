@@ -16,13 +16,10 @@
 
 package com.google.errorprone.bugtrack.harness.utils;
 
-import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.projects.HazelcastProject;
-import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.googlejavaformat.java.FormatterException;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Assert;
@@ -31,54 +28,21 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.IOException;
-import java.util.List;
 
 @RunWith(JUnit4.class)
 public class GitUtilsTest {
-    @Test
-    public void canExpandValidCommitRange() throws GitAPIException, IOException, InterruptedException {
-        // GIVEN:
-        Repository repo = new HazelcastProject().loadRepo();
-        CommitRange range = new CommitRange("6a5bc11894e312366e82d4c808df31c2d441d0fc","b78ce05074c5c482873165749c4a32053352282f");
+  @Test
+  public void canLoadLineFromDiagnostic() throws IOException, FormatterException {
+    // GIVEN:
+    Repository repo = new JSoupProject().loadRepo();
+    RevCommit commit = GitUtils.parseCommit(repo, "b61a3e6b340b878b30c518e35c6066f559b5102e");
+    DatasetDiagnostic diag =
+        new DatasetDiagnostic("src/test/java/org/jsoup/nodes/DocumentTest.java", 44, 0, "test");
 
-        // WHEN:
-        List<RevCommit> expandedRange = GitUtils.expandCommitRange(repo, range);
+    // WHEN:
+    String line = GitUtils.loadJavaLine(repo, commit, diag).trim();
 
-        expandedRange.forEach(c -> System.out.println(c.getName()));
-
-        // EXPECT:
-        Assert.assertEquals(2788, expandedRange.size());
-        Assert.assertEquals(range.startCommit, expandedRange.get(0).getName());
-        Assert.assertEquals(range.finalCommit, expandedRange.get(expandedRange.size()-1).getName());
-    }
-
-//    @Test
-//    public void canLoadObjectsFromCommits() throws IOException {
-//        // GIVEN:
-//        Repository project = new TestProject().loadRepo();
-//        RevCommit commit = GitUtils.parseCommit(project, "e4ffa7f74f461ca3e36fb89987f77e991ed8d998");
-//        String file1 = "hi3.cpp", file2 = "foo/hi.txt";
-//
-//        // WHEN:
-//        SrcFile file1Lines = GitUtils.loadSrcFile(project, commit, file1);
-//        SrcFile file2Lines = GitUtils.loadSrcFile(project, commit, file2);
-//
-//        // THEN:
-//        Assert.assertEquals(6, file1Lines.getLines().size());
-//        Assert.assertEquals(5, file2Lines.getLines().size());
-//    }
-
-    @Test
-    public void canLoadLineFromDiagnostic() throws IOException, FormatterException {
-        // GIVEN:
-        Repository repo = new JSoupProject().loadRepo();
-        RevCommit commit = GitUtils.parseCommit(repo, "b61a3e6b340b878b30c518e35c6066f559b5102e");
-        DatasetDiagnostic diag = new DatasetDiagnostic("src/test/java/org/jsoup/nodes/DocumentTest.java", 44, 0, "test");
-
-        // WHEN:
-        String line = GitUtils.loadJavaLine(repo, commit, diag).trim();
-
-        // THEN:
-        Assert.assertEquals("Document noTitle = Jsoup.parse(\"<p>Hello</p>\");", line);
-    }
+    // THEN:
+    Assert.assertEquals("Document noTitle = Jsoup.parse(\"<p>Hello</p>\");", line);
+  }
 }

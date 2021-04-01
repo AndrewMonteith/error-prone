@@ -16,10 +16,10 @@
 
 package com.google.errorprone.bugtrack.harness.scanning;
 
-import com.google.errorprone.bugtrack.utils.ShellUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
+import com.google.errorprone.bugtrack.utils.ShellUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -27,51 +27,56 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class MavenProjectScanner extends ProjectScanner {
-    @Override
-    public void cleanProject(Path projectDir) throws IOException, InterruptedException {
-//        ShellUtils.runCommand(projectDir, "mvn", "clean");
-        ShellUtils.runCommand(projectDir, "/bin/bash", ProjectFiles.find("error-prone", "clean_proj.sh").toString());
+  @Override
+  public void cleanProject(Path projectDir) throws IOException, InterruptedException {
+    //        ShellUtils.runCommand(projectDir, "mvn", "clean");
+    ShellUtils.runCommand(
+        projectDir, "/bin/bash", ProjectFiles.find("error-prone", "clean_proj.sh").toString());
+  }
+
+  private List<ProjectFile> getFilesFromSourcepaths(
+      CorpusProject project, String sourcepaths, Set<String> scannedSourcepaths) {
+    return Arrays.stream(sourcepaths.split(":"))
+        .filter(sourcepath -> !scannedSourcepaths.contains(sourcepath))
+        .peek(scannedSourcepaths::add)
+        .map(sourcepath -> getFilesFromSourcepath(project, sourcepath))
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
+  }
+
+  public Collection<DiagnosticsScan> parseScansOutput(CorpusProject project, String buildOutput) {
+    Collection<DiagnosticsScan> scans = new ArrayList<>();
+    Set<String> scannedSourcepaths = new HashSet<>();
+
+    String[] buildOutputLines = buildOutput.split("\n");
+    for (int i = 0; i < buildOutputLines.length; i += 2) {
+      String scanName = buildOutputLines[i];
+      List<String> cmdLineArguments = filterCmdLineArgs(buildOutputLines[i + 1]);
+
+      List<ProjectFile> filesToParse =
+          getFilesFromSourcepaths(
+              project,
+              cmdLineArguments.get(cmdLineArguments.indexOf("-sourcepath") + 1),
+              scannedSourcepaths);
+
+      scans.add(new DiagnosticsScan(scanName, filesToParse, cmdLineArguments));
     }
 
-    private List<ProjectFile> getFilesFromSourcepaths(CorpusProject project, String sourcepaths, Set<String> scannedSourcepaths) {
-        return Arrays.stream(sourcepaths.split(":"))
-                .filter(sourcepath -> !scannedSourcepaths.contains(sourcepath))
-                .peek(scannedSourcepaths::add)
-                .map(sourcepath -> getFilesFromSourcepath(project, sourcepath))
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-    }
+    return scans;
+  }
 
-    public Collection<DiagnosticsScan> parseScansOutput(CorpusProject project, String buildOutput) {
-        Collection<DiagnosticsScan> scans = new ArrayList<>();
-        Set<String> scannedSourcepaths = new HashSet<>();
+  @Override
+  public Collection<DiagnosticsScan> getScans(CorpusProject project)
+      throws IOException, InterruptedException {
+    System.out.println("Building");
+    String buildOutput =
+        ShellUtils.runCommand(
+            project.getRoot(),
+            "/usr/bin/python3",
+            ProjectFiles.find("error-prone", "get_maven_cmdargs.py").toString(),
+            project.getRoot().toString());
 
-        String[] buildOutputLines = buildOutput.split("\n");
-        for (int i = 0; i < buildOutputLines.length; i += 2) {
-            String scanName = buildOutputLines[i];
-            List<String> cmdLineArguments = filterCmdLineArgs(buildOutputLines[i + 1]);
-
-            List<ProjectFile> filesToParse = getFilesFromSourcepaths(project,
-                    cmdLineArguments.get(cmdLineArguments.indexOf("-sourcepath") + 1), scannedSourcepaths);
-
-            scans.add(new DiagnosticsScan(
-                    scanName,
-                    filesToParse,
-                    cmdLineArguments));
-        }
-
-        return scans;
-    }
-
-    @Override
-    public Collection<DiagnosticsScan> getScans(CorpusProject project) throws IOException, InterruptedException {
-        System.out.println("Building");
-        String buildOutput = ShellUtils.runCommand(project.getRoot(),
-                "/usr/bin/python3",
-                ProjectFiles.find("error-prone", "get_maven_cmdargs.py").toString(),
-                project.getRoot().toString());
-
-        System.out.println("parsing output");
-        return parseScansOutput(project, buildOutput);
-    }
+    System.out.println("parsing output");
+    return parseScansOutput(project, buildOutput);
+  }
 }

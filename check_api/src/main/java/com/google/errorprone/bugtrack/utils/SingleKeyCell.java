@@ -20,31 +20,31 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 public class SingleKeyCell<K, V> {
-    @FunctionalInterface
-    public interface ThrowableSupplier<T> {
-        T get() throws Exception;
+  private K currentKey;
+  private V value;
+
+  public V get(K key, Supplier<V> valSupplier) {
+    if (!Objects.equals(currentKey, key)) {
+      currentKey = key;
+      value = null;
+      value = valSupplier.get();
     }
 
-    private K currentKey;
-    private V value;
+    return value;
+  }
 
-    public V get(K key, Supplier<V> valSupplier) {
-        if (!Objects.equals(currentKey, key)) {
-            currentKey = key;
-            value = null;
-            value = valSupplier.get();
-        }
-
-        return value;
+  public V throwableGet(K key, ThrowableSupplier<V> valSupplier) throws Exception {
+    if (!Objects.equals(currentKey, key)) {
+      currentKey = key;
+      value = null;
+      value = valSupplier.get();
     }
 
-    public V throwableGet(K key, ThrowableSupplier<V> valSupplier) throws Exception {
-        if (!Objects.equals(currentKey, key)) {
-            currentKey = key;
-            value = null;
-            value = valSupplier.get();
-        }
+    return value;
+  }
 
-        return value;
-    }
+  @FunctionalInterface
+  public interface ThrowableSupplier<T> {
+    T get() throws Exception;
+  }
 }

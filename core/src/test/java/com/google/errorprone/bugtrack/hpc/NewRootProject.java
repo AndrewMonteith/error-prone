@@ -21,26 +21,26 @@ import com.google.errorprone.bugtrack.projects.CorpusProject;
 import java.nio.file.Path;
 
 public class NewRootProject implements CorpusProject {
-    private final CorpusProject project;
-    private final Path newRoot;
+  private final CorpusProject project;
+  private final Path newRoot;
 
-    public NewRootProject(CorpusProject project, Path newRoot) {
-        this.project = project;
-        this.newRoot = newRoot;
-    }
+  public NewRootProject(CorpusProject project, Path newRoot) {
+    this.project = project;
+    this.newRoot = newRoot;
+  }
 
-    @Override
-    public Path getRoot() {
-        return newRoot;
-    }
+  @Override
+  public Path getRoot() {
+    return newRoot;
+  }
 
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return project.shouldScanFile(file);
-    }
+  @Override
+  public boolean shouldScanFile(Path file) {
+    return project.shouldScanFile(file);
+  }
 
-    @Override
-    public BuildSystem getBuildSystem() {
-        return project.getBuildSystem();
-    }
+  @Override
+  public BuildSystem getBuildSystem() {
+    return project.getBuildSystem();
+  }
 }

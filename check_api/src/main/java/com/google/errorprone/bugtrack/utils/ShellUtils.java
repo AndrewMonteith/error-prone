@@ -17,9 +17,6 @@
 package com.google.errorprone.bugtrack.utils;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,36 +27,34 @@ import java.util.concurrent.TimeUnit;
 
 public final class ShellUtils {
 
-    public static String runCommand(Path directory, String... command) throws IOException, InterruptedException {
-        return runCommand(directory.toFile(), command);
+  public static String runCommand(Path directory, String... command)
+      throws IOException, InterruptedException {
+    return runCommand(directory.toFile(), command);
+  }
+
+  public static String runCommand(File directory, String... command)
+      throws IOException, InterruptedException {
+    Process process = new ProcessBuilder().command(command).directory(directory).start();
+
+    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+    StringBuilder output = new StringBuilder();
+
+    do {
+      process.waitFor(1000, TimeUnit.MILLISECONDS);
+
+      // Drain input to stop process buffer filling up and waitFor() hanging
+      int b;
+      while ((b = reader.read()) != -1) {
+        output.append((char) b);
+      }
+    } while (process.isAlive());
+
+    if (process.exitValue() != 0) {
+      String errorMsg = "Failed to run command " + Joiner.on(' ').join(command) + "\n";
+      errorMsg += new InputStreamReader(process.getErrorStream()).toString();
+      throw new IOException(errorMsg);
     }
 
-    public static String runCommand(File directory, String... command) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder()
-                .command(command)
-                .directory(directory)
-                .start();
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        StringBuilder output = new StringBuilder();
-
-        do {
-            process.waitFor(1000, TimeUnit.MILLISECONDS);
-
-            // Drain input to stop process buffer filling up and waitFor() hanging
-            int b;
-            while ((b = reader.read()) != -1) {
-                output.append((char)b);
-            }
-        } while (process.isAlive());
-
-        if (process.exitValue() != 0) {
-            String errorMsg = "Failed to run command " + Joiner.on(' ').join(command) + "\n";
-            errorMsg += new InputStreamReader(process.getErrorStream()).toString();
-            throw new IOException(errorMsg);
-        }
-
-        return output.toString();
-    }
-
+    return output.toString();
+  }
 }

@@ -21,36 +21,36 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 public final class FileUtils {
 
-    public static List<Path> findFilesMatchingGlob(Path root, String glob) {
-        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + glob);
-        List<Path> result = new ArrayList<>();
+  public static List<Path> findFilesMatchingGlob(Path root, String glob) {
+    final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + glob);
+    List<Path> result = new ArrayList<>();
 
-        try {
-            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path path,
-                                                 BasicFileAttributes attrs) throws IOException {
-                    if (pathMatcher.matches(path)) {
-                        result.add(path);
-                    }
+    try {
+      Files.walkFileTree(
+          root,
+          new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
+                throws IOException {
+              if (pathMatcher.matches(path)) {
+                result.add(path);
+              }
 
-                    return FileVisitResult.CONTINUE;
-                }
+              return FileVisitResult.CONTINUE;
+            }
 
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return result;
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+              return FileVisitResult.CONTINUE;
+            }
+          });
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
+    return result;
+  }
 }

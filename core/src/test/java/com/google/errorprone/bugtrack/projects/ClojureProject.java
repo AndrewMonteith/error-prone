@@ -19,24 +19,23 @@ package com.google.errorprone.bugtrack.projects;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.underDirectory;
 
 public class ClojureProject implements CorpusProject {
-    @Override
-    public Path getRoot() {
-        return ProjectFiles.get("java-corpus/clojure");
-    }
+  @Override
+  public Path getRoot() {
+    return ProjectFiles.get("java-corpus/clojure");
+  }
 
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return isJavaFile(file) && underDirectory(file, "src");
-    }
+  @Override
+  public boolean shouldScanFile(Path file) {
+    return isJavaFile(file) && underDirectory(file, "src");
+  }
 
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Maven;
-    }
+  @Override
+  public BuildSystem getBuildSystem() {
+    return BuildSystem.Maven;
+  }
 }

@@ -17,15 +17,15 @@
 package com.google.errorprone.bugtrack;
 
 public final class CommitRange {
-    public final String startCommit;
-    public final String finalCommit;
+  public final String startCommit;
+  public final String finalCommit;
 
-    public CommitRange(String startCommit, String finalCommit) {
-        this.startCommit = startCommit;
-        this.finalCommit = finalCommit;
-    }
+  public CommitRange(String startCommit, String finalCommit) {
+    this.startCommit = startCommit;
+    this.finalCommit = finalCommit;
+  }
 
-    public static CommitRange single(String commit) {
-        return new CommitRange(commit, commit);
-    }
+  public static CommitRange single(String commit) {
+    return new CommitRange(commit, commit);
+  }
 }

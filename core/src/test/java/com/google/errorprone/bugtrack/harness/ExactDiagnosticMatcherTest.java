@@ -25,54 +25,51 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public final class ExactDiagnosticMatcherTest {
-    @Test
-    public void canMatchDiagnosticsBetweenFiles() {
-        TestUtils.DiagnosticsPair pair = TestUtils.compareDiagnostics(
-                "breaking_changes/no_line_old.java",
-                "breaking_changes/no_line_new.java");
+  @Test
+  public void canMatchDiagnosticsBetweenFiles() {
+    TestUtils.DiagnosticsPair pair =
+        TestUtils.compareDiagnostics(
+            "breaking_changes/no_line_old.java", "breaking_changes/no_line_new.java");
 
-        BugComparer comparer = new ExactDiagnosticMatcher();
+    BugComparer comparer = new ExactDiagnosticMatcher();
 
-        MatchResults results = new DiagnosticsMatcher(
-                pair.oldDiagnostics,
-                pair.newDiagnostics,
-                comparer,
-                (oldPath, newPath) -> true).getResults();
+    MatchResults results =
+        new DiagnosticsMatcher(
+                pair.oldDiagnostics, pair.newDiagnostics, comparer, (oldPath, newPath) -> true)
+            .getResults();
 
-        Assert.assertEquals(3, results.getMatchedDiagnostics().size());
-    }
+    Assert.assertEquals(3, results.getMatchedDiagnostics().size());
+  }
 
-    @Test
-    public void canDetectDiagnosticsEntering() {
-        TestUtils.DiagnosticsPair pair = TestUtils.compareDiagnostics(
-                "breaking_changes/no_line_old_removed.java",
-                "breaking_changes/no_line_new.java");
+  @Test
+  public void canDetectDiagnosticsEntering() {
+    TestUtils.DiagnosticsPair pair =
+        TestUtils.compareDiagnostics(
+            "breaking_changes/no_line_old_removed.java", "breaking_changes/no_line_new.java");
 
-        BugComparer comparer = new ExactDiagnosticMatcher();
+    BugComparer comparer = new ExactDiagnosticMatcher();
 
-        MatchResults results = new DiagnosticsMatcher(
-                pair.oldDiagnostics,
-                pair.newDiagnostics,
-                comparer,
-                (oldPath, newPath) -> true).getResults();
+    MatchResults results =
+        new DiagnosticsMatcher(
+                pair.oldDiagnostics, pair.newDiagnostics, comparer, (oldPath, newPath) -> true)
+            .getResults();
 
-        Assert.assertEquals(2, results.getUnmatchedNewDiagnostics().size());
-    }
+    Assert.assertEquals(2, results.getUnmatchedNewDiagnostics().size());
+  }
 
-    @Test
-    public void canDetectDiagnosticsLeaving() {
-        TestUtils.DiagnosticsPair pair = TestUtils.compareDiagnostics(
-                "breaking_changes/no_line_old.java",
-                "breaking_changes/no_line_new_removed.java");
+  @Test
+  public void canDetectDiagnosticsLeaving() {
+    TestUtils.DiagnosticsPair pair =
+        TestUtils.compareDiagnostics(
+            "breaking_changes/no_line_old.java", "breaking_changes/no_line_new_removed.java");
 
-        BugComparer comparer = new ExactDiagnosticMatcher();
+    BugComparer comparer = new ExactDiagnosticMatcher();
 
-        MatchResults results = new DiagnosticsMatcher(
-                pair.oldDiagnostics,
-                pair.newDiagnostics,
-                comparer,
-                (oldPath, newPath) -> true).getResults();
+    MatchResults results =
+        new DiagnosticsMatcher(
+                pair.oldDiagnostics, pair.newDiagnostics, comparer, (oldPath, newPath) -> true)
+            .getResults();
 
-        Assert.assertEquals(2, results.getUnmatchedOldDiagnostics().size());
-    }
+    Assert.assertEquals(2, results.getUnmatchedOldDiagnostics().size());
+  }
 }

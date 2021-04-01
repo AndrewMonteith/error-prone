@@ -17,10 +17,10 @@
 package com.google.errorprone.bugtrack.signatures;
 
 public final class NoSignature implements DiagnosticSignature {
-    public static DiagnosticSignature NO_SIGNATURE = new NoSignature();
+  public static DiagnosticSignature NO_SIGNATURE = new NoSignature();
 
-    @Override
-    public boolean areSame(DiagnosticSignature other) {
-        return other == NO_SIGNATURE;
-    }
+  @Override
+  public boolean areSame(DiagnosticSignature other) {
+    return other == NO_SIGNATURE;
+  }
 }

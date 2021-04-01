@@ -1,20 +1,22 @@
 #!/bin/python3
-import re
-import sys
 import os
+import re
 import subprocess
+import sys
 
 # Collect output from mvn install
 os.chdir(sys.argv[1])
 
+
 def extract_raw_args(cmdline):
-    return cmdline[cmdline.find("arguments:")+11:]
+    return cmdline[cmdline.find("arguments:") + 11:]
+
 
 def print_targets(output):
     build_output = output.split('\n')
 
     all_compiler_args = [(i, line.strip()) for (i, line) in enumerate(build_output)
-                        if "NormalizingJavaCompiler" in line]
+                         if "NormalizingJavaCompiler" in line]
 
     extract_proj_name = re.compile(r"^.*'Compile Java for (.*)'")
 
@@ -28,6 +30,7 @@ def print_targets(output):
 
         print(task_name)
         print(extract_raw_args(compiler_arg))
+
 
 gradle_cmd = "./gradlew" if os.path.isfile("./gradlew") else "gradle"
 

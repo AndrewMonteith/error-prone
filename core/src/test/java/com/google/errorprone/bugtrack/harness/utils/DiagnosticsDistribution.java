@@ -26,71 +26,77 @@ import java.util.Map;
 import static com.google.errorprone.bugtrack.utils.DiagnosticUtils.extractDiagnosticType;
 
 public final class DiagnosticsDistribution {
-    private final Map<String, Integer> diagnosticCounts;
+  private final Map<String, Integer> diagnosticCounts;
 
-    private DiagnosticsDistribution() {
-        diagnosticCounts = new HashMap<>();
+  private DiagnosticsDistribution() {
+    diagnosticCounts = new HashMap<>();
+  }
+
+  public DiagnosticsDistribution(Iterable<DatasetDiagnostic> diagnostics) {
+    this();
+
+    diagnostics.forEach(this::addDiagnostic);
+  }
+
+  public static DiagnosticsDistribution fromDiagnostics(
+      Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
+    DiagnosticsDistribution distribution = new DiagnosticsDistribution();
+    diagnostics.forEach(distribution::addDiagnostic);
+    return distribution;
+  }
+
+  public static DiagnosticsDistribution fromDiagnosticKinds(Iterable<String> diagnostics) {
+    DiagnosticsDistribution distribution = new DiagnosticsDistribution();
+    diagnostics.forEach(distribution::addDiagnostic);
+    return distribution;
+  }
+
+  private void addDiagnostic(Diagnostic<? extends JavaFileObject> diagnostic) {
+    addDiagnostic(extractDiagnosticType(diagnostic));
+  }
+
+  private void addDiagnostic(String diagnosticKind) {
+    diagnosticCounts.put(diagnosticKind, diagnosticCounts.getOrDefault(diagnosticKind, 0) + 1);
+  }
+
+  private void addDiagnostic(DatasetDiagnostic diagnostic) {
+    addDiagnostic(extractDiagnosticType(diagnostic));
+  }
+
+  public int getDiagnosticKindCount(String diagnosticKind) {
+    return diagnosticCounts.getOrDefault(diagnosticKind, 0);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DiagnosticsDistribution that = (DiagnosticsDistribution) o;
+
+    if (diagnosticCounts.size() != that.diagnosticCounts.size()) {
+      return false;
     }
 
-    public static DiagnosticsDistribution fromDiagnostics(Iterable<Diagnostic<? extends JavaFileObject>> diagnostics) {
-        DiagnosticsDistribution distribution = new DiagnosticsDistribution();
-        diagnostics.forEach(distribution::addDiagnostic);
-        return distribution;
-    }
+    return diagnosticCounts.keySet().stream()
+        .allMatch(
+            diagnosticKind ->
+                getDiagnosticKindCount(diagnosticKind)
+                    == that.getDiagnosticKindCount(diagnosticKind));
+  }
 
-    public static DiagnosticsDistribution fromDiagnosticKinds(Iterable<String> diagnostics) {
-        DiagnosticsDistribution distribution = new DiagnosticsDistribution();
-        diagnostics.forEach(distribution::addDiagnostic);
-        return distribution;
-    }
+  @Override
+  public String toString() {
+    StringBuilder result = new StringBuilder();
+    result
+        .append("Distribution on ")
+        .append(diagnosticCounts.values().stream().mapToInt(i -> i).sum())
+        .append(":\n");
 
-    public DiagnosticsDistribution(Iterable<DatasetDiagnostic> diagnostics) {
-        this();
-
-        diagnostics.forEach(this::addDiagnostic);
-    }
-
-    private void addDiagnostic(Diagnostic<? extends JavaFileObject> diagnostic) {
-        addDiagnostic(extractDiagnosticType(diagnostic));
-    }
-
-    private void addDiagnostic(String diagnosticKind) {
-        diagnosticCounts.put(diagnosticKind, diagnosticCounts.getOrDefault(diagnosticKind, 0) + 1);
-    }
-
-    private void addDiagnostic(DatasetDiagnostic diagnostic) {
-        addDiagnostic(extractDiagnosticType(diagnostic));
-    }
-
-    public int getDiagnosticKindCount(String diagnosticKind) {
-        return diagnosticCounts.getOrDefault(diagnosticKind, 0);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DiagnosticsDistribution that = (DiagnosticsDistribution) o;
-
-        if (diagnosticCounts.size() != that.diagnosticCounts.size()) {
-            return false;
-        }
-
-        return diagnosticCounts.keySet().stream()
-                .allMatch(diagnosticKind ->
-                        getDiagnosticKindCount(diagnosticKind) == that.getDiagnosticKindCount(diagnosticKind));
-
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        result.append("Distribution on ").append(diagnosticCounts.values().stream().mapToInt(i -> i).sum()).append(":\n");
-
-        diagnosticCounts.forEach((diagnosticType, frequency) -> {
-            result.append(diagnosticType).append(" ").append(frequency).append("\n");
+    diagnosticCounts.forEach(
+        (diagnosticType, frequency) -> {
+          result.append(diagnosticType).append(" ").append(frequency).append("\n");
         });
 
-        return result.toString();
-    }
+    return result.toString();
+  }
 }

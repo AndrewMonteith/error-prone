@@ -22,45 +22,46 @@ import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 
 public class JDTToJCPosMapper extends TreeScanner<Void, Void> {
-    private final EndPosTable endPosTable;
-    private final long jdtPos;
+  private final EndPosTable endPosTable;
+  private final long jdtPos;
 
-    private long closestStartPosition = -1;
-    public long getClosestStartPosition() {
-        return closestStartPosition;
+  private long closestStartPosition = -1;
+  private long closestEndPosition = -1;
+  private long closestPreferredPosition = -1;
+
+  public JDTToJCPosMapper(EndPosTable endPosTable, final long jdtPos) {
+    this.endPosTable = endPosTable;
+    this.jdtPos = jdtPos;
+  }
+
+  public long getClosestStartPosition() {
+    return closestStartPosition;
+  }
+
+  public long getClosestEndPosition() {
+    return closestEndPosition;
+  }
+
+  public long getClosestPreferredPosition() {
+    return closestPreferredPosition;
+  }
+
+  @Override
+  public Void scan(Tree tree, Void p) {
+    if (tree instanceof JCTree) {
+      JCTree jcTree = (JCTree) tree;
+
+      final long jcStartPos = jcTree.getStartPosition();
+      final long jcEndPos = jcTree.getEndPosition(endPosTable);
+
+      if (jcStartPos <= jdtPos && jdtPos <= jcEndPos) {
+        closestStartPosition = jcStartPos;
+        closestEndPosition = jcEndPos;
+        closestPreferredPosition = jcTree.getPreferredPosition();
+        tree.accept(this, p);
+      }
     }
 
-    private long closestEndPosition = -1;
-    public long getClosestEndPosition() {
-        return closestEndPosition;
-    }
-
-    private long closestPreferredPosition = -1;
-    public long getClosestPreferredPosition() {
-        return closestPreferredPosition;
-    }
-
-    public JDTToJCPosMapper(EndPosTable endPosTable, final long jdtPos) {
-        this.endPosTable = endPosTable;
-        this.jdtPos = jdtPos;
-    }
-
-    @Override
-    public Void scan(Tree tree, Void p) {
-        if (tree instanceof JCTree) {
-            JCTree jcTree = (JCTree) tree;
-
-            final long jcStartPos = jcTree.getStartPosition();
-            final long jcEndPos = jcTree.getEndPosition(endPosTable);
-
-            if (jcStartPos <= jdtPos && jdtPos <= jcEndPos) {
-                closestStartPosition = jcStartPos;
-                closestEndPosition = jcEndPos;
-                closestPreferredPosition = jcTree.getPreferredPosition();
-                tree.accept(this, p);
-            }
-        }
-
-        return null;
-    }
-};
+    return null;
+  }
+}

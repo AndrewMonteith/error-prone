@@ -19,10 +19,10 @@ package com.google.errorprone.bugtrack.harness.evaluating;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.SrcFilePairLoader;
-import com.google.errorprone.bugtrack.util.ThrowingTriFunction;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.errorprone.bugtrack.util.ThrowingTriFunction;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -31,96 +31,105 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /*
-    This file's code quality is pants. You have been warned.
-    It is purely helper functions for testing, ie a type-safe shoot yourself in the foot DSL
- */
+   This file's code quality is pants. You have been warned.
+   It is purely helper functions for testing, ie a type-safe shoot yourself in the foot DSL
+*/
 public final class BugComparerExperiment {
-    private final CorpusProject project;
-    private DiagnosticsFilePairLoader dataLoader;
-    private DiagnosticsFilePairMapper<BugComparer> bugComparer1;
-    private DiagnosticsFilePairMapper<BugComparer> bugComparer2;
-    private DiagnosticsFilePairMapper<SrcFilePairLoader> srcDiagLoader;
-    private DiagnosticsFilePairMapper<PathsComparer> pathsComparerCtor;
-    private int numOfTrials = 100;
-    private MissedLikelihoodCalculator likelihoodCalc = MissedLikelihoodCalculatorFactory.zero();
+  private final CorpusProject project;
+  private DiagnosticsFilePairLoader dataLoader;
+  private DiagnosticsFilePairMapper<BugComparer> bugComparer1;
+  private DiagnosticsFilePairMapper<BugComparer> bugComparer2;
+  private DiagnosticsFilePairMapper<SrcFilePairLoader> srcDiagLoader;
+  private DiagnosticsFilePairMapper<PathsComparer> pathsComparerCtor;
+  private int numOfTrials = 100;
+  private MissedLikelihoodCalculator likelihoodCalc = MissedLikelihoodCalculatorFactory.zero();
 
-    private BugComparerExperiment(CorpusProject project) {
-        this.project = project;
+  private BugComparerExperiment(CorpusProject project) {
+    this.project = project;
+  }
+
+  public static <V> DiagnosticsFilePairMapper<V> withGit(
+      CorpusProject project, ThrowingTriFunction<Repository, RevCommit, RevCommit, V> func) {
+    return oldAndNewDiagFiles -> {
+      Repository repo = project.loadRepo();
+
+      return func.apply(
+          repo,
+          GitUtils.parseCommit(repo, oldAndNewDiagFiles.oldFile.commitId),
+          GitUtils.parseCommit(repo, oldAndNewDiagFiles.newFile.commitId));
+    };
+  }
+
+  public static BugComparerExperiment forProject(CorpusProject project) {
+    return new BugComparerExperiment(project);
+  }
+
+  public BugComparerExperiment withData(DiagnosticsFilePairLoader dataLoader) {
+    this.dataLoader = dataLoader;
+
+    return this;
+  }
+
+  public DiagnosticsFilePairMapper<BugComparer> makeBugPosTracker(
+      DiagnosticPositionTrackerConstructor posTracker) {
+    return oldAndNewDiagFiles ->
+        new DiagnosticPositionMotionComparer(srcDiagLoader.apply(oldAndNewDiagFiles), posTracker);
+  }
+
+  public BugComparerExperiment makeBugComparer1(DiagnosticPositionTrackerConstructor posCtor) {
+    return makeBugComparer1(makeBugPosTracker(posCtor));
+  }
+
+  public BugComparerExperiment makeBugComparer1(
+      DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor) {
+    this.bugComparer1 = bugComparer1Ctor;
+    return this;
+  }
+
+  public BugComparerExperiment makeBugComparer2(
+      DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor) {
+    this.bugComparer2 = bugComparer2Ctor;
+    return this;
+  }
+
+  public BugComparerExperiment makeBugComparer2(DiagnosticPositionTrackerConstructor posCtor) {
+    return makeBugComparer2(makeBugPosTracker(posCtor));
+  }
+
+  public BugComparerExperiment loadDiags(
+      DiagnosticsFilePairMapper<SrcFilePairLoader> srcDiagLoader) {
+    this.srcDiagLoader = srcDiagLoader;
+    return this;
+  }
+
+  public BugComparerExperiment comparePaths(
+      DiagnosticsFilePairMapper<PathsComparer> pathsComparerCtor) {
+    this.pathsComparerCtor = pathsComparerCtor;
+    return this;
+  }
+
+  public BugComparerExperiment findMissedTrackings(MissedLikelihoodCalculator likelihoodCalc) {
+    this.likelihoodCalc = likelihoodCalc;
+    return this;
+  }
+
+  public void run(String output) throws Exception {
+    Path outputDir = Paths.get(output);
+    if (!outputDir.toFile().isDirectory()) {
+      throw new RuntimeException(output + " does not exist");
     }
 
-    public static <V> DiagnosticsFilePairMapper<V> withGit(CorpusProject project,
-                                                           ThrowingTriFunction<Repository, RevCommit, RevCommit, V> func) {
-        return oldAndNewDiagFiles -> {
-            Repository repo = project.loadRepo();
+    BugComparerEvaluator eval =
+        new BugComparerEvaluator(project, dataLoader, likelihoodCalc, numOfTrials);
+    BugComparerEvaluationConfig evaluationConfig =
+        new BugComparerEvaluationConfig(
+            bugComparer1, bugComparer2, srcDiagLoader, pathsComparerCtor);
 
-            return func.apply(repo,
-                    GitUtils.parseCommit(repo, oldAndNewDiagFiles.oldFile.commitId),
-                    GitUtils.parseCommit(repo, oldAndNewDiagFiles.newFile.commitId));
-        };
-    }
+    eval.compareBugComparers(evaluationConfig, Paths.get(output));
+  }
 
-    public static BugComparerExperiment forProject(CorpusProject project) {
-        return new BugComparerExperiment(project);
-    }
-
-    public BugComparerExperiment withData(DiagnosticsFilePairLoader dataLoader) {
-        this.dataLoader = dataLoader;
-
-        return this;
-    }
-
-    public DiagnosticsFilePairMapper<BugComparer> makeBugPosTracker(DiagnosticPositionTrackerConstructor posTracker) {
-        return oldAndNewDiagFiles -> new DiagnosticPositionMotionComparer(srcDiagLoader.apply(oldAndNewDiagFiles), posTracker);
-    }
-
-    public BugComparerExperiment makeBugComparer1(DiagnosticPositionTrackerConstructor posCtor) {
-        return makeBugComparer1(makeBugPosTracker(posCtor));
-    }
-
-    public BugComparerExperiment makeBugComparer1(DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor) {
-        this.bugComparer1 = bugComparer1Ctor;
-        return this;
-    }
-
-    public BugComparerExperiment makeBugComparer2(DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor) {
-        this.bugComparer2 = bugComparer2Ctor;
-        return this;
-    }
-
-    public BugComparerExperiment makeBugComparer2(DiagnosticPositionTrackerConstructor posCtor) {
-        return makeBugComparer2(makeBugPosTracker(posCtor));
-    }
-
-    public BugComparerExperiment loadDiags(DiagnosticsFilePairMapper<SrcFilePairLoader> srcDiagLoader) {
-        this.srcDiagLoader = srcDiagLoader;
-        return this;
-    }
-
-    public BugComparerExperiment comparePaths(DiagnosticsFilePairMapper<PathsComparer> pathsComparerCtor) {
-        this.pathsComparerCtor = pathsComparerCtor;
-        return this;
-    }
-
-    public BugComparerExperiment findMissedTrackings(MissedLikelihoodCalculator likelihoodCalc) {
-        this.likelihoodCalc = likelihoodCalc;
-        return this;
-    }
-
-    public void run(String output) throws Exception {
-        Path outputDir = Paths.get(output);
-        if (!outputDir.toFile().isDirectory()) {
-            throw new RuntimeException(output + " does not exist");
-        }
-
-        BugComparerEvaluator eval = new BugComparerEvaluator(project, dataLoader, likelihoodCalc, numOfTrials);
-        BugComparerEvaluationConfig evaluationConfig =
-                new BugComparerEvaluationConfig(bugComparer1, bugComparer2, srcDiagLoader, pathsComparerCtor);
-
-        eval.compareBugComparers(evaluationConfig, Paths.get(output));
-    }
-
-    public BugComparerExperiment trials(int trials) {
-        this.numOfTrials = trials;
-        return this;
-    }
+  public BugComparerExperiment trials(int trials) {
+    this.numOfTrials = trials;
+    return this;
+  }
 }

@@ -20,31 +20,31 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public final class IntRangesTest {
-    @Test
-    public void correctlyQueriesMiddleOfRange() {
-        Assert.assertTrue(IntRanges.include(1, 10).contains(1));
-    }
+  @Test
+  public void correctlyQueriesMiddleOfRange() {
+    Assert.assertTrue(IntRanges.include(1, 10).contains(1));
+  }
 
-    @Test
-    public void correctlyQueriesEndpoints() {
-        Assert.assertTrue(IntRanges.include(1, 10).contains(1));
-        Assert.assertTrue(IntRanges.include(1, 10).contains(10));
-    }
+  @Test
+  public void correctlyQueriesEndpoints() {
+    Assert.assertTrue(IntRanges.include(1, 10).contains(1));
+    Assert.assertTrue(IntRanges.include(1, 10).contains(10));
+  }
 
-    @Test
-    public void correctlyQueriesOutsideRange() {
-        Assert.assertFalse(IntRanges.include(1, 10).contains(0));
-        Assert.assertFalse(IntRanges.include(1, 10).contains(11));
-    }
+  @Test
+  public void correctlyQueriesOutsideRange() {
+    Assert.assertFalse(IntRanges.include(1, 10).contains(0));
+    Assert.assertFalse(IntRanges.include(1, 10).contains(11));
+  }
 
-    @Test
-    public void correctlyQueriesFragmentedRange() {
-        IntRanges range = IntRanges.include(1, 10).excludeRange(3, 5);
+  @Test
+  public void correctlyQueriesFragmentedRange() {
+    IntRanges range = IntRanges.include(1, 10).excludeRange(3, 5);
 
-        Assert.assertTrue(range.contains(2));
-        Assert.assertFalse(range.contains(3));
-        Assert.assertFalse(range.contains(4));
-        Assert.assertFalse(range.contains(5));
-        Assert.assertTrue(range.contains(6));
-    }
+    Assert.assertTrue(range.contains(2));
+    Assert.assertFalse(range.contains(3));
+    Assert.assertFalse(range.contains(4));
+    Assert.assertFalse(range.contains(5));
+    Assert.assertTrue(range.contains(6));
+  }
 }

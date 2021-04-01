@@ -21,7 +21,8 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import java.io.IOException;
 
 public interface DiagnosticsDeltaManager {
-    boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
+  boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
 
-    SrcFilePair loadFilesBetweenDiagnostics(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+  SrcFilePair loadFilesBetweenDiagnostics(
+      DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
 }

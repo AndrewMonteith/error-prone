@@ -17,6 +17,6 @@
 package com.google.errorprone.bugtrack.harness;
 
 public enum Verbosity {
-    VERBOSE, /* Scream lungs out */
-    SILENT /* Hush now */
+  VERBOSE, /* Scream lungs out */
+  SILENT /* Hush now */
 }

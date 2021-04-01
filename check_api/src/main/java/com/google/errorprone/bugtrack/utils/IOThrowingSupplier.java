@@ -19,5 +19,5 @@ package com.google.errorprone.bugtrack.utils;
 import java.io.IOException;
 
 public interface IOThrowingSupplier<T> {
-    T get() throws IOException;
+  T get() throws IOException;
 }

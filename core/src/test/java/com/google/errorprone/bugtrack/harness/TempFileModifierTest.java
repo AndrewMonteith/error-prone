@@ -28,20 +28,20 @@ import java.nio.file.StandardOpenOption;
 
 @RunWith(JUnit4.class)
 public class TempFileModifierTest {
-    private static final String TEST_DATA = "src/test/java/com/google/errorprone/bugtrack/testdata/";
+  private static final String TEST_DATA = "src/test/java/com/google/errorprone/bugtrack/testdata/";
 
-    @Test
-    public void resetsFileWhenDestroyed() throws Exception {
-        Path xmlFile = Paths.get(TEST_DATA + "/test.xml");
-        try (TempFileModifier modifier = new TempFileModifier(xmlFile)) {
-            Assert.assertEquals(3169, Files.readAllLines(xmlFile).size());
-            Files.write(xmlFile, "extra text".getBytes(), StandardOpenOption.APPEND);
-            Assert.assertEquals(3170, Files.readAllLines(xmlFile).size());
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail();
-        } finally {
-            Assert.assertEquals(3169, Files.readAllLines(xmlFile).size());
-        }
+  @Test
+  public void resetsFileWhenDestroyed() throws Exception {
+    Path xmlFile = Paths.get(TEST_DATA + "/test.xml");
+    try (TempFileModifier modifier = new TempFileModifier(xmlFile)) {
+      Assert.assertEquals(3169, Files.readAllLines(xmlFile).size());
+      Files.write(xmlFile, "extra text".getBytes(), StandardOpenOption.APPEND);
+      Assert.assertEquals(3170, Files.readAllLines(xmlFile).size());
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      Assert.assertEquals(3169, Files.readAllLines(xmlFile).size());
     }
+  }
 }

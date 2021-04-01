@@ -16,71 +16,70 @@
 
 package com.google.errorprone.bugtrack.harness.evaluating;
 
-import com.google.errorprone.bugtrack.harness.evaluating.MissedLikelihoodCalculator;
-
 public final class MissedLikelihoodCalculatorFactory {
-    private MissedLikelihoodCalculatorFactory() {
-    }
+  private MissedLikelihoodCalculatorFactory() {}
 
-    /*
-     * Largest substring of 'str2' contained in 'str1' / len of 'str2'
-     */
-    private static double stringIntersection(String str1, String str2) {
-        double maxLen = 0;
-        for (int i = 0; i < str2.length(); ++i) {
-            for (int j = i; j < str2.length(); ++j) {
-                if (str1.contains(str2.substring(i, j))) {
-                    maxLen = Math.max(maxLen, j - i + 1);
-                }
-            }
+  /*
+   * Largest substring of 'str2' contained in 'str1' / len of 'str2'
+   */
+  private static double stringIntersection(String str1, String str2) {
+    double maxLen = 0;
+    for (int i = 0; i < str2.length(); ++i) {
+      for (int j = i; j < str2.length(); ++j) {
+        if (str1.contains(str2.substring(i, j))) {
+          maxLen = Math.max(maxLen, j - i + 1);
         }
-
-        return maxLen / str2.length();
+      }
     }
 
-    public static MissedLikelihoodCalculator diagSrcOverlap() {
-        return (srcFilePair, oldDiagnostic, newDiagnostic) -> {
-            if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
-                return oldDiagnostic.getLineNumber() == newDiagnostic.getLineNumber() ? 1 : 0;
-            }
+    return maxLen / str2.length();
+  }
 
-            return stringIntersection(
-                    srcFilePair.oldFile.getSrcExtract(oldDiagnostic),
-                    srcFilePair.newFile.getSrcExtract(newDiagnostic));
-        };
-    }
+  public static MissedLikelihoodCalculator diagSrcOverlap() {
+    return (srcFilePair, oldDiagnostic, newDiagnostic) -> {
+      if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
+        return oldDiagnostic.getLineNumber() == newDiagnostic.getLineNumber() ? 1 : 0;
+      }
 
-    public static MissedLikelihoodCalculator diagLineSrcOverlap() {
-        return (srcFilePair, oldDiagnostic, newDiagnostic) -> {
-            if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
-                return oldDiagnostic.getLineNumber() == newDiagnostic.getLineNumber() ? 1 : 0;
-            }
+      return stringIntersection(
+          srcFilePair.oldFile.getSrcExtract(oldDiagnostic),
+          srcFilePair.newFile.getSrcExtract(newDiagnostic));
+    };
+  }
 
-            return stringIntersection(
-                    srcFilePair.oldFile.getLines().get((int) (oldDiagnostic.getLineNumber() - 1)),
-                    srcFilePair.newFile.getLines().get((int) (newDiagnostic.getLineNumber() - 1)));
-        };
-    }
+  public static MissedLikelihoodCalculator diagLineSrcOverlap() {
+    return (srcFilePair, oldDiagnostic, newDiagnostic) -> {
+      if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
+        return oldDiagnostic.getLineNumber() == newDiagnostic.getLineNumber() ? 1 : 0;
+      }
 
-    public static MissedLikelihoodCalculator lineDistance() {
-        return (srcFilePair, oldDiag, newDiag) ->
-                1.0 / (1 + oldDiag.getLineNumber() - newDiag.getLineNumber());
-    }
+      return stringIntersection(
+          srcFilePair.oldFile.getLines().get((int) (oldDiagnostic.getLineNumber() - 1)),
+          srcFilePair.newFile.getLines().get((int) (newDiagnostic.getLineNumber() - 1)));
+    };
+  }
 
-    public static MissedLikelihoodCalculator average(MissedLikelihoodCalculator calc1, MissedLikelihoodCalculator calc2) {
-        return (srcFilePair, oldDiag, newDiag) ->
-                0.5 * (calc1.compute(srcFilePair, oldDiag, newDiag) + calc2.compute(srcFilePair, oldDiag, newDiag));
-    }
+  public static MissedLikelihoodCalculator lineDistance() {
+    return (srcFilePair, oldDiag, newDiag) ->
+        1.0 / (1 + oldDiag.getLineNumber() - newDiag.getLineNumber());
+  }
 
-    public static MissedLikelihoodCalculator weighted(float w1,
-                                                      MissedLikelihoodCalculator calc1,
-                                                      float w2,
-                                                      MissedLikelihoodCalculator calc2) {
-        return (srcFilePair, oldDiag, newDiag) ->
-                (w1 * calc1.compute(srcFilePair, oldDiag, newDiag)) + (w2 * calc2.compute(srcFilePair, oldDiag, newDiag)) / (w1 + w2);
-    }
+  public static MissedLikelihoodCalculator average(
+      MissedLikelihoodCalculator calc1, MissedLikelihoodCalculator calc2) {
+    return (srcFilePair, oldDiag, newDiag) ->
+        0.5
+            * (calc1.compute(srcFilePair, oldDiag, newDiag)
+                + calc2.compute(srcFilePair, oldDiag, newDiag));
+  }
 
-    public static MissedLikelihoodCalculator zero() {
-        return (srcFilePair, oldDiagnostic, newDiagnostic) -> 0;
-    }
+  public static MissedLikelihoodCalculator weighted(
+      float w1, MissedLikelihoodCalculator calc1, float w2, MissedLikelihoodCalculator calc2) {
+    return (srcFilePair, oldDiag, newDiag) ->
+        (w1 * calc1.compute(srcFilePair, oldDiag, newDiag))
+            + (w2 * calc2.compute(srcFilePair, oldDiag, newDiag)) / (w1 + w2);
+  }
+
+  public static MissedLikelihoodCalculator zero() {
+    return (srcFilePair, oldDiagnostic, newDiagnostic) -> 0;
+  }
 }

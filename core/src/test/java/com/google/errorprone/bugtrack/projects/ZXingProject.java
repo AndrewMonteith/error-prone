@@ -23,18 +23,18 @@ import java.nio.file.Path;
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
 
 public class ZXingProject implements CorpusProject {
-    @Override
-    public Path getRoot() {
-        return ProjectFiles.get("java-corpus/zxing");
-    }
+  @Override
+  public Path getRoot() {
+    return ProjectFiles.get("java-corpus/zxing");
+  }
 
-    @Override
-    public boolean shouldScanFile(Path file) {
-        return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources");
-    }
+  @Override
+  public boolean shouldScanFile(Path file) {
+    return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources");
+  }
 
-    @Override
-    public BuildSystem getBuildSystem() {
-        return BuildSystem.Maven;
-    }
+  @Override
+  public BuildSystem getBuildSystem() {
+    return BuildSystem.Maven;
+  }
 }

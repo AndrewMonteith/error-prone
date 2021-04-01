@@ -84,20 +84,20 @@ public class TokenLineTrackerTest {
     @Test
     public void canTrackLinesAroundADeletion() throws IOException, DiffException, FormatterException {
         performTest("Tag.java", "Tag_Newer.java", lineMotionTracker -> {
-            assertLineIsTracked(lineMotionTracker, 18,20);
+            assertLineIsTracked(lineMotionTracker, 18, 20);
             assertLineIsNotTracked(lineMotionTracker, 19);
             assertLineIsNotTracked(lineMotionTracker, 20);
-            assertLineIsTracked(lineMotionTracker, 21,21);
+            assertLineIsTracked(lineMotionTracker, 21, 21);
         });
     }
 
     @Test
     public void canTrackLinesAroundAnInsertion() throws IOException, DiffException, FormatterException {
         performTest("Tag.java", "Tag_Newer.java", lineMotionTracker -> {
-            assertLineIsTracked(lineMotionTracker, 18,20);
+            assertLineIsTracked(lineMotionTracker, 18, 20);
             assertLineIsNotTracked(lineMotionTracker, 19);
             assertLineIsNotTracked(lineMotionTracker, 20);
-            assertLineIsTracked(lineMotionTracker, 21,21);
+            assertLineIsTracked(lineMotionTracker, 21, 21);
         });
     }
 

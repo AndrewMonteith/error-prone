@@ -26,27 +26,27 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import java.io.IOException;
 
 public class GitSrcFilePairLoader implements SrcFilePairLoader {
-    private final Repository repo;
-    private final RevCommit oldCommit;
-    private final RevCommit newCommit;
+  private final Repository repo;
+  private final RevCommit oldCommit;
+  private final RevCommit newCommit;
 
-    public GitSrcFilePairLoader(Repository repo, RevCommit oldCommit, RevCommit newCommit) {
-        this.repo = repo;
-        this.oldCommit = oldCommit;
-        this.newCommit = newCommit;
-    }
+  public GitSrcFilePairLoader(Repository repo, RevCommit oldCommit, RevCommit newCommit) {
+    this.repo = repo;
+    this.oldCommit = oldCommit;
+    this.newCommit = newCommit;
+  }
 
-    public GitSrcFilePairLoader(Repository repo, String oldCommit, String newCommit) throws IOException {
-        this(repo,
-                GitUtils.parseCommit(repo, oldCommit),
-                GitUtils.parseCommit(repo, newCommit));
-    }
+  public GitSrcFilePairLoader(Repository repo, String oldCommit, String newCommit)
+      throws IOException {
+    this(repo, GitUtils.parseCommit(repo, oldCommit), GitUtils.parseCommit(repo, newCommit));
+  }
 
-    @Override
-    public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException, FormatterException {
-        SrcFile oldFile = GitUtils.loadSrcFile(repo, oldCommit, oldDiagnostic.getFileName());
-        SrcFile newFile = GitUtils.loadSrcFile(repo, newCommit, newDiagnostic.getFileName());
+  @Override
+  public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
+      throws IOException, FormatterException {
+    SrcFile oldFile = GitUtils.loadSrcFile(repo, oldCommit, oldDiagnostic.getFileName());
+    SrcFile newFile = GitUtils.loadSrcFile(repo, newCommit, newDiagnostic.getFileName());
 
-        return new SrcFilePair(oldFile, newFile);
-    }
+    return new SrcFilePair(oldFile, newFile);
+  }
 }

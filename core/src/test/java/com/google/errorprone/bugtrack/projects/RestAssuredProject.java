@@ -19,9 +19,9 @@ package com.google.errorprone.bugtrack.projects;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
-import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.*;
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
+import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.underMain;
 
 public class RestAssuredProject implements CorpusProject {
     @Override

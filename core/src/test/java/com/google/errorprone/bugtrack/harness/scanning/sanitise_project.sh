@@ -36,6 +36,5 @@ find . -name "pom.xml" -exec sed -i 's/<target>1.5/<target>1.8/g' {} \;
 find . -name "pom.xml" -exec sed -i 's/<target>1.6/<target>1.8/g' {} \;
 find . -name "pom.xml" -exec sed -i 's/<target>1.7/<target>1.8/g' {} \;
 
-
 # Misc
 find . -name "ant-phase-verify.xml" -exec sed -i 's/failOnViolation="true"/failOnViolation="false"/g' {} \;

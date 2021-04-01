@@ -16,64 +16,70 @@
 
 package com.google.errorprone.bugtrack.harness.scanning;
 
-
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.bugtrack.harness.utils.FileUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.errorprone.bugtrack.projects.ShouldScanUtils.isJavaFile;
 
 public abstract class ProjectScanner {
-    public abstract void cleanProject(Path project) throws IOException, InterruptedException;
+  public abstract void cleanProject(Path project) throws IOException, InterruptedException;
 
-    public abstract Collection<DiagnosticsScan> getScans(CorpusProject project)
-            throws IOException, InterruptedException;
+  public abstract Collection<DiagnosticsScan> getScans(CorpusProject project)
+      throws IOException, InterruptedException;
 
-    protected List<String> filterCmdLineArgs(String rawCmdLineArgs) {
-        List<String> args = new ArrayList<>();
+  protected List<String> filterCmdLineArgs(String rawCmdLineArgs) {
+    List<String> args = new ArrayList<>();
 
-        Set<String> singleArgBlockList = ImmutableSet.of("-nowarn", "-deprecation");
+    Set<String> singleArgBlockList = ImmutableSet.of("-nowarn", "-deprecation");
 
-        String[] individualArgs = rawCmdLineArgs.split(" ");
-        for (int i = 0; i < individualArgs.length; ++i) {
-            if (singleArgBlockList.contains(individualArgs[i])) { continue; }
-            else if (individualArgs[i].equals("-d")) {
-                ++i;
-                continue;
-            }
-            else if (individualArgs[i].startsWith("(") || individualArgs[i].startsWith("[")) { continue; }
-            else if (isJavaFile(individualArgs[i])) { continue; }
-            else if (individualArgs[i].equals("-target") || individualArgs[i].equals("-source")) {
-                individualArgs[i + 1] = "1.8";
-                ++i;
-                continue;
-            }
-            else if (individualArgs[i].startsWith("-Xlint")) { continue; }
-            else if (individualArgs[i].startsWith("-Xdoclint")) { continue; }
-            else if (individualArgs[i].startsWith("-W")) { continue; }
+    String[] individualArgs = rawCmdLineArgs.split(" ");
+    for (int i = 0; i < individualArgs.length; ++i) {
+      if (singleArgBlockList.contains(individualArgs[i])) {
+        continue;
+      } else if (individualArgs[i].equals("-d")) {
+        ++i;
+        continue;
+      } else if (individualArgs[i].startsWith("(") || individualArgs[i].startsWith("[")) {
+        continue;
+      } else if (isJavaFile(individualArgs[i])) {
+        continue;
+      } else if (individualArgs[i].equals("-target") || individualArgs[i].equals("-source")) {
+        individualArgs[i + 1] = "1.8";
+        ++i;
+        continue;
+      } else if (individualArgs[i].startsWith("-Xlint")) {
+        continue;
+      } else if (individualArgs[i].startsWith("-Xdoclint")) {
+        continue;
+      } else if (individualArgs[i].startsWith("-W")) {
+        continue;
+      }
 
-            args.add(individualArgs[i]);
-        }
-
-        return args;
+      args.add(individualArgs[i]);
     }
 
-    protected List<ProjectFile> getFilesFromSourcepath(CorpusProject project, String sourcepath) {
-        if (sourcepath.contains(":")) {
-            throw new RuntimeException("this method can only scan a single sourcepath");
-        }
+    return args;
+  }
 
-        return FileUtils.findFilesMatchingGlob(Paths.get(sourcepath), "**/*.java").stream()
-                .filter(project::shouldScanFile)
-                .map(file -> new ProjectFile(project, file))
-                .collect(Collectors.toList());
+  protected List<ProjectFile> getFilesFromSourcepath(CorpusProject project, String sourcepath) {
+    if (sourcepath.contains(":")) {
+      throw new RuntimeException("this method can only scan a single sourcepath");
     }
+
+    return FileUtils.findFilesMatchingGlob(Paths.get(sourcepath), "**/*.java").stream()
+        .filter(project::shouldScanFile)
+        .map(file -> new ProjectFile(project, file))
+        .collect(Collectors.toList());
+  }
 }

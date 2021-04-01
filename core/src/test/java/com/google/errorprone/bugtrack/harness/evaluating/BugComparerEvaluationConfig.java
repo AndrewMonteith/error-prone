@@ -20,36 +20,40 @@ import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.SrcFilePairLoader;
 
-
 public final class BugComparerEvaluationConfig {
-    private final DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor;
-    private final DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor;
-    private final DiagnosticsFilePairMapper<SrcFilePairLoader> srcFilePairLoader;
-    private final DiagnosticsFilePairMapper<PathsComparer> pathsComparer;
+  private final DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor;
+  private final DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor;
+  private final DiagnosticsFilePairMapper<SrcFilePairLoader> srcFilePairLoader;
+  private final DiagnosticsFilePairMapper<PathsComparer> pathsComparer;
 
-    public BugComparerEvaluationConfig(DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor,
-                                       DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor,
-                                       DiagnosticsFilePairMapper<SrcFilePairLoader> srcFilePairLoader,
-                                       DiagnosticsFilePairMapper<PathsComparer> pathsComparer) {
-        this.bugComparer1Ctor = bugComparer1Ctor;
-        this.bugComparer2Ctor = bugComparer2Ctor;
-        this.srcFilePairLoader = srcFilePairLoader;
-        this.pathsComparer = pathsComparer;
-    }
+  public BugComparerEvaluationConfig(
+      DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor,
+      DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor,
+      DiagnosticsFilePairMapper<SrcFilePairLoader> srcFilePairLoader,
+      DiagnosticsFilePairMapper<PathsComparer> pathsComparer) {
+    this.bugComparer1Ctor = bugComparer1Ctor;
+    this.bugComparer2Ctor = bugComparer2Ctor;
+    this.srcFilePairLoader = srcFilePairLoader;
+    this.pathsComparer = pathsComparer;
+  }
 
-    public BugComparer createBugComparer1(DiagnosticsFilePairLoader.Pair oldAndNewFile) throws Exception {
-        return bugComparer1Ctor.apply(oldAndNewFile);
-    }
+  public BugComparer createBugComparer1(DiagnosticsFilePairLoader.Pair oldAndNewFile)
+      throws Exception {
+    return bugComparer1Ctor.apply(oldAndNewFile);
+  }
 
-    public BugComparer createBugComparer2(DiagnosticsFilePairLoader.Pair oldAndNewFile) throws Exception {
-        return bugComparer2Ctor.apply(oldAndNewFile);
-    }
+  public BugComparer createBugComparer2(DiagnosticsFilePairLoader.Pair oldAndNewFile)
+      throws Exception {
+    return bugComparer2Ctor.apply(oldAndNewFile);
+  }
 
-    public SrcFilePairLoader createSrcFilePairLoader(DiagnosticsFilePairLoader.Pair oldAndNewFile) throws Exception {
-        return srcFilePairLoader.apply(oldAndNewFile);
-    }
+  public SrcFilePairLoader createSrcFilePairLoader(DiagnosticsFilePairLoader.Pair oldAndNewFile)
+      throws Exception {
+    return srcFilePairLoader.apply(oldAndNewFile);
+  }
 
-    public PathsComparer createPathComparer(DiagnosticsFilePairLoader.Pair oldAndNewFile) throws Exception {
-        return pathsComparer.apply(oldAndNewFile);
-    }
+  public PathsComparer createPathComparer(DiagnosticsFilePairLoader.Pair oldAndNewFile)
+      throws Exception {
+    return pathsComparer.apply(oldAndNewFile);
+  }
 }

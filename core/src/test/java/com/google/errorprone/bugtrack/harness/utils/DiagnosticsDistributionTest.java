@@ -26,46 +26,57 @@ import java.util.List;
 
 @RunWith(JUnit4.class)
 public final class DiagnosticsDistributionTest {
-    @Test
-    public void recognisesEqualDistributions() {
-        // GIVEN:
-        List<String> diagnosticKinds = ImmutableList.of("MissingOverride", "OperatorPrecedence", "MissingOverride");
-        List<String> diagnosticKinds2 = ImmutableList.of("OperatorPrecedence", "MissingOverride", "MissingOverride");
+  @Test
+  public void recognisesEqualDistributions() {
+    // GIVEN:
+    List<String> diagnosticKinds =
+        ImmutableList.of("MissingOverride", "OperatorPrecedence", "MissingOverride");
+    List<String> diagnosticKinds2 =
+        ImmutableList.of("OperatorPrecedence", "MissingOverride", "MissingOverride");
 
-        // WHEN:
-        DiagnosticsDistribution distribution = DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds);
-        DiagnosticsDistribution distribution2 = DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds2);
+    // WHEN:
+    DiagnosticsDistribution distribution =
+        DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds);
+    DiagnosticsDistribution distribution2 =
+        DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds2);
 
-        // THEN:
-        Assert.assertEquals(distribution, distribution2);
-        Assert.assertEquals(distribution2, distribution);
-    }
+    // THEN:
+    Assert.assertEquals(distribution, distribution2);
+    Assert.assertEquals(distribution2, distribution);
+  }
 
-    @Test
-    public void recognisesUnequalDistributionsWithDifferentCardinality() {
-        List<String> diagnosticKinds = ImmutableList.of("MissingOverride", "OperatorPrecedence", "Mutability");
-        List<String> diagnosticKinds2 = ImmutableList.of("MissingOverride", "OperatorPrecedence");
+  @Test
+  public void recognisesUnequalDistributionsWithDifferentCardinality() {
+    List<String> diagnosticKinds =
+        ImmutableList.of("MissingOverride", "OperatorPrecedence", "Mutability");
+    List<String> diagnosticKinds2 = ImmutableList.of("MissingOverride", "OperatorPrecedence");
 
-        // WHEN:
-        DiagnosticsDistribution distribution = DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds);
-        DiagnosticsDistribution distribution2 = DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds2);
+    // WHEN:
+    DiagnosticsDistribution distribution =
+        DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds);
+    DiagnosticsDistribution distribution2 =
+        DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds2);
 
-        // THEN:
-        Assert.assertNotEquals(distribution, distribution2);
-        Assert.assertNotEquals(distribution2, distribution);
-    }
+    // THEN:
+    Assert.assertNotEquals(distribution, distribution2);
+    Assert.assertNotEquals(distribution2, distribution);
+  }
 
-    @Test
-    public void recognisesUnequalDistributionsWithSameCardinality() {
-        List<String> diagnosticKinds = ImmutableList.of("MissingOverride", "OperatorPrecedence", "Mutability");
-        List<String> diagnosticKinds2 = ImmutableList.of("MissingOverride", "OperatorPrecedence", "Immutability");
+  @Test
+  public void recognisesUnequalDistributionsWithSameCardinality() {
+    List<String> diagnosticKinds =
+        ImmutableList.of("MissingOverride", "OperatorPrecedence", "Mutability");
+    List<String> diagnosticKinds2 =
+        ImmutableList.of("MissingOverride", "OperatorPrecedence", "Immutability");
 
-        // WHEN:
-        DiagnosticsDistribution distribution = DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds);
-        DiagnosticsDistribution distribution2 = DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds2);
+    // WHEN:
+    DiagnosticsDistribution distribution =
+        DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds);
+    DiagnosticsDistribution distribution2 =
+        DiagnosticsDistribution.fromDiagnosticKinds(diagnosticKinds2);
 
-        // THEN:
-        Assert.assertNotEquals(distribution, distribution2);
-        Assert.assertNotEquals(distribution2, distribution);
-    }
+    // THEN:
+    Assert.assertNotEquals(distribution, distribution2);
+    Assert.assertNotEquals(distribution2, distribution);
+  }
 }

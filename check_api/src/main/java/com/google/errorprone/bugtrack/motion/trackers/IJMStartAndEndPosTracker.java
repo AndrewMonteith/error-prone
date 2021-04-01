@@ -23,45 +23,54 @@ import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
-import com.google.errorprone.bugtrack.utils.IOThrowingSupplier;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
-    public IJMStartAndEndPosTracker(SrcFilePair srcFilePair,
-                                    TrackersSharedState sharedState,
-                                    IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier) throws IOException {
-        super(srcFilePair, sharedState, jdtVisitorSupplier);
+public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker
+    implements DiagnosticPositionTracker {
+  public IJMStartAndEndPosTracker(
+      SrcFilePair srcFilePair,
+      TrackersSharedState sharedState,
+      IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier)
+      throws IOException {
+    super(srcFilePair, sharedState, jdtVisitorSupplier);
+  }
+
+  public IJMStartAndEndPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState)
+      throws IOException {
+    super(srcFilePair, sharedState);
+  }
+
+  @Override
+  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
+    Optional<NodeLocation> mappedStartPos = trackPosition(oldDiag.getStartPos());
+
+    if (!mappedStartPos.isPresent()) {
+      return Optional.empty();
     }
 
-    public IJMStartAndEndPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState) throws IOException {
-        super(srcFilePair, sharedState);
+    if (oldDiag.getEndPos() == -1) {
+      return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, -1));
     }
 
-    @Override
-    public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-        Optional<NodeLocation> mappedStartPos = trackPosition(oldDiag.getStartPos());
-
-        if (!mappedStartPos.isPresent()) {
-            return Optional.empty();
-        }
-
-        if (oldDiag.getEndPos() == -1) {
-            return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, -1));
-        }
-
-        Optional<List<NodeLocation>> mappedEndPoses = trackEndPosition(oldDiag.getEndPos());
-        if (!mappedEndPoses.isPresent() || mappedEndPoses.get().isEmpty()) {
-            return mappedStartPos.map(srcBufRange -> DiagSrcPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
-        }
-
-        List<DiagPosEqualityOracle> posOracles = mappedEndPoses.get().stream()
-                .map(endPos -> DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, endPos.end))
-                .collect(Collectors.toList());
-
-        return Optional.of(DiagPosEqualityOracle.any(posOracles));
+    Optional<List<NodeLocation>> mappedEndPoses = trackEndPosition(oldDiag.getEndPos());
+    if (!mappedEndPoses.isPresent() || mappedEndPoses.get().isEmpty()) {
+      return mappedStartPos.map(
+          srcBufRange ->
+              DiagSrcPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
     }
+
+    List<DiagPosEqualityOracle> posOracles =
+        mappedEndPoses.get().stream()
+            .map(
+                endPos ->
+                    DiagSrcPosEqualityOracle.byStartAndEndPos(
+                        mappedStartPos.get().start, endPos.end))
+            .collect(Collectors.toList());
+
+    return Optional.of(DiagPosEqualityOracle.any(posOracles));
+  }
 }

@@ -21,12 +21,11 @@ import java.util.Arrays;
 @FunctionalInterface
 public interface BugComparer {
 
-    static BugComparer any(BugComparer... comparers) {
-        return (oldDiagnostic, newDiagnostic) -> Arrays.stream(comparers)
-                .anyMatch(comparer -> comparer.areSame(oldDiagnostic, newDiagnostic));
-    }
+  static BugComparer any(BugComparer... comparers) {
+    return (oldDiagnostic, newDiagnostic) ->
+        Arrays.stream(comparers)
+            .anyMatch(comparer -> comparer.areSame(oldDiagnostic, newDiagnostic));
+  }
 
-    boolean areSame(DatasetDiagnostic oldDiagnostic,
-                    DatasetDiagnostic newDiagnostic);
-
+  boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
 }

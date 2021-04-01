@@ -24,25 +24,25 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 public interface CorpusProject {
-    enum BuildSystem {
-        Maven,
-        Gradle,
-        Other
+  @NotNull
+  Path getRoot();
+
+  boolean shouldScanFile(Path file);
+
+  BuildSystem getBuildSystem();
+
+  default Repository loadRepo() {
+    try {
+      return FileRepositoryBuilder.create(getRoot().resolve(".git").toFile());
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
     }
+  }
 
-    @NotNull
-    Path getRoot();
-
-    boolean shouldScanFile(Path file);
-
-    BuildSystem getBuildSystem();
-
-    default Repository loadRepo() {
-        try {
-            return FileRepositoryBuilder.create(getRoot().resolve(".git").toFile());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+  enum BuildSystem {
+    Maven,
+    Gradle,
+    Other
+  }
 }

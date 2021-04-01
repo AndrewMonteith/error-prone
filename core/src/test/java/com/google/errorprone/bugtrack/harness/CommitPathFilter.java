@@ -23,6 +23,6 @@ import java.io.IOException;
 import java.util.List;
 
 @FunctionalInterface
-public interface CommitRangeFilter {
-    List<RevCommit> filterCommits(List<RevCommit> commits) throws IOException, GitAPIException;
+public interface CommitPathFilter {
+  List<RevCommit> filter(List<RevCommit> commits) throws IOException, GitAPIException;
 }

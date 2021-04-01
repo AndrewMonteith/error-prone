@@ -33,229 +33,251 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
 
 import static com.google.errorprone.bugtrack.harness.utils.ListUtils.consecutivePairs;
 import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
 
 public final class MultiGrainDiagFileComparer {
-    private final CorpusProject project;
-    private final Map<CommitPair, MatchResults> resultsCache;
+  private final CorpusProject project;
+  private final Map<StrCommitPair, MatchResults> resultsCache;
 
-    private MultiGrainDiagFileComparer(CorpusProject project) {
-        this.project = project;
-        this.resultsCache = new ConcurrentHashMap<>();
+  private MultiGrainDiagFileComparer(CorpusProject project) {
+    this.project = project;
+    this.resultsCache = new ConcurrentHashMap<>();
+  }
+
+  public static void compareFiles(
+      CorpusProject project, Path output, List<GrainDiagFile> grainFiles) {
+    new MultiGrainDiagFileComparer(project).compare(output, grainFiles);
+  }
+
+  public static void compareFilesInParallel(
+      CorpusProject project, Path output, List<GrainDiagFile> grainFiles) {
+    new MultiGrainDiagFileComparer(project).compareParallel(output, grainFiles);
+  }
+
+  private MatchResults scan(DiagnosticsFile last, DiagnosticsFile next)
+      throws IOException, GitAPIException {
+    StrCommitPair cp = new StrCommitPair(last.commitId, next.commitId);
+    if (resultsCache.containsKey(cp)) {
+      System.out.println("retrieved " + cp + " from cache");
+      return resultsCache.get(cp);
     }
 
-    public static void compareFiles(CorpusProject project,
-                                    Path output,
-                                    List<GrainDiagFile> grainFiles) {
-        new MultiGrainDiagFileComparer(project).compare(output, grainFiles);
+    MatchResults results;
+    try {
+      results =
+          GitCommitMatcher.compareGit(project, last, next)
+              .trackIdentical()
+              .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+              .match();
+    } catch (RuntimeException e) {
+      System.out.printf("Failed scanning %s -> %s\n", last.commitId, next.commitId);
+      throw new RuntimeException(e);
     }
 
-    public static void compareFilesInParallel(CorpusProject project,
-                                              Path output,
-                                              List<GrainDiagFile> grainFiles) {
-        new MultiGrainDiagFileComparer(project).compareParallel(output, grainFiles);
-    }
+    resultsCache.put(cp, results);
 
-    private MatchResults scan(DiagnosticsFile last, DiagnosticsFile next) throws IOException, GitAPIException {
-        CommitPair cp = new CommitPair(last.commitId, next.commitId);
-        if (resultsCache.containsKey(cp)) {
-            System.out.println("retrieved " + cp + " from cache");
-            return resultsCache.get(cp);
-        }
+    return results;
+  }
 
-        MatchResults results;
-        try {
-            results = GitCommitMatcher.compareGit(project, last, next)
-                    .trackIdentical()
-                    .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
-                    .match();
-        } catch (RuntimeException e) {
-            System.out.printf("Failed scanning %s -> %s\n", last.commitId, next.commitId);
-            throw new RuntimeException(e);
-        }
+  private void scanWalk(Path output, Iterable<GrainDiagFile> grainFiles) {
+    consecutivePairs(
+        grainFiles,
+        (ThrowingBiConsumer<GrainDiagFile, GrainDiagFile>)
+            (oldGrainFile, newGrainFile) -> {
+              DiagnosticsFile last = oldGrainFile.getDiagFile();
+              DiagnosticsFile next = newGrainFile.getDiagFile();
 
-        resultsCache.put(cp, results);
-
-        return results;
-    }
-
-    private void scanWalk(Path output, Iterable<GrainDiagFile> grainFiles) {
-        consecutivePairs(grainFiles, (ThrowingBiConsumer<GrainDiagFile, GrainDiagFile>) (oldGrainFile, newGrainFile) -> {
-            DiagnosticsFile last = oldGrainFile.getDiagFile();
-            DiagnosticsFile next = newGrainFile.getDiagFile();
-
-            if (last.commitId.equals(next.commitId)) {
+              if (last.commitId.equals(next.commitId)) {
                 return;
-            }
+              }
 
-            String name = last.getSeqNum() + " " + last.commitId + " -> " + next.getSeqNum() + " " + next.commitId;
-            System.out.println("Scanning " + name);
+              String name =
+                  last.getSeqNum()
+                      + " "
+                      + last.commitId
+                      + " -> "
+                      + next.getSeqNum()
+                      + " "
+                      + next.commitId;
+              System.out.println("Scanning " + name);
 
-            scan(last, next).save(output.resolve(name));
-        });
-    }
-
-    private ImmutableSet<Integer> getAllGrains(List<GrainDiagFile> grainFiles) {
-        return grainFiles.stream()
-                .map(GrainDiagFile::getGrains)
-                .reduce(ImmutableSet.of(), (s1, s2) ->
-                        ImmutableSet.<Integer>builder()
-                                .addAll(s1)
-                                .addAll(s2)
-                                .build()
-                );
-    }
-
-    private Iterable<GrainDiagFile> filterGrainFiles(Iterable<GrainDiagFile> grainFiles,
-                                                     final int maxGrain,
-                                                     final int grain) {
-        return Iterables.filter(grainFiles, grainFile -> grainFile.hasGrain(maxGrain) || grainFile.hasGrain(grain));
-    }
-
-    private void compare(Path output, List<GrainDiagFile> grainFiles) {
-        Set<Integer> grains = getAllGrains(grainFiles);
-
-        makeGrainFolders(output, grains);
-
-        final int maxGrain = Collections.max(grains);
-
-        for (int grain : grains) {
-            System.out.println("scanning grain " + grain);
-            scanWalk(output.resolve("grain-" + grain), filterGrainFiles(grainFiles, maxGrain, grain));
-        }
-    }
-
-    private void makeGrainFolders(Path output, Iterable<Integer> grains) {
-        for (int grain : grains) {
-            Path grainOutput = output.resolve("grain-" + grain);
-            if (!grainOutput.toFile().exists()) {
-                try {
-                    Files.createDirectory(grainOutput);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-    private void compareParallel(Path output, List<GrainDiagFile> grainFiles) {
-        Set<Integer> grains = getAllGrains(grainFiles);
-
-        makeGrainFolders(output, grains);
-
-        final int maxGrain = Collections.max(grains);
-
-        // Create task for each pair of files. Record which grains need the results of the comparisons
-        Map<CommitPair, CompareTask> commitPairsTasks = new HashMap<>();
-        for (int grain : grains) {
-            Path grainOutput = output.resolve("grain-" + grain);
-            consecutivePairs(filterGrainFiles(grainFiles, maxGrain, grain), (oldGrainFile, newGrainFile) -> {
-                DiagnosticsFile oldFile = oldGrainFile.getDiagFile();
-                DiagnosticsFile newFile = newGrainFile.getDiagFile();
-
-                String fileName = oldFile.getSeqNum() + " " + oldFile.commitId + " -> "
-                        + newFile.getSeqNum() + " " + newFile.commitId;
-
-                commitPairsTasks.computeIfAbsent(
-                        new CommitPair(oldFile.commitId, newFile.commitId),
-                        __ -> new CompareTask(oldFile, newFile, new ArrayList<>()))
-                        .outputs.add(grainOutput.resolve(fileName));
+              scan(last, next).save(output.resolve(name));
             });
-        }
+  }
 
-        final int processors = Runtime.getRuntime().availableProcessors();
-        final int grainSize = commitPairsTasks.values().size() / processors;
+  private ImmutableSet<Integer> getAllGrains(List<GrainDiagFile> grainFiles) {
+    return grainFiles.stream()
+        .map(GrainDiagFile::getGrains)
+        .reduce(
+            ImmutableSet.of(),
+            (s1, s2) -> ImmutableSet.<Integer>builder().addAll(s1).addAll(s2).build());
+  }
 
-        // Assign all tasks equally to each core available
-        List<Callable<Void>> compareThreadTasks = new ArrayList<>();
-        Lists.partition(ImmutableList.copyOf(commitPairsTasks.values()), grainSize)
-                .forEach(compareTasks ->
-                        compareThreadTasks.add(() -> {
-                            long threadId = Thread.currentThread().getId();
-                            for (int i = 0; i < compareTasks.size(); ++i) {
-                                System.out.printf("Thread %d [%d / %d]\n", threadId, i + 1, compareTasks.size());
+  private Iterable<GrainDiagFile> filterGrainFiles(
+      Iterable<GrainDiagFile> grainFiles, final int maxGrain, final int grain) {
+    return Iterables.filter(
+        grainFiles, grainFile -> grainFile.hasGrain(maxGrain) || grainFile.hasGrain(grain));
+  }
 
-                                CompareTask task = compareTasks.get(i);
-                                MatchResults results = scan(task.before, task.after);
-                                task.outputs.forEach((ThrowingConsumer<Path>) results::save);
-                            }
+  private void compare(Path output, List<GrainDiagFile> grainFiles) {
+    Set<Integer> grains = getAllGrains(grainFiles);
 
-                            return null;
-                        }));
+    makeGrainFolders(output, grains);
 
-        // Spin up the threads
-        ExecutorService executor = new ForkJoinPool();
+    final int maxGrain = Collections.max(grains);
+
+    for (int grain : grains) {
+      System.out.println("scanning grain " + grain);
+      scanWalk(output.resolve("grain-" + grain), filterGrainFiles(grainFiles, maxGrain, grain));
+    }
+  }
+
+  private void makeGrainFolders(Path output, Iterable<Integer> grains) {
+    for (int grain : grains) {
+      Path grainOutput = output.resolve("grain-" + grain);
+      if (!grainOutput.toFile().exists()) {
         try {
-            // Let's go!
-            List<Future<Void>> results = executor.invokeAll(compareThreadTasks);
-            for (Future<Void> future : results) {
-                future.get();
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        } finally {
-            executor.shutdown();
+          Files.createDirectory(grainOutput);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
+      }
+    }
+  }
+
+  private void compareParallel(Path output, List<GrainDiagFile> grainFiles) {
+    Set<Integer> grains = getAllGrains(grainFiles);
+
+    makeGrainFolders(output, grains);
+
+    final int maxGrain = Collections.max(grains);
+
+    // Create task for each pair of files. Record which grains need the results of the comparisons
+    Map<StrCommitPair, CompareTask> commitPairsTasks = new HashMap<>();
+    for (int grain : grains) {
+      Path grainOutput = output.resolve("grain-" + grain);
+      consecutivePairs(
+          filterGrainFiles(grainFiles, maxGrain, grain),
+          (oldGrainFile, newGrainFile) -> {
+            DiagnosticsFile oldFile = oldGrainFile.getDiagFile();
+            DiagnosticsFile newFile = newGrainFile.getDiagFile();
+
+            String fileName =
+                oldFile.getSeqNum()
+                    + " "
+                    + oldFile.commitId
+                    + " -> "
+                    + newFile.getSeqNum()
+                    + " "
+                    + newFile.commitId;
+
+            commitPairsTasks
+                .computeIfAbsent(
+                    new StrCommitPair(oldFile.commitId, newFile.commitId),
+                    __ -> new CompareTask(oldFile, newFile, new ArrayList<>()))
+                .outputs
+                .add(grainOutput.resolve(fileName));
+          });
     }
 
-    private static class CompareTask {
-        public final DiagnosticsFile before;
-        public final DiagnosticsFile after;
-        public final List<Path> outputs;
+    final int processors = Runtime.getRuntime().availableProcessors();
+    final int grainSize = commitPairsTasks.values().size() / processors;
 
-        public CompareTask(final DiagnosticsFile before, final DiagnosticsFile after, final List<Path> outputs) {
-            this.before = before;
-            this.after = after;
-            this.outputs = outputs;
-        }
+    // Assign all tasks equally to each core available
+    List<Callable<Void>> compareThreadTasks = new ArrayList<>();
+    Lists.partition(ImmutableList.copyOf(commitPairsTasks.values()), grainSize)
+        .forEach(
+            compareTasks ->
+                compareThreadTasks.add(
+                    () -> {
+                      long threadId = Thread.currentThread().getId();
+                      for (int i = 0; i < compareTasks.size(); ++i) {
+                        System.out.printf(
+                            "Thread %d [%d / %d]\n", threadId, i + 1, compareTasks.size());
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CompareTask that = (CompareTask) o;
-            return before.equals(that.before) && after.equals(that.after) && Iterables.elementsEqual(outputs, that.outputs);
-        }
+                        CompareTask task = compareTasks.get(i);
+                        MatchResults results = scan(task.before, task.after);
+                        task.outputs.forEach((ThrowingConsumer<Path>) results::save);
+                      }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(before, after, outputs.size());
-        }
+                      return null;
+                    }));
 
-        @Override
-        public String toString() {
-            return before.commitId + " -> " + after.commitId;
-        }
+    // Spin up the threads
+    ExecutorService executor = new ForkJoinPool();
+    try {
+      // Let's go!
+      List<Future<Void>> results = executor.invokeAll(compareThreadTasks);
+      for (Future<Void> future : results) {
+        future.get();
+      }
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    } finally {
+      executor.shutdown();
+    }
+  }
+
+  private static class CompareTask {
+    public final DiagnosticsFile before;
+    public final DiagnosticsFile after;
+    public final List<Path> outputs;
+
+    public CompareTask(
+        final DiagnosticsFile before, final DiagnosticsFile after, final List<Path> outputs) {
+      this.before = before;
+      this.after = after;
+      this.outputs = outputs;
     }
 
-    private static class CommitPair {
-        public final String preCommit;
-        public final String postCommit;
-
-        public CommitPair(String preCommit, String postCommit) {
-            this.preCommit = preCommit;
-            this.postCommit = postCommit;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CommitPair that = (CommitPair) o;
-            return preCommit.equals(that.preCommit) && postCommit.equals(that.postCommit);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(preCommit, postCommit);
-        }
-
-        @Override
-        public String toString() {
-            return preCommit + " ->" + postCommit;
-        }
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      CompareTask that = (CompareTask) o;
+      return before.equals(that.before)
+          && after.equals(that.after)
+          && Iterables.elementsEqual(outputs, that.outputs);
     }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(before, after, outputs.size());
+    }
+
+    @Override
+    public String toString() {
+      return before.commitId + " -> " + after.commitId;
+    }
+  }
+
+  private static class StrCommitPair {
+    public final String preCommit;
+    public final String postCommit;
+
+    public StrCommitPair(String preCommit, String postCommit) {
+      this.preCommit = preCommit;
+      this.postCommit = postCommit;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      StrCommitPair that = (StrCommitPair) o;
+      return preCommit.equals(that.preCommit) && postCommit.equals(that.postCommit);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(preCommit, postCommit);
+    }
+
+    @Override
+    public String toString() {
+      return preCommit + " ->" + postCommit;
+    }
+  }
 }

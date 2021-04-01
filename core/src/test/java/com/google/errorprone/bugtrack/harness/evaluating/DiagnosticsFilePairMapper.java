@@ -17,5 +17,5 @@
 package com.google.errorprone.bugtrack.harness.evaluating;
 
 public interface DiagnosticsFilePairMapper<V> {
-    V apply(DiagnosticsFilePairLoader.Pair oldAndNewFile) throws Exception;
+  V apply(DiagnosticsFilePairLoader.Pair oldAndNewFile) throws Exception;
 }

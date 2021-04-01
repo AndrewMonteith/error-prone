@@ -20,7 +20,6 @@ import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.nio.file.Path;
 
 public class ProjectFilesTest {

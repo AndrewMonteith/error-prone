@@ -19,5 +19,5 @@ package com.google.errorprone.bugtrack.utils;
 import java.io.IOException;
 
 public interface IOThrowingFunction<K, V> {
-    V apply(K key) throws IOException;
+  V apply(K key) throws IOException;
 }

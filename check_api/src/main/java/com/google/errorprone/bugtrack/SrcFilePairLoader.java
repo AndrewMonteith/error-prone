@@ -23,5 +23,6 @@ import java.io.IOException;
 
 @FunctionalInterface
 public interface SrcFilePairLoader {
-    SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException, FormatterException;
+  SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
+      throws IOException, FormatterException;
 }

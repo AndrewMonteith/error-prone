@@ -27,41 +27,44 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class GitPathComparer implements PathsComparer {
-    private final Repository repo;
-    private final List<DiffEntry> diffs;
+  private final Repository repo;
+  private final List<DiffEntry> diffs;
 
-    public GitPathComparer(Repository repo, RevCommit oldCommit, RevCommit newCommit) throws GitAPIException, IOException {
-        this.repo = repo;
-        this.diffs = GitUtils.computeDiffs(repo, oldCommit, newCommit);
+  public GitPathComparer(Repository repo, RevCommit oldCommit, RevCommit newCommit)
+      throws GitAPIException, IOException {
+    this.repo = repo;
+    this.diffs = GitUtils.computeDiffs(repo, oldCommit, newCommit);
+  }
+
+  public GitPathComparer(Repository repo, String oldCommit, String newCommit)
+      throws IOException, GitAPIException {
+    this(repo, GitUtils.parseCommit(repo, oldCommit), GitUtils.parseCommit(repo, newCommit));
+  }
+
+  private Path makeRelativeToRepo(Path path) {
+    Path repoRoot = repo.getDirectory().getParentFile().toPath();
+
+    if (path.startsWith(repoRoot)) {
+      return repoRoot.relativize(path);
+    } else {
+      return path;
+    }
+  }
+
+  @Override
+  public boolean isSameFile(Path oldPath, Path newPath) {
+    if (oldPath.equals(newPath)) {
+      return true;
     }
 
-    public GitPathComparer(Repository repo, String oldCommit, String newCommit) throws IOException, GitAPIException {
-        this(repo,
-                GitUtils.parseCommit(repo, oldCommit),
-                GitUtils.parseCommit(repo, newCommit));
-    }
+    Path relOldPath = makeRelativeToRepo(oldPath);
+    Path relNewPath = makeRelativeToRepo(newPath);
 
-    private Path makeRelativeToRepo(Path path) {
-        Path repoRoot = repo.getDirectory().getParentFile().toPath();
-
-        if (path.startsWith(repoRoot)) {
-            return repoRoot.relativize(path);
-        } else {
-            return path;
-        }
-    }
-
-    @Override
-    public boolean isSameFile(Path oldPath, Path newPath) {
-        if (oldPath.equals(newPath)) {
-            return true;
-        }
-
-        Path relOldPath = makeRelativeToRepo(oldPath);
-        Path relNewPath = makeRelativeToRepo(newPath);
-
-        return diffs.stream()
-                .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
-                .anyMatch(diff -> diff.getOldPath().equals(relOldPath.toString()) && diff.getNewPath().equals(relNewPath.toString()));
-    }
+    return diffs.stream()
+        .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
+        .anyMatch(
+            diff ->
+                diff.getOldPath().equals(relOldPath.toString())
+                    && diff.getNewPath().equals(relNewPath.toString()));
+  }
 }

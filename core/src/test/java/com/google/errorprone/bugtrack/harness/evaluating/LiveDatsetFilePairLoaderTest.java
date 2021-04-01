@@ -26,55 +26,59 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public final class LiveDatsetFilePairLoaderTest {
-    private static final String testDiagnosticFiles = "src/test/java/com/google/errorprone/bugtrack/testdata/fake_dataset_files";
-
-    @Test
-    public void canLoadAllFiles() {
-        Assert.assertEquals(5, LiveDatasetFilePairLoader.allFiles(testDiagnosticFiles).getNumberOfFiles());
-    }
-
-    @Test
-    public void canLoadFilesRespectingRange() {
-        // GIVEN:
-        IntRanges range = IntRanges.include(1, 5).excludeRange(2, 3);
-
-        // WHEN:
-        LiveDatasetFilePairLoader loader = LiveDatasetFilePairLoader.inSeqNumRange(testDiagnosticFiles, range);
-
-        // THEN:
-        Assert.assertEquals(3, loader.getNumberOfFiles());
-    }
-
-    @Test
-    public void pairsLoadedArentBackwards() throws IOException {
-        // GIVEN:
-        LiveDatasetFilePairLoader loader = LiveDatasetFilePairLoader.allFiles(testDiagnosticFiles);
-
-        // WHEN:
-        ArrayList<DiagnosticsFilePairLoader.Pair> pairs = new ArrayList<>();
-        for (int i = 0; i < 1000; ++i) {
-            pairs.add(loader.load(TEST_PROJECT));
-        }
-
-        // THEN:
-        Assert.assertTrue(pairs.stream().allMatch(pair ->
-                pair.oldFile.commitId.compareTo(pair.newFile.commitId) <= 0));
-    }
-
-    private static CorpusProject TEST_PROJECT = new CorpusProject() {
+  private static final String testDiagnosticFiles =
+      "src/test/java/com/google/errorprone/bugtrack/testdata/fake_dataset_files";
+  private static final CorpusProject TEST_PROJECT =
+      new CorpusProject() {
         @Override
         public Path getRoot() {
-            return Paths.get("root/java-corpus/test");
+          return Paths.get("root/java-corpus/test");
         }
 
         @Override
         public boolean shouldScanFile(Path file) {
-            return true;
+          return true;
         }
 
         @Override
         public BuildSystem getBuildSystem() {
-            return BuildSystem.Maven;
+          return BuildSystem.Maven;
         }
-    };
+      };
+
+  @Test
+  public void canLoadAllFiles() {
+    Assert.assertEquals(
+        5, LiveDatasetFilePairLoader.allFiles(testDiagnosticFiles).getNumberOfFiles());
+  }
+
+  @Test
+  public void canLoadFilesRespectingRange() {
+    // GIVEN:
+    IntRanges range = IntRanges.include(1, 5).excludeRange(2, 3);
+
+    // WHEN:
+    LiveDatasetFilePairLoader loader =
+        LiveDatasetFilePairLoader.inSeqNumRange(testDiagnosticFiles, range);
+
+    // THEN:
+    Assert.assertEquals(3, loader.getNumberOfFiles());
+  }
+
+  @Test
+  public void pairsLoadedArentBackwards() throws IOException {
+    // GIVEN:
+    LiveDatasetFilePairLoader loader = LiveDatasetFilePairLoader.allFiles(testDiagnosticFiles);
+
+    // WHEN:
+    ArrayList<DiagnosticsFilePairLoader.Pair> pairs = new ArrayList<>();
+    for (int i = 0; i < 1000; ++i) {
+      pairs.add(loader.load(TEST_PROJECT));
+    }
+
+    // THEN:
+    Assert.assertTrue(
+        pairs.stream()
+            .allMatch(pair -> pair.oldFile.commitId.compareTo(pair.newFile.commitId) <= 0));
+  }
 }

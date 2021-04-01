@@ -17,7 +17,7 @@
 package com.google.errorprone.bugtrack.harness;
 
 import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.utils.GitUtils;
+import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinder;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -33,36 +33,44 @@ import java.util.List;
 
 @RunWith(JUnit4.class)
 public final class LinesChangedCommitFilterTest {
-    @Test
-    public void lineChangeFilterNotTriggeredUnderThreshold() throws IOException, GitAPIException, InterruptedException {
-        // GIVEN:
-        Repository jsoupRepo = new JSoupProject().loadRepo();
-        CommitRange range = new CommitRange("c0b275361ce8409f85de3573d89f6a617f0084d5", "62f5035bc6b466f59231c59a7ed414db8783c0c3");
+  @Test
+  public void lineChangeFilterNotTriggeredUnderThreshold()
+      throws IOException, GitAPIException, InterruptedException {
+    // GIVEN:
+    Repository jsoupRepo = new JSoupProject().loadRepo();
+    CommitRange range =
+        new CommitRange(
+            "c0b275361ce8409f85de3573d89f6a617f0084d5", "62f5035bc6b466f59231c59a7ed414db8783c0c3");
 
-        // WHEN:
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(jsoupRepo), 50)
-                .filterCommits(GitUtils.expandCommitRange(jsoupRepo, range));
+    // WHEN:
+    List<RevCommit> filteredCommits =
+        new JavaLinesChangedFilter(new Git(jsoupRepo), 50)
+            .filter(CommitDAGPathFinder.find(jsoupRepo, range));
 
-        // THEN:
-        Assert.assertEquals(2, filteredCommits.size());
-        Assert.assertTrue(filteredCommits.get(0).getName().startsWith("c0b27536"));
-        Assert.assertTrue(filteredCommits.get(1).getName().startsWith("62f5035b"));
-    }
+    // THEN:
+    Assert.assertEquals(2, filteredCommits.size());
+    Assert.assertTrue(filteredCommits.get(0).getName().startsWith("c0b27536"));
+    Assert.assertTrue(filteredCommits.get(1).getName().startsWith("62f5035b"));
+  }
 
-    @Test
-    public void lineChangeFilterTriggeredOverThreshold() throws IOException, GitAPIException, InterruptedException {
-        // GIVEN:
-        Repository jsoupRepo = new JSoupProject().loadRepo();
-        CommitRange range = new CommitRange("c0b275361ce8409f85de3573d89f6a617f0084d5", "f6388656f6c1ce111bc2dd158bf5a3732bda0605");
+  @Test
+  public void lineChangeFilterTriggeredOverThreshold()
+      throws IOException, GitAPIException, InterruptedException {
+    // GIVEN:
+    Repository jsoupRepo = new JSoupProject().loadRepo();
+    CommitRange range =
+        new CommitRange(
+            "c0b275361ce8409f85de3573d89f6a617f0084d5", "f6388656f6c1ce111bc2dd158bf5a3732bda0605");
 
-        // WHEN:
-        List<RevCommit> filteredCommits = new LinesChangedCommitFilter(new Git(jsoupRepo), 50)
-                .filterCommits(GitUtils.expandCommitRange(jsoupRepo, range));
+    // WHEN:
+    List<RevCommit> filteredCommits =
+        new JavaLinesChangedFilter(new Git(jsoupRepo), 50)
+            .filter(CommitDAGPathFinder.find(jsoupRepo, range));
 
-        // THEN:
-        Assert.assertEquals(3, filteredCommits.size());
-        Assert.assertTrue(filteredCommits.get(0).getName().startsWith("c0b27536"));
-        Assert.assertTrue(filteredCommits.get(1).getName().startsWith("6e3c98c4"));
-        Assert.assertTrue(filteredCommits.get(2).getName().startsWith("f6388656"));
-    }
+    // THEN:
+    Assert.assertEquals(3, filteredCommits.size());
+    Assert.assertTrue(filteredCommits.get(0).getName().startsWith("c0b27536"));
+    Assert.assertTrue(filteredCommits.get(1).getName().startsWith("6e3c98c4"));
+    Assert.assertTrue(filteredCommits.get(2).getName().startsWith("f6388656"));
+  }
 }

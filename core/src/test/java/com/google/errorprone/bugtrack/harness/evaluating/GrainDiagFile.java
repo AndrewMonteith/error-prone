@@ -32,34 +32,35 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GrainDiagFile {
-    private final ImmutableSet<Integer> grains;
-    private final DiagnosticsFile diagFile;
+  private final ImmutableSet<Integer> grains;
+  private final DiagnosticsFile diagFile;
 
-    public DiagnosticsFile getDiagFile() {
-        return diagFile;
-    }
+  public GrainDiagFile(CorpusProject project, Path file) throws IOException {
+    Iterable<String> stringGrains = Splitter.on("-").split(Files.getFileExtension(file.toString()));
+    this.grains = ImmutableSet.copyOf(Iterables.transform(stringGrains, Integer::parseInt));
+    this.diagFile = DiagnosticsFile.load(project, file);
+  }
 
-    public ImmutableSet<Integer> getGrains() {
-        return grains;
+  public static List<GrainDiagFile> loadSortedFiles(CorpusProject project, Path files)
+      throws IOException {
+    try (Stream<Path> fileStream = java.nio.file.Files.list(files)) {
+      return fileStream
+          .filter(file -> !java.nio.file.Files.isDirectory(file))
+          .map(((ThrowingFunction<Path, GrainDiagFile>) file -> new GrainDiagFile(project, file)))
+          .sorted(Comparator.comparingInt(grainFile -> grainFile.diagFile.getSeqNum()))
+          .collect(Collectors.toList());
     }
+  }
 
-    public boolean hasGrain(int grain) {
-        return grains.contains(grain);
-    }
+  public DiagnosticsFile getDiagFile() {
+    return diagFile;
+  }
 
-    public GrainDiagFile(CorpusProject project, Path file) throws IOException {
-        Iterable<String> stringGrains = Splitter.on("-").split(Files.getFileExtension(file.toString()));
-        this.grains = ImmutableSet.copyOf(Iterables.transform(stringGrains, Integer::parseInt));
-        this.diagFile = DiagnosticsFile.load(project, file);
-    }
+  public ImmutableSet<Integer> getGrains() {
+    return grains;
+  }
 
-    public static List<GrainDiagFile> loadSortedFiles(CorpusProject project, Path files) throws IOException {
-        try (Stream<Path> fileStream = java.nio.file.Files.list(files)) {
-            return fileStream
-                    .filter(file -> !java.nio.file.Files.isDirectory(file))
-                    .map(((ThrowingFunction<Path, GrainDiagFile>) file -> new GrainDiagFile(project, file)))
-                    .sorted(Comparator.comparingInt(grainFile -> grainFile.diagFile.getSeqNum()))
-                    .collect(Collectors.toList());
-        }
-    }
+  public boolean hasGrain(int grain) {
+    return grains.contains(grain);
+  }
 }

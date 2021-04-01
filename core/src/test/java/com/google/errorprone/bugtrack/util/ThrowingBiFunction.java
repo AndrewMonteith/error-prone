@@ -17,5 +17,5 @@
 package com.google.errorprone.bugtrack.util;
 
 public interface ThrowingBiFunction<K1, K2, V> {
-    V apply(K1 key1, K2 key2) throws Exception;
+  V apply(K1 key1, K2 key2) throws Exception;
 }

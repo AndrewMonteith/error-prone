@@ -22,52 +22,52 @@ import java.nio.file.Paths;
 import java.util.Objects;
 
 public final class ProjectFile {
-    private final CorpusProject project;
-    private final Path projPath;
+  private final CorpusProject project;
+  private final Path projPath;
 
-    public ProjectFile(CorpusProject project, Path path) {
-        this.project = project;
+  public ProjectFile(CorpusProject project, Path path) {
+    this.project = project;
 
-        if (path.startsWith(project.getRoot())) {
-            this.projPath = project.getRoot().relativize(path);
-        } else if (project.getRoot().resolve(path).toFile().exists()) {
-            this.projPath = project.getRoot().resolve(path);
-        } else {
-            throw new IllegalArgumentException("could not find " + path + " in " + project.getRoot());
-        }
+    if (path.startsWith(project.getRoot())) {
+      this.projPath = project.getRoot().relativize(path);
+    } else if (project.getRoot().resolve(path).toFile().exists()) {
+      this.projPath = project.getRoot().resolve(path);
+    } else {
+      throw new IllegalArgumentException("could not find " + path + " in " + project.getRoot());
     }
+  }
 
-    public ProjectFile(CorpusProject project, String path) {
-        this(project, Paths.get(path));
-    }
+  public ProjectFile(CorpusProject project, String path) {
+    this(project, Paths.get(path));
+  }
 
-    public boolean exists() {
-        return toFile().exists();
-    }
+  public boolean exists() {
+    return toFile().exists();
+  }
 
-    public File toFile() {
-        return project.getRoot().resolve(projPath).toFile();
-    }
+  public File toFile() {
+    return project.getRoot().resolve(projPath).toFile();
+  }
 
-    public Path getProjectPath() {
-        return projPath;
-    }
+  public Path getProjectPath() {
+    return projPath;
+  }
 
-    @Override
-    public String toString() {
-        return toFile().toString();
-    }
+  @Override
+  public String toString() {
+    return toFile().toString();
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ProjectFile that = (ProjectFile) o;
-        return Objects.equals(projPath, that.projPath);
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ProjectFile that = (ProjectFile) o;
+    return Objects.equals(projPath, that.projPath);
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(projPath);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(projPath);
+  }
 }

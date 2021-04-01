@@ -17,11 +17,11 @@
 package com.google.errorprone.bugtrack.motion;
 
 public class SrcFilePair {
-    public final SrcFile oldFile;
-    public final SrcFile newFile;
+  public final SrcFile oldFile;
+  public final SrcFile newFile;
 
-    public SrcFilePair(final SrcFile oldFile, final SrcFile newFile) {
-        this.oldFile = oldFile;
-        this.newFile = newFile;
-    }
+  public SrcFilePair(final SrcFile oldFile, final SrcFile newFile) {
+    this.oldFile = oldFile;
+    this.newFile = newFile;
+  }
 }

@@ -20,14 +20,14 @@ import java.util.function.BiConsumer;
 
 @FunctionalInterface
 public interface ThrowingBiConsumer<T, U> extends BiConsumer<T, U> {
-    @Override
-    default void accept(final T elem, final U elem2) {
-        try {
-            acceptThrows(elem, elem2);
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
+  @Override
+  default void accept(final T elem, final U elem2) {
+    try {
+      acceptThrows(elem, elem2);
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    void acceptThrows(T elem, U elem2) throws Exception;
+  void acceptThrows(T elem, U elem2) throws Exception;
 }

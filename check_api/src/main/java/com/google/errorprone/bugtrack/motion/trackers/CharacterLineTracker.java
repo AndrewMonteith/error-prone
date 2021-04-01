@@ -26,17 +26,18 @@ import java.util.Optional;
 
 /*
 
- */
+*/
 public class CharacterLineTracker implements DiagnosticPositionTracker {
-    private final SrcLineTracker<String> srcTracker;
+  private final SrcLineTracker<String> srcTracker;
 
-    public CharacterLineTracker(List<String> oldSrc, List<String> newSrc) throws DiffException {
-        this.srcTracker = new SrcLineTracker<>(oldSrc, newSrc);
-    }
+  public CharacterLineTracker(List<String> oldSrc, List<String> newSrc) throws DiffException {
+    this.srcTracker = new SrcLineTracker<>(oldSrc, newSrc);
+  }
 
-    @Override
-    public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic diag) {
-        return srcTracker.getNewLineNumber(diag.getLineNumber())
-                .map(newLineNum -> DiagSrcPosEqualityOracle.byLineCol(newLineNum, diag.getColumnNumber()));
-    }
+  @Override
+  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic diag) {
+    return srcTracker
+        .getNewLineNumber(diag.getLineNumber())
+        .map(newLineNum -> DiagSrcPosEqualityOracle.byLineCol(newLineNum, diag.getColumnNumber()));
+  }
 }

@@ -1,4 +1,7 @@
 #!/bin/bash
+# Make sure we can modify pom's
+find . -name 'pom.xml' -exec chmod 777 {} \;
+
 # Don't skip files
 find . -name 'pom.xml' -exec sed -i '/\bmaven.install.skip\b/d' {} \; # no target should be skipped by install
 find . -name 'pom.xml' -exec sed -i '/\bmaven.deploy.skip\b/d' {} \; # no target should be skipped by install

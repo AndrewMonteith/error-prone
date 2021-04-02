@@ -17,7 +17,7 @@
 package com.google.errorprone.bugtrack.harness;
 
 import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinder;
+import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.projects.JSoupProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -45,7 +45,7 @@ public final class LinesChangedCommitFilterTest {
     // WHEN:
     List<RevCommit> filteredCommits =
         new JavaLinesChangedFilter(new Git(jsoupRepo), 50)
-            .filter(CommitDAGPathFinder.find(jsoupRepo, range));
+            .filter(CommitDAGPathFinders.in(jsoupRepo, range).dfs());
 
     // THEN:
     Assert.assertEquals(2, filteredCommits.size());
@@ -65,7 +65,7 @@ public final class LinesChangedCommitFilterTest {
     // WHEN:
     List<RevCommit> filteredCommits =
         new JavaLinesChangedFilter(new Git(jsoupRepo), 50)
-            .filter(CommitDAGPathFinder.find(jsoupRepo, range));
+            .filter(CommitDAGPathFinders.in(jsoupRepo, range).dfs());
 
     // THEN:
     Assert.assertEquals(3, filteredCommits.size());

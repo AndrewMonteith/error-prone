@@ -17,11 +17,13 @@
 package com.google.errorprone.bugtrack.utils;
 
 import com.google.common.base.Joiner;
+import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -50,9 +52,10 @@ public final class ShellUtils {
     } while (process.isAlive());
 
     if (process.exitValue() != 0) {
-      String errorMsg = "Failed to run command " + Joiner.on(' ').join(command) + "\n";
-      errorMsg += new InputStreamReader(process.getErrorStream()).toString();
-      throw new IOException(errorMsg);
+      StringBuilder errorMsg = new StringBuilder();
+      errorMsg.append("Failed to run command ").append(Joiner.on(' ').join(command)).append("\n");
+      errorMsg.append(IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8.name())).append("\n");
+      throw new IOException(errorMsg.toString());
     }
 
     return output.toString();

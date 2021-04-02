@@ -26,49 +26,96 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import java.io.IOException;
 import java.util.*;
 
-public class CommitDAGPathFinder {
+public class CommitDAGPathFinders {
   private final RevCommit startCommit;
   private final RevCommit endCommit;
   private final Map<RevCommit, List<RevCommit>> adjacencyList;
 
-  private CommitDAGPathFinder(final Repository repo, final CommitRange range) throws IOException {
+  private CommitDAGPathFinders(final Repository repo, final CommitRange range) throws IOException {
     this.startCommit = GitUtils.parseCommit(repo, range.startCommit);
     this.endCommit = GitUtils.parseCommit(repo, range.finalCommit);
-    this.adjacencyList = CommitDAGUtils.buildAdjacencyList(repo);
+    this.adjacencyList = buildAdjacencyList(repo, range);
   }
 
-  public static List<RevCommit> find(final Repository repo, final CommitRange range)
+  public static CommitDAGPathFinders in(final Repository repo, final CommitRange range)
       throws IOException {
-    return ImmutableList.copyOf(new CommitDAGPathFinder(repo, range).find());
+    return new CommitDAGPathFinders(repo, range);
   }
 
-  private List<RevCommit> find() throws IOException {
-    RevCommit current = startCommit;
+  private static Map<RevCommit, List<RevCommit>> buildAdjacencyList(
+      Repository repo, CommitRange commitRange) throws IOException {
+    Map<RevCommit, List<RevCommit>> adjList = new HashMap<>();
+    RevCommit startCommit = GitUtils.parseCommit(repo, commitRange.startCommit);
+    RevCommit endCommit = GitUtils.parseCommit(repo, commitRange.finalCommit);
 
-    Stack<RevCommit> path = new Stack<>();
-    Set<RevCommit> visited = new HashSet<>();
+    try (RevWalk walk = new RevWalk(repo)) {
+      walk.markStart(endCommit);
+      walk.markUninteresting(startCommit);
 
-    visit_again:
-    while (!current.equals(endCommit)) {
-      for (RevCommit adjacent : adjacencyList.get(current)) {
-        if (!visited.contains(adjacent)) {
-          path.add(adjacent);
-          visited.add(adjacent);
-          current = adjacent;
-          continue visit_again;
+      for (RevCommit commit : walk) {
+        if (commit.equals(startCommit)) {
+          break;
         }
-
-        if (path.empty()) {
-          throw new RuntimeException("could not find a path");
+        for (RevCommit parent : commit.getParents()) {
+          adjList.computeIfAbsent(parent, __ -> new ArrayList<>()).add(commit);
         }
-
-        current = path.pop();
       }
     }
 
-    path.add(0, startCommit);
-
-    return ImmutableList.copyOf(path);
+    return adjList;
   }
 
+  public List<RevCommit> dfs() {
+    return new DFSSearch().find(adjacencyList, startCommit, endCommit);
+  }
+
+  public List<RevCommit> longest() {
+    return new LongestPath().find(adjacencyList, startCommit, endCommit);
+  }
+
+  @FunctionalInterface
+  private interface PathFinder {
+    List<RevCommit> find(Map<RevCommit, List<RevCommit>> adjList, RevCommit start, RevCommit goal);
+  }
+
+  private static class LongestPath implements PathFinder {
+    @Override
+    public List<RevCommit> find(
+        Map<RevCommit, List<RevCommit>> adjList, RevCommit start, RevCommit goal) {
+      return null;
+    }
+  }
+
+  private static class DFSSearch implements PathFinder {
+    @Override
+    public List<RevCommit> find(
+        Map<RevCommit, List<RevCommit>> adjList, final RevCommit start, final RevCommit goal) {
+      RevCommit current = start;
+
+      Stack<RevCommit> path = new Stack<>();
+      Set<RevCommit> visited = new HashSet<>();
+
+      visit_again:
+      while (!current.equals(goal)) {
+        for (RevCommit adjacent : adjList.get(current)) {
+          if (!visited.contains(adjacent)) {
+            path.add(adjacent);
+            visited.add(adjacent);
+            current = adjacent;
+            continue visit_again;
+          }
+
+          if (path.empty()) {
+            throw new RuntimeException("could not find a path");
+          }
+
+          current = path.pop();
+        }
+      }
+
+      path.add(0, start);
+
+      return ImmutableList.copyOf(path);
+    }
+  }
 }

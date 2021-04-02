@@ -16,5 +16,12 @@
 
 package com.google.errorprone.bugtrack.harness.utils;
 
+import org.eclipse.jgit.revwalk.RevCommit;
+
+import java.util.List;
+import java.util.Map;
+
+@FunctionalInterface
 public interface CommitDAGPathFinder {
+    List<RevCommit> find(Map<RevCommit, List<RevCommit>> adjacenyList, RevCommit start, RevCommit goal);
 }

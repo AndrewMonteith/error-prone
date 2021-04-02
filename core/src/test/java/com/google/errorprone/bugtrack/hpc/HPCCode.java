@@ -24,7 +24,7 @@ import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.evaluating.*;
-import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinder;
+import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -76,7 +76,7 @@ public final class HPCCode {
 
     List<RevCommit> filteredCommits =
         new JavaLinesChangedFilter(new Git(repo), 200)
-            .filter(CommitDAGPathFinder.find(repo, range));
+            .filter(CommitDAGPathFinders.in(repo, range).dfs());
 
     System.out.println("Total commits  " + filteredCommits.size());
   }
@@ -130,7 +130,7 @@ public final class HPCCode {
     List<RevCommit> filteredCommits =
         new JavaLinesChangedFilter(
                 new Git(repo), Integer.parseInt(System.getProperty("linesChanged")))
-            .filter(CommitDAGPathFinder.find(repo, range));
+            .filter(CommitDAGPathFinders.in(repo, range).dfs());
 
     System.out.println("Total commits  " + filteredCommits.size());
 
@@ -141,14 +141,14 @@ public final class HPCCode {
 
   @Test
   public void foo() throws GitAPIException, IOException, InterruptedException {
-    Repository repo = projects.get("hazelcast").loadRepo();
+    Repository repo = projects.get("jruby").loadRepo();
     CommitRange range =
         new CommitRange(
-            "6a5bc11894e312366e82d4c808df31c2d441d0fc", "1d86daea33db15b04bc1da84325f2bda17b44cfb");
+            "3c4ab50125f9d5e6375e316c6d1b4930eb7c29c7", "dbbc69abb42d920d2b93a0e17027b4830370d79a");
 
     List<RevCommit> filteredCommits =
-        new JavaLinesChangedFilter(new Git(repo), 250)
-            .filter(CommitDAGPathFinder.find(repo, range));
+        new JavaLinesChangedFilter(new Git(repo), 50)
+            .filter(CommitDAGPathFinders.in(repo, range).dfs());
 
     System.out.println("Total commits  " + filteredCommits.size());
 

@@ -24,7 +24,7 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
-import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinder;
+import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -148,7 +148,7 @@ public final class ProjectHarness {
       throw new RuntimeException(output + " is not a directory.");
     }
 
-    List<RevCommit> commits = filter.filter(CommitDAGPathFinder.find(project.loadRepo(), range));
+    List<RevCommit> commits = filter.filter(CommitDAGPathFinders.in(project.loadRepo(), range).dfs());
 
     for (; commitNum < commits.size(); ++commitNum) {
       RevCommit commit = commits.get(commitNum);

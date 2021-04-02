@@ -19,7 +19,7 @@ package com.google.errorprone.bugtrack.harness.scanning;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinder;
+import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -71,7 +71,7 @@ public class GradleProjectScannerTests {
     Repository testRepo = GRADLE_TEST_PROJECT.loadRepo();
 
     List<Collection<DiagnosticsScan>> scans = new ArrayList<>();
-    for (RevCommit commit : CommitDAGPathFinder.find(testRepo, commitRange)) {
+    for (RevCommit commit : CommitDAGPathFinders.in(testRepo, commitRange).dfs()) {
       new Git(testRepo).checkout().setName(commit.getName()).call();
       scans.add(walker.getScans(GRADLE_TEST_PROJECT));
     }

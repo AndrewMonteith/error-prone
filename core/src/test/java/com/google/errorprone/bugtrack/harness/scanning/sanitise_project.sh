@@ -1,6 +1,6 @@
 #!/bin/bash
 # Make sure we can modify pom's
-find . -name 'pom.xml' -exec chmod 777 {} \;
+find . -name "pom.xml" -exec chmod 777 {} \;
 
 # Don't skip files
 find . -name 'pom.xml' -exec sed -i '/\bmaven.install.skip\b/d' {} \; # no target should be skipped by install
@@ -41,3 +41,7 @@ find . -name "pom.xml" -exec sed -i 's/<target>1.7/<target>1.8/g' {} \;
 
 # Misc
 find . -name "ant-phase-verify.xml" -exec sed -i 's/failOnViolation="true"/failOnViolation="false"/g' {} \;
+find . -name "pom.rb" -exec sed -i "s/plugin :compiler, '[[:digit:]].[[:digit:]]'/plugin( :compiler, '3.3',\n           'compilerArguments' => {'parameters' => ''})/g" {} \;
+
+#    plugin( :compiler, '3.3',
+#            'compilerArguments' => {'parameters' => ''})

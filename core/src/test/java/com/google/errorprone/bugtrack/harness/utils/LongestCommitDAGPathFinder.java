@@ -16,5 +16,5 @@
 
 package com.google.errorprone.bugtrack.harness.utils;
 
-public interface CommitDAGPathFinder {
+public class LongestCommitDAGPathFinder {
 }

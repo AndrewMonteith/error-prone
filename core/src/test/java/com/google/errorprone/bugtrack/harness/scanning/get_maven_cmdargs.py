@@ -17,9 +17,9 @@ def get_current_commit():
 
 build_output_folder = Path(os.getenv("ROOT")) / "build_outputs" / Path(sys.argv[1]).name
 if not os.path.isdir(build_output_folder):
-    os.path.mkdir(build_output_folder)
+    os.mkdir(build_output_folder)
 
-stdout_file = build_output_folder / "stdout_" + get_current_commit()
+stdout_file = build_output_folder / ("stdout_" + get_current_commit())
 
 # subprocess.PIPE can hang for sufficient large outputs, so we pipe everything into text files
 with open(stdout_file, "w") as f:

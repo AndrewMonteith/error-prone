@@ -66,6 +66,8 @@ public class CommitDAGPathFinder {
       }
     }
 
+    path.add(0, startCommit);
+
     return ImmutableList.copyOf(path);
   }
 

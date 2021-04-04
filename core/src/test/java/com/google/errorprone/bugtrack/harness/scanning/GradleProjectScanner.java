@@ -87,33 +87,35 @@ public class GradleProjectScanner extends ProjectScanner {
   @Override
   public Collection<DiagnosticsScan> getScans(CorpusProject project)
       throws IOException, InterruptedException {
-    String scriptOutput =
-        ShellUtils.runCommand(
-            project.getRoot(),
-            "/usr/bin/python3",
-            ProjectFiles.find("error-prone", "get_gradle_cmdargs.py").toString(),
-            project.getRoot().toString());
-
-    if (scriptOutput.trim().isEmpty()) {
-      return ImmutableList.of();
-    }
-
-    List<DiagnosticsScan> scans = new ArrayList<>();
-
-    String[] scriptOutputLines = scriptOutput.split("\n");
-    for (int i = 0; i < scriptOutputLines.length; i += 2) {
-      String scanName = scriptOutputLines[i];
-      List<String> cmdArgs = filterCmdLineArgs(scriptOutputLines[i + 1]);
-
-      //            Optional<List<ProjectFile>> filesToParse = getFilesFromTaskName(project,
-      // scanName, cmdArgs);
-      List<ProjectFile> filesToParse = getFilesFromOutput(project, scriptOutputLines[i + 1]);
-
-      if (!filesToParse.isEmpty()) {
-        scans.add(new DiagnosticsScan(scanName, filesToParse, cmdArgs));
-      }
-    }
-
-    return scans;
+    return ImmutableList.of();
+//
+//    String scriptOutput =
+//        ShellUtils.runCommand(
+//            project.getRoot(),
+//            "/usr/bin/python3",
+//            ProjectFiles.find("error-prone", "get_gradle_cmdargs.py").toString(),
+//            project.getRoot().toString());
+//
+//    if (scriptOutput.trim().isEmpty()) {
+//      return ImmutableList.of();
+//    }
+//
+//    List<DiagnosticsScan> scans = new ArrayList<>();
+//
+//    String[] scriptOutputLines = scriptOutput.split("\n");
+//    for (int i = 0; i < scriptOutputLines.length; i += 2) {
+//      String scanName = scriptOutputLines[i];
+//      List<String> cmdArgs = filterCmdLineArgs(scriptOutputLines[i + 1]);
+//
+//      //            Optional<List<ProjectFile>> filesToParse = getFilesFromTaskName(project,
+//      // scanName, cmdArgs);
+//      List<ProjectFile> filesToParse = getFilesFromOutput(project, scriptOutputLines[i + 1]);
+//
+//      if (!filesToParse.isEmpty()) {
+//        scans.add(new DiagnosticsScan(scanName, filesToParse, cmdArgs));
+//      }
+//    }
+//
+//    return scans;
   }
 }

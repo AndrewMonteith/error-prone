@@ -43,7 +43,7 @@ public abstract class ProjectScanner {
 
     Set<String> singleArgBlockList =
         ImmutableSet.of(
-            "-nowarn", "-deprecation", "-verbose", "-XDignore.symbol.file=true", "-deprecation");
+            "-nowarn", "-deprecation", "-verbose", "-deprecation");
 
     Set<String> badSourceTargetVersions = ImmutableSet.of("1.5", "1.6", "1.7", "5", "6", "7");
 

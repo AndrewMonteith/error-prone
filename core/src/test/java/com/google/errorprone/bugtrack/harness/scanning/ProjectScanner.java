@@ -41,7 +41,7 @@ public abstract class ProjectScanner {
   protected List<String> filterCmdLineArgs(String rawCmdLineArgs) {
     List<String> args = new ArrayList<>();
 
-    Set<String> singleArgBlockList = ImmutableSet.of("-nowarn", "-deprecation");
+    Set<String> singleArgBlockList = ImmutableSet.of("-nowarn", "-deprecation", "-verbose");
 
     String[] individualArgs = rawCmdLineArgs.split(" ");
     for (int i = 0; i < individualArgs.length; ++i) {

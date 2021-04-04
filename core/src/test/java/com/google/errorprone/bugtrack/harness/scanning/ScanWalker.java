@@ -100,9 +100,10 @@ public final class ScanWalker
       //            ShellUtils.runCommand(project.getRoot(), "git", "checkout", ".");
       //            ShellUtils.runCommand(project.getRoot(), "git", "checkout",
       // commits.next().getName());
-      Repository repo = project.loadRepo();
-      new Git(repo).checkout().setAllPaths(true).call();
-      new Git(repo).checkout().setName(commits.next().getName()).call();
+//      Repository repo = project.loadRepo();
+//      new Git(repo).checkout().setAllPaths(true).call();
+//      new Git(repo).checkout().setName(commits.next().getName()).call();
+      project.getForwarder().forward(new Git(project.loadRepo()), commits.next());
 
       System.out.println("running shell cmds");
       // Normalize the whitespace in all files

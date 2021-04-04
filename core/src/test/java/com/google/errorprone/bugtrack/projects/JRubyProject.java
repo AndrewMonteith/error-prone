@@ -16,6 +16,8 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.harness.scanning.CommitForwarder;
+import com.google.errorprone.bugtrack.harness.scanning.PullAndResetForwader;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
@@ -36,5 +38,10 @@ public final class JRubyProject implements CorpusProject {
   @Override
   public BuildSystem getBuildSystem() {
     return BuildSystem.Maven;
+  }
+
+  @Override
+  public CommitForwarder getForwarder() {
+    return new PullAndResetForwader("master");
   }
 }

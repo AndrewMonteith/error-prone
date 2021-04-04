@@ -16,6 +16,8 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.harness.scanning.CheckoutForwader;
+import com.google.errorprone.bugtrack.harness.scanning.CommitForwarder;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
@@ -38,6 +40,10 @@ public interface CorpusProject {
       e.printStackTrace();
       return null;
     }
+  }
+
+  default CommitForwarder getForwarder() {
+    return new CheckoutForwader();
   }
 
   enum BuildSystem {

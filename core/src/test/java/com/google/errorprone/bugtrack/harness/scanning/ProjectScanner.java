@@ -41,7 +41,11 @@ public abstract class ProjectScanner {
   protected List<String> filterCmdLineArgs(String rawCmdLineArgs) {
     List<String> args = new ArrayList<>();
 
-    Set<String> singleArgBlockList = ImmutableSet.of("-nowarn", "-deprecation", "-verbose");
+    Set<String> singleArgBlockList =
+        ImmutableSet.of(
+            "-nowarn", "-deprecation", "-verbose", "-XDignore.symbol.file=true", "-deprecation");
+
+    Set<String> badSourceTargetVersions = ImmutableSet.of("1.5", "1.6", "1.7", "5", "6", "7");
 
     String[] individualArgs = rawCmdLineArgs.split(" ");
     for (int i = 0; i < individualArgs.length; ++i) {
@@ -54,10 +58,9 @@ public abstract class ProjectScanner {
         continue;
       } else if (isJavaFile(individualArgs[i])) {
         continue;
-      } else if (individualArgs[i].equals("-target") || individualArgs[i].equals("-source")) {
+      } else if ((individualArgs[i].equals("-target") || individualArgs[i].equals("-source"))
+          && badSourceTargetVersions.contains(individualArgs[i + 1])) {
         individualArgs[i + 1] = "1.8";
-        ++i;
-        continue;
       } else if (individualArgs[i].startsWith("-Xlint")) {
         continue;
       } else if (individualArgs[i].startsWith("-Xdoclint")) {

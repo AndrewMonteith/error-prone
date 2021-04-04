@@ -84,7 +84,16 @@ public final class DiagnosticsCollector {
       }
     }
 
-    return ListUtils.distinct(helper.getDiagnostics());
+    Collection<Diagnostic<? extends JavaFileObject>> collectedDiagnostics =
+        ListUtils.distinct(helper.getDiagnostics());
+
+    if (collectedDiagnostics.isEmpty() && files.size() > 5) {
+      // Seems suspicious
+      System.out.println("Weird following scan had 0 files");
+      System.out.println(scan);
+    }
+
+    return ListUtils.distinct(collectedDiagnostics);
   }
 
   private static Collection<Diagnostic<? extends JavaFileObject>> collectDiagnostics(

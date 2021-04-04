@@ -66,30 +66,90 @@ public class CommitDAGPathFinders {
   }
 
   public List<RevCommit> dfs() {
-    return new DFSSearch().find(adjacencyList, startCommit, endCommit);
+    return new DFSSearch(adjacencyList).find(startCommit, endCommit);
   }
 
   public List<RevCommit> longest() {
-    return new LongestPath().find(adjacencyList, startCommit, endCommit);
+    return new LongestPath(adjacencyList).find(startCommit, endCommit);
   }
 
   @FunctionalInterface
   private interface PathFinder {
-    List<RevCommit> find(Map<RevCommit, List<RevCommit>> adjList, RevCommit start, RevCommit goal);
+    List<RevCommit> find(RevCommit start, RevCommit goal);
   }
 
   private static class LongestPath implements PathFinder {
+    // https://www.geeksforgeeks.org/find-longest-path-directed-acyclic-graph/
+
+    private final Set<RevCommit> visited;
+    private final Stack<RevCommit> topologicalOrdering;
+    private final Map<RevCommit, List<RevCommit>> adjacencyList;
+
+    public LongestPath(Map<RevCommit, List<RevCommit>> adjacencyList) {
+      this.visited = new HashSet<>();
+      this.topologicalOrdering = new Stack<>();
+      this.adjacencyList = adjacencyList;
+    }
+
+    private static final List<RevCommit> EMPTY_LIST = ImmutableList.of();
+
+    private void topologicalVisit(RevCommit commit) {
+      visited.add(commit);
+
+      for (RevCommit adj : adjacencyList.getOrDefault(commit, EMPTY_LIST)) {
+        if (!visited.contains(adj)) {
+          topologicalVisit(adj);
+        }
+      }
+
+      topologicalOrdering.push(commit);
+    }
+
+    private Map<RevCommit, RevCommit> visitNodesInTopologicalOrdering() {
+      Map<RevCommit, Integer> distance = new HashMap<>();
+      Map<RevCommit, RevCommit> predecessor = new HashMap<>();
+
+      for (RevCommit commit : topologicalOrdering) {
+        final int longestPathToCommit = distance.getOrDefault(commit, 0);
+
+        for (RevCommit neighbour : adjacencyList.getOrDefault(commit, EMPTY_LIST)) {
+          final int knownLongestPath = distance.getOrDefault(neighbour, 0);
+          if (knownLongestPath < 1 + longestPathToCommit) {
+            predecessor.put(neighbour, commit);
+            distance.put(neighbour, 1 + knownLongestPath);
+          }
+        }
+      }
+
+      return predecessor;
+    }
+
     @Override
-    public List<RevCommit> find(
-        Map<RevCommit, List<RevCommit>> adjList, RevCommit start, RevCommit goal) {
-      return null;
+    public List<RevCommit> find(RevCommit start, RevCommit goal) {
+      topologicalVisit(start);
+
+      Map<RevCommit, RevCommit> predecessorMap = visitNodesInTopologicalOrdering();
+      List<RevCommit> longestPath = new ArrayList<>();
+
+      RevCommit current = predecessorMap.get(goal);
+      while (!current.equals(start)) {
+        longestPath.add(current);
+        current = predecessorMap.get(current);
+      }
+
+      return longestPath;
     }
   }
 
   private static class DFSSearch implements PathFinder {
+    private final Map<RevCommit, List<RevCommit>> adjList;
+
+    public DFSSearch(Map<RevCommit, List<RevCommit>> adjList) {
+      this.adjList = adjList;
+    }
+
     @Override
-    public List<RevCommit> find(
-        Map<RevCommit, List<RevCommit>> adjList, final RevCommit start, final RevCommit goal) {
+    public List<RevCommit> find(final RevCommit start, final RevCommit goal) {
       RevCommit current = start;
 
       Stack<RevCommit> path = new Stack<>();

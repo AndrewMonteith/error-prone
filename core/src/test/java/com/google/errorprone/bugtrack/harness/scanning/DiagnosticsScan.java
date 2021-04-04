@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.harness.scanning;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
 
 import java.util.List;
@@ -28,8 +29,8 @@ public class DiagnosticsScan {
 
   public DiagnosticsScan(String name, List<ProjectFile> files, List<String> cmdLineArguments) {
     this.name = name;
-    this.files = files;
-    this.cmdLineArguments = cmdLineArguments;
+    this.files = ImmutableList.copyOf(files);
+    this.cmdLineArguments = ImmutableList.copyOf(cmdLineArguments);
   }
 
   @Override

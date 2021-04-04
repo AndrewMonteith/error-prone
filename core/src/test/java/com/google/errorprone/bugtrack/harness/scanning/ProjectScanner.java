@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.bugtrack.harness.utils.FileUtils;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.projects.ProjectFile;
+import org.eclipse.core.internal.resources.Project;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -38,12 +39,13 @@ public abstract class ProjectScanner {
   public abstract Collection<DiagnosticsScan> getScans(CorpusProject project)
       throws IOException, InterruptedException;
 
-  protected List<String> filterCmdLineArgs(String rawCmdLineArgs) {
+  protected DiagnosticsScan createScan(
+      CorpusProject project, String scanName, String rawCmdLineArgs) {
     List<String> args = new ArrayList<>();
+    List<ProjectFile> files = new ArrayList<>();
 
     Set<String> singleArgBlockList =
-        ImmutableSet.of(
-            "-nowarn", "-deprecation", "-verbose", "-deprecation");
+        ImmutableSet.of("-nowarn", "-deprecation", "-verbose", "-deprecation");
 
     Set<String> badSourceTargetVersions = ImmutableSet.of("1.5", "1.6", "1.7", "5", "6", "7");
 
@@ -57,6 +59,7 @@ public abstract class ProjectScanner {
       } else if (individualArgs[i].startsWith("(") || individualArgs[i].startsWith("[")) {
         continue;
       } else if (isJavaFile(individualArgs[i])) {
+        files.add(new ProjectFile(project, individualArgs[i]));
         continue;
       } else if ((individualArgs[i].equals("-target") || individualArgs[i].equals("-source"))
           && badSourceTargetVersions.contains(individualArgs[i + 1])) {
@@ -72,7 +75,7 @@ public abstract class ProjectScanner {
       args.add(individualArgs[i]);
     }
 
-    return args;
+    return new DiagnosticsScan(scanName, files, args);
   }
 
   protected List<ProjectFile> getFilesFromSourcepath(CorpusProject project, String sourcepath) {

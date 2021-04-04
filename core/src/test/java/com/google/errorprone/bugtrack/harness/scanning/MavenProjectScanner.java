@@ -46,20 +46,14 @@ public class MavenProjectScanner extends ProjectScanner {
 
   public Collection<DiagnosticsScan> parseScansOutput(CorpusProject project, String buildOutput) {
     Collection<DiagnosticsScan> scans = new ArrayList<>();
-    Set<String> scannedSourcepaths = new HashSet<>();
 
     String[] buildOutputLines = buildOutput.split("\n");
     for (int i = 0; i < buildOutputLines.length; i += 2) {
-      String scanName = buildOutputLines[i];
-      List<String> cmdLineArguments = filterCmdLineArgs(buildOutputLines[i + 1]);
-
-      List<ProjectFile> filesToParse =
-          getFilesFromSourcepaths(
+      scans.add(
+          createScan(
               project,
-              cmdLineArguments.get(cmdLineArguments.indexOf("-sourcepath") + 1),
-              scannedSourcepaths);
-
-      scans.add(new DiagnosticsScan(scanName, filesToParse, cmdLineArguments));
+              /*scanName=*/ buildOutputLines[i],
+              /*cmdLineArgs=*/ buildOutputLines[i + 1]));
     }
 
     return scans;

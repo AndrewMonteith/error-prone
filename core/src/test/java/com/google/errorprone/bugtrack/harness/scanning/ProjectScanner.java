@@ -59,7 +59,9 @@ public abstract class ProjectScanner {
       } else if (individualArgs[i].startsWith("(") || individualArgs[i].startsWith("[")) {
         continue;
       } else if (isJavaFile(individualArgs[i])) {
-        files.add(new ProjectFile(project, individualArgs[i]));
+        if (project.shouldScanFile(Paths.get(individualArgs[i]))) {
+          files.add(new ProjectFile(project, individualArgs[i]));
+        }
         continue;
       } else if ((individualArgs[i].equals("-target") || individualArgs[i].equals("-source"))
           && badSourceTargetVersions.contains(individualArgs[i + 1])) {

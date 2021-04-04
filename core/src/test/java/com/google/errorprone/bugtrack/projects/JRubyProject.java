@@ -32,7 +32,10 @@ public final class JRubyProject implements CorpusProject {
 
   @Override
   public boolean shouldScanFile(Path file) {
-    return isJavaFile(file) && underMain(file) && !underDirectory(file, "generated-sources");
+    return isJavaFile(file)
+        && underMain(file)
+        && !underDirectory(file, "generated-sources")
+        && !hasName(file, "NormalYieldCompiler.java");
   }
 
   @Override

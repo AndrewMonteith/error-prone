@@ -385,7 +385,7 @@ public class CompilationTestHelper {
 
         List<String> processedArgs = buildArguments(overrideClasspath, extraArgs);
         if (checkWellFormed) {
-//            checkWellFormed(sources, processedArgs);
+            checkWellFormed(sources, processedArgs);
         }
 
         fileManager.createAndInstallTempFolderForOutput();

@@ -17,19 +17,26 @@
 package com.google.errorprone.bugtrack.projects;
 
 import com.google.errorprone.bugtrack.harness.scanning.CheckoutForwader;
+import com.google.errorprone.bugtrack.harness.scanning.CmdBlobFilesExtractor;
 import com.google.errorprone.bugtrack.harness.scanning.CommitForwarder;
+import com.google.errorprone.bugtrack.harness.scanning.TakeFromBlobFilesExtractor;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public interface CorpusProject {
   @NotNull
   Path getRoot();
 
   boolean shouldScanFile(Path file);
+
+  default boolean shouldScanFile(String s) {
+    return shouldScanFile(Paths.get(s));
+  }
 
   BuildSystem getBuildSystem();
 
@@ -44,6 +51,10 @@ public interface CorpusProject {
 
   default CommitForwarder getForwarder() {
     return new CheckoutForwader();
+  }
+
+  default CmdBlobFilesExtractor getFilesExtractor() {
+    return new TakeFromBlobFilesExtractor(this);
   }
 
   enum BuildSystem {

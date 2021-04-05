@@ -73,7 +73,8 @@ public final class DiagnosticsCollector {
     helper.setArgs(
         ImmutableList.copyOf(
             Iterables.concat(
-                scan.cmdLineArguments, ImmutableList.of("-Xjcov", "-XDshould-stop.ifError=FLOW"))));
+                scan.cmdLineArguments,
+                ImmutableList.of("-Xjcov", "-XDshould-stop.ifError=LOWER"))));
 
     if (!helper.compile().isOK()) {
       String output = helper.getOutput();

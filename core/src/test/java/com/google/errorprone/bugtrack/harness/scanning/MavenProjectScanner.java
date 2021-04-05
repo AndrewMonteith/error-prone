@@ -16,15 +16,16 @@
 
 package com.google.errorprone.bugtrack.harness.scanning;
 
+import com.google.common.base.Splitter;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.projects.ProjectFile;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import com.google.errorprone.bugtrack.utils.ShellUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class MavenProjectScanner extends ProjectScanner {
   @Override
@@ -34,26 +35,20 @@ public class MavenProjectScanner extends ProjectScanner {
         projectDir, "/bin/bash", ProjectFiles.find("error-prone", "clean_proj.sh").toString());
   }
 
-  private List<ProjectFile> getFilesFromSourcepaths(
-      CorpusProject project, String sourcepaths, Set<String> scannedSourcepaths) {
-    return Arrays.stream(sourcepaths.split(":"))
-        .filter(sourcepath -> !scannedSourcepaths.contains(sourcepath))
-        .peek(scannedSourcepaths::add)
-        .map(sourcepath -> getFilesFromSourcepath(project, sourcepath))
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
-  }
-
   public Collection<DiagnosticsScan> parseScansOutput(CorpusProject project, String buildOutput) {
+    CmdBlobFilesExtractor filesExtractor = project.getFilesExtractor();
+
     Collection<DiagnosticsScan> scans = new ArrayList<>();
 
-    String[] buildOutputLines = buildOutput.split("\n");
-    for (int i = 0; i < buildOutputLines.length; i += 2) {
+    List<String> buildOutputLines = Splitter.on('\n').splitToList(buildOutput.trim());
+    for (int i = 0; i < buildOutputLines.size(); i += 2) {
+      String scanName = buildOutputLines.get(i);
+      List<String> cmdlineBlob = Splitter.on(' ').splitToList(buildOutputLines.get(i + 1));
       scans.add(
-          createScan(
-              project,
-              /*scanName=*/ buildOutputLines[i],
-              /*cmdLineArgs=*/ buildOutputLines[i + 1]));
+          new DiagnosticsScan(
+              scanName,
+              /* files= */ filesExtractor.extract(cmdlineBlob),
+              /* cmdlineArgs= */ CmdlineArgFilterer.filter(cmdlineBlob)));
     }
 
     return scans;

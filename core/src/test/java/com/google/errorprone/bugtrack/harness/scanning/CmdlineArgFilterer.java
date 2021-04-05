@@ -49,7 +49,7 @@ public final class CmdlineArgFilterer {
         continue;
       } else if (args.get(i).equals("-target") || args.get(i).equals("-source")) {
         if (UNSUPPORTED_EARLY_JAVA_VERSIONS.contains(args.get(i + 1))) {
-          args.set(i + 1, "1.8");
+          result.set(i + 1, "1.8");
         }
       } else if (args.get(i).startsWith("-Xlint")) {
         continue;

@@ -16,6 +16,8 @@
 
 package com.google.errorprone.bugtrack.hpc;
 
+import com.google.errorprone.bugtrack.harness.scanning.CmdBlobFilesExtractor;
+import com.google.errorprone.bugtrack.harness.scanning.CommitForwarder;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 
 import java.nio.file.Path;
@@ -42,5 +44,15 @@ public class NewRootProject implements CorpusProject {
   @Override
   public BuildSystem getBuildSystem() {
     return project.getBuildSystem();
+  }
+
+  @Override
+  public CmdBlobFilesExtractor getFilesExtractor() {
+    return project.getFilesExtractor();
+  }
+
+  @Override
+  public CommitForwarder getForwarder() {
+    return project.getForwarder();
   }
 }

@@ -16,13 +16,6 @@
 
 package com.google.errorprone.bugpatterns;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.errorprone.BugPattern.SeverityLevel.SUGGESTION;
-import static com.google.errorprone.util.ASTHelpers.getReceiver;
-import static com.google.errorprone.util.ASTHelpers.getSymbol;
-import static java.util.Optional.empty;
-import static java.util.Optional.ofNullable;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -42,8 +35,17 @@ import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
-import java.util.Optional;
+
 import javax.lang.model.element.Modifier;
+import java.util.List;
+import java.util.Optional;
+
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.errorprone.BugPattern.SeverityLevel.SUGGESTION;
+import static com.google.errorprone.util.ASTHelpers.getReceiver;
+import static com.google.errorprone.util.ASTHelpers.getSymbol;
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 
 /** @author amesbah@google.com (Ali Mesbah) */
 @BugPattern(
@@ -116,6 +118,49 @@ public class LambdaFunctionalInterface extends BugChecker implements MethodTreeM
           .put("java.util.function.ToDoubleFunction<T>", "applyAsDouble")
           .put("java.util.function.ToLongFunction<T>", "applyAsLong")
           .build();
+
+  private static ClassTree getTopLevelClassTree(VisitorState state) {
+    return (ClassTree)
+        Streams.findLast(
+                Streams.stream(state.getPath().iterator())
+                    .filter((Tree t) -> t.getKind() == Kind.CLASS))
+            .orElseThrow(() -> new IllegalArgumentException("No enclosing class found"));
+  }
+
+  private static boolean hasFunctionAsArg(Tree param, VisitorState state) {
+    return ASTHelpers.isSameType(
+        ASTHelpers.getType(param), state.getTypeFromString(JAVA_UTIL_FUNCTION_FUNCTION), state);
+  }
+
+  private static boolean isFunctionArgSubtypeOf(
+      Tree param, int argIndex, Type type, VisitorState state) {
+    List<Type> paramTypeArguments = ASTHelpers.getType(param).getTypeArguments();
+    return !paramTypeArguments.isEmpty()
+        && ASTHelpers.isSameType(paramTypeArguments.get(argIndex), type, state);
+  }
+
+  private static Optional<String> getMappingForFunctionFromTree(Tree param) {
+    Optional<Type> type = ofNullable(ASTHelpers.getType(param));
+    return (type == null) ? empty() : getMappingForFunction(type.get().toString());
+  }
+
+  private static Optional<String> getMappingForFunction(String function) {
+    return ofNullable(methodMappings.get(function));
+  }
+
+  private static Optional<String> getMappingForApply(String apply) {
+    return ofNullable(applyMappings.get(apply));
+  }
+
+  private static String getFunctionName(String fullyQualifiedName) {
+    return fullyQualifiedName.substring(fullyQualifiedName.lastIndexOf('.') + 1);
+  }
+
+  private static String getImportName(String fullyQualifiedName) {
+    int cutPosition = fullyQualifiedName.indexOf('<');
+
+    return (cutPosition < 0) ? fullyQualifiedName : fullyQualifiedName.substring(0, cutPosition);
+  }
 
   /**
    * Identifies methods with parameters that have a generic argument with Int, Long, or Double. If
@@ -231,14 +276,6 @@ public class LambdaFunctionalInterface extends BugChecker implements MethodTreeM
     return true;
   }
 
-  private static ClassTree getTopLevelClassTree(VisitorState state) {
-    return (ClassTree)
-        Streams.findLast(
-                Streams.stream(state.getPath().iterator())
-                    .filter((Tree t) -> t.getKind() == Kind.CLASS))
-            .orElseThrow(() -> new IllegalArgumentException("No enclosing class found"));
-  }
-
   private ImmutableMultimap<String, MethodInvocationTree> methodCallsForSymbol(
       Symbol sym, ClassTree classTree) {
     ImmutableMultimap.Builder<String, MethodInvocationTree> methodMap = ImmutableMultimap.builder();
@@ -256,39 +293,5 @@ public class LambdaFunctionalInterface extends BugChecker implements MethodTreeM
         null);
 
     return methodMap.build();
-  }
-
-  private static boolean hasFunctionAsArg(Tree param, VisitorState state) {
-    return ASTHelpers.isSameType(
-        ASTHelpers.getType(param), state.getTypeFromString(JAVA_UTIL_FUNCTION_FUNCTION), state);
-  }
-
-  private static boolean isFunctionArgSubtypeOf(
-      Tree param, int argIndex, Type type, VisitorState state) {
-    return ASTHelpers.isSubtype(
-        ASTHelpers.getType(param).getTypeArguments().get(argIndex), type, state);
-  }
-
-  private static Optional<String> getMappingForFunctionFromTree(Tree param) {
-    Optional<Type> type = ofNullable(ASTHelpers.getType(param));
-    return (type == null) ? empty() : getMappingForFunction(type.get().toString());
-  }
-
-  private static Optional<String> getMappingForFunction(String function) {
-    return ofNullable(methodMappings.get(function));
-  }
-
-  private static Optional<String> getMappingForApply(String apply) {
-    return ofNullable(applyMappings.get(apply));
-  }
-
-  private static String getFunctionName(String fullyQualifiedName) {
-    return fullyQualifiedName.substring(fullyQualifiedName.lastIndexOf('.') + 1);
-  }
-
-  private static String getImportName(String fullyQualifiedName) {
-    int cutPosition = fullyQualifiedName.indexOf('<');
-
-    return (cutPosition < 0) ? fullyQualifiedName : fullyQualifiedName.substring(0, cutPosition);
   }
 }

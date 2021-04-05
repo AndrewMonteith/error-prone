@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.harness.scanning.*;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
@@ -36,5 +37,10 @@ public class JSoupProject implements CorpusProject {
   @Override
   public boolean shouldScanFile(Path file) {
     return isJavaFile(file);
+  }
+
+  @Override
+  public CmdBlobFilesExtractor getFilesExtractor() {
+    return new SourcepathScanner(this);
   }
 }

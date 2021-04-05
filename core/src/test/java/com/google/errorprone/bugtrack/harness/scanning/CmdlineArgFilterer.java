@@ -48,9 +48,11 @@ public final class CmdlineArgFilterer {
       } else if (isJavaFile(args.get(i))) {
         continue;
       } else if (args.get(i).equals("-target") || args.get(i).equals("-source")) {
-        if (UNSUPPORTED_EARLY_JAVA_VERSIONS.contains(args.get(i + 1))) {
-          result.set(i + 1, "1.8");
-        }
+        result.add(args.get(i));
+        result.add(
+            UNSUPPORTED_EARLY_JAVA_VERSIONS.contains(args.get(i + 1)) ? "1.8" : args.get(i + 1));
+        ++i;
+        continue;
       } else if (args.get(i).startsWith("-Xlint")) {
         continue;
       } else if (args.get(i).startsWith("-Xdoclint")) {

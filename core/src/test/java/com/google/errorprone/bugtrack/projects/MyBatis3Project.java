@@ -16,6 +16,8 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.harness.scanning.CmdBlobFilesExtractor;
+import com.google.errorprone.bugtrack.harness.scanning.SourcepathScanner;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;
@@ -36,5 +38,10 @@ public class MyBatis3Project implements CorpusProject {
     @Override
     public BuildSystem getBuildSystem() {
         return BuildSystem.Maven;
+    }
+
+    @Override
+    public CmdBlobFilesExtractor getFilesExtractor() {
+        return new SourcepathScanner(this);
     }
 }

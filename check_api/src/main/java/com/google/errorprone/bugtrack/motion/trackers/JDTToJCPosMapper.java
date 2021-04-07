@@ -26,7 +26,7 @@ public class JDTToJCPosMapper extends TreeScanner<Void, Void> {
   private final long jdtPos;
 
   private long closestStartPosition = -1;
-  private long closestEndPosition = -1;
+  private long closestEndPosition = Long.MAX_VALUE;
   private long closestPreferredPosition = -1;
 
   public JDTToJCPosMapper(EndPosTable endPosTable, final long jdtPos) {
@@ -54,10 +54,18 @@ public class JDTToJCPosMapper extends TreeScanner<Void, Void> {
       final long jcStartPos = jcTree.getStartPosition();
       final long jcEndPos = jcTree.getEndPosition(endPosTable);
 
-      if (jcStartPos <= jdtPos && jdtPos <= jcEndPos) {
-        closestStartPosition = jcStartPos;
-        closestEndPosition = jcEndPos;
-        closestPreferredPosition = jcTree.getPreferredPosition();
+      if (jcStartPos < jdtPos && jdtPos < jcEndPos) {
+        // If node is strictly closer then accept it
+        if (closestStartPosition <= jcStartPos && jcEndPos <= closestEndPosition) {
+          closestStartPosition = jcStartPos;
+          closestEndPosition = jcEndPos;
+
+          // Update preferred position if it's closer
+          final int prefPos = jcTree.getPreferredPosition();
+          if (Math.abs(prefPos - jdtPos) < Math.abs(prefPos - closestPreferredPosition)) {
+            closestPreferredPosition = prefPos;
+          }
+        }
         tree.accept(this, p);
       }
     }

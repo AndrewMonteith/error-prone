@@ -67,7 +67,7 @@ public class ProjectTests {
     @Test
     public void canScanJSoup() throws IOException {
         assertFindsDiagnostics(new JSoupProject(),
-                "79496d8d047f2d0774e0ad9d8169a021cb828fab");
+                "91ca25b341bc5ad1c364b8e7389287c45ca9df2c");
     }
 
     @Test
@@ -79,7 +79,7 @@ public class ProjectTests {
     @Test
     public void canScanMyBatis3() throws IOException {
         assertFindsDiagnostics(new MyBatis3Project(),
-                "b2c8a2cc9e8daf43817d0151bbf3826ae884df40");
+                "f6788c7a100eb6cb53b0b7401a31c469198ec017");
     }
 
     @Test
@@ -310,11 +310,11 @@ public class ProjectTests {
 
     @Test
     public void trackProject() throws IOException {
-        CorpusProject project = new JSoupProject();
-        Path output = ProjectFiles.get("java-corpus/comparison_data/jsoup");
+        CorpusProject project = new GuiceProject();
+        Path output = ProjectFiles.get("java-corpus/comparison_data/guice");
         List<GrainDiagFile> grainFiles = GrainDiagFile.loadSortedFiles(
-                project, ProjectFiles.get("java-corpus/diagnostics/jsoup_full"));
+                project, ProjectFiles.get("java-corpus/diagnostics/guice_full"));
 
-        MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles);
+        MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, true);
     }
 }

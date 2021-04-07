@@ -30,9 +30,10 @@ import java.util.List;
 public class MavenProjectScanner extends ProjectScanner {
   @Override
   public void cleanProject(Path projectDir) throws IOException, InterruptedException {
-    //        ShellUtils.runCommand(projectDir, "mvn", "clean");
-    ShellUtils.runCommand(
-        projectDir, "/bin/bash", ProjectFiles.find("error-prone", "clean_proj.sh").toString());
+    ShellUtils.runCommand(projectDir, "git", "clean", "-f");
+//    //        ShellUtils.runCommand(projectDir, "mvn", "clean");
+//    ShellUtils.runCommand(
+//        projectDir, "/bin/bash", ProjectFiles.find("error-prone", "clean_proj.sh").toString());
   }
 
   public Collection<DiagnosticsScan> parseScansOutput(CorpusProject project, String buildOutput) {

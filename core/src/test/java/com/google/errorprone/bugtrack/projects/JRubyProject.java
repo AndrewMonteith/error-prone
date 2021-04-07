@@ -43,8 +43,4 @@ public final class JRubyProject implements CorpusProject {
     return BuildSystem.Maven;
   }
 
-  @Override
-  public CommitForwarder getForwarder() {
-    return new PullAndResetForwader("master");
-  }
 }

@@ -16,6 +16,10 @@
 
 package com.google.errorprone.bugtrack;
 
+import com.github.gumtreediff.gen.jdt.AbstractJdtTreeGenerator;
+import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
+import com.github.gumtreediff.gen.jdt.JdtVisitor;
+import com.github.gumtreediff.tree.TreeContext;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
@@ -27,6 +31,7 @@ import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
+import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -296,13 +301,13 @@ public class ProjectTests {
         CorpusProject project = new GuiceProject();
 
         DiagnosticsFile oldFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice50/old");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_25/5 81af4ad5ce1c2b28b0617747eca76367addbcb4e");
 
         DiagnosticsFile newFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice50/new");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_25/6 875868e7263491291d4f8bdc1332bfea746ad673");
 
         MatchResults results = GitCommitMatcher.compareGit(project, oldFile, newFile)
-                .trackPosition(any(newTokenizedLineTracker(), newIJMPosTracker()))
+                .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker(), newIJMPosTracker()))
                 .match();
 
         System.out.println(results);

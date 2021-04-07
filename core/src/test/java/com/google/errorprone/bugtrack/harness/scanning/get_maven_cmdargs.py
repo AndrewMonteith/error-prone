@@ -14,8 +14,9 @@ def get_current_commit():
     output = git_query.stdout.decode("utf-8").split(" ")
     return output[0]
 
+ROOT = Path(os.getenv("ROOT") if os.getenv("ROOT") is not None else "/home/monty/IdeaProjects")
 
-build_output_folder = Path(os.getenv("ROOT")) / "build_outputs" / Path(sys.argv[1]).name
+build_output_folder = ROOT / "build_outputs" / Path(sys.argv[1]).name
 if not os.path.isdir(build_output_folder):
     os.mkdir(build_output_folder)
 
@@ -38,6 +39,9 @@ def escape_ansi(line):
 
 build_output = [escape_ansi(line)
                 for line in open(stdout_file, "r").readlines()]
+
+# build_output = [escape_ansi(line)
+#                 for line in open("/home/monty/IdeaProjects/foo", "r").readlines()]
 
 i = 0
 

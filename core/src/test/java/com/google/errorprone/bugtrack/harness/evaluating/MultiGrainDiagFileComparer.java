@@ -47,20 +47,18 @@ public final class MultiGrainDiagFileComparer {
   }
 
   public static void compareFiles(
-      CorpusProject project, Path output, List<GrainDiagFile> grainFiles) {
-    new MultiGrainDiagFileComparer(project).compare(output, grainFiles);
-  }
-
-  public static void compareFilesInParallel(
-      CorpusProject project, Path output, List<GrainDiagFile> grainFiles) {
-    new MultiGrainDiagFileComparer(project).compareParallel(output, grainFiles);
+      CorpusProject project, Path output, List<GrainDiagFile> grainFiles, boolean inParallel) {
+    if (inParallel) {
+      new MultiGrainDiagFileComparer(project).compareParallel(output, grainFiles);
+    } else {
+      new MultiGrainDiagFileComparer(project).compare(output, grainFiles);
+    }
   }
 
   private MatchResults scan(DiagnosticsFile last, DiagnosticsFile next)
       throws IOException, GitAPIException {
     StrCommitPair cp = new StrCommitPair(last.commitId, next.commitId);
     if (resultsCache.containsKey(cp)) {
-      System.out.println("retrieved " + cp + " from cache");
       return resultsCache.get(cp);
     }
 
@@ -69,7 +67,8 @@ public final class MultiGrainDiagFileComparer {
       results =
           GitCommitMatcher.compareGit(project, last, next)
               .trackIdentical()
-              .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
+              .trackPosition(
+                  any(newTokenizedLineTracker(), newIJMStartAndEndTracker(), newIJMPosTracker()))
               .match();
     } catch (RuntimeException e) {
       System.out.printf("Failed scanning %s -> %s\n", last.commitId, next.commitId);
@@ -207,6 +206,7 @@ public final class MultiGrainDiagFileComparer {
 
     // Spin up the threads
     ExecutorService executor = new ForkJoinPool();
+
     try {
       // Let's go!
       List<Future<Void>> results = executor.invokeAll(compareThreadTasks);

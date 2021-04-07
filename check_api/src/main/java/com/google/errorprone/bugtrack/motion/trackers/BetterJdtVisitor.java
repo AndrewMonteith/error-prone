@@ -74,15 +74,6 @@ public class BetterJdtVisitor extends JdtVisitor {
     return super.visit(tryStatement);
   }
 
-  //    @Override
-  //    public boolean visit(TypeDeclaration typeDecl) {
-  //        String label = typeDecl.isInterface() ? "interface" : "class";
-  //        // No easy way to find the source region of the 'interface' or 'class' label
-  //        List<IExtendedModifier> modifiers = (List<IExtendedModifier>) typeDecl.modifiers();
-  //
-  //
-  //    }
-
   private long findStartOfTypeDeclToken(final long start, String token) {
     // start can point to either the beginning of a comment, modifiers, or the actual token
     ImmutableList<String> lines = srcFile.getLines();
@@ -96,20 +87,22 @@ public class BetterJdtVisitor extends JdtVisitor {
       ++lineIndex;
     }
 
-    // we should now be on the <modifiers> <token> <identifier> line
-    final int column = lines.get(lineIndex).indexOf(token) + 1;
-    if (column == 0) {
+    while (lineIndex < lines.size() && !lines.get(lineIndex).contains(token)) {
+      ++lineIndex;
+    }
+
+    if (lineIndex == lines.size()) {
       throw new RuntimeException(
           "requested wrong token type."
               + srcFile.getName()
               + " "
-              + (lineIndex + 1)
-              + " "
-              + lines.get(lineIndex)
+              + start
               + " "
               + token);
     }
 
+    // we should now be on the <modifiers> <token> <identifier> {
+    final int column = lines.get(lineIndex).indexOf(token) + 1;
     return srcFile.getPosition((lineIndex + 1), column);
   }
 

@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public final class DiagnosticsMatcher {
-  private static final boolean printMultiMatches = false;
+  private static final boolean printMultiMatches = true;
   private final Collection<DatasetDiagnostic> oldDiagnostics;
   private final Collection<DatasetDiagnostic> newDiagnostics;
   private final BugComparer comparer;

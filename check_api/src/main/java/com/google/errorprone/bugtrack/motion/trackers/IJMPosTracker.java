@@ -41,13 +41,34 @@ public final class IJMPosTracker extends BaseIJMPosTracker implements Diagnostic
     super(srcFilePair, sharedState);
   }
 
+  private long modifyPosition(DatasetDiagnostic diagnostic) {
+    // The AndroidJdkLibsChecker and Java7APIChecker position point to the '.' which is not included
+    // in the JDT AST. Not including the '.''s in AST I imagine is to reduce the size of the tree so
+    // we don't want to introduce them. These two diagnostics can point either at a symbol of a
+    // method call. To discern between the two cases, if the diagnostic's position is the same as
+    // it's start position then it points at a class symbol else it points at a '.'. So if it points
+    // at a '.' then we knock it forward 1 so that hopefully it points at a node.
+    String diagType = diagnostic.getType();
+    final long diagPos = diagnostic.getPos();
+
+    if (!(diagType.equals("AndroidJdkLibsChecker") || diagType.equals("Java7ApiChecker"))) {
+      return diagPos;
+    }
+
+    if (diagnostic.getStartPos() == diagPos) {
+      return diagPos;
+    } else {
+      return diagPos + 1;
+    }
+  }
+
   @Override
   public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
     if (oldDiag.getPos() == -1) {
       return Optional.empty();
     }
 
-    return trackPosition(oldDiag.getPos())
+    return trackPosition(modifyPosition(oldDiag))
         .map(srcBufferRange -> DiagSrcPosEqualityOracle.byPosition(srcBufferRange.pos));
   }
 }

@@ -84,7 +84,7 @@ public final class HPCCode {
   @Before
   public void initJGit() {
     FS.DETECTED.setGitSystemConfig(
-        Paths.get("/rds/user/am2857/hpc-work/java-corpus/git/etc/gitconfig").toFile());
+        Paths.get("/home/monty/IdeaProjects/java-corpus/git/etc/gitconfig").toFile());
   }
 
   private Path getPath(String path1, String... paths) {
@@ -141,13 +141,13 @@ public final class HPCCode {
 
   @Test
   public void foo() throws GitAPIException, IOException, InterruptedException {
-    Repository repo = projects.get("jruby").loadRepo();
+    Repository repo = projects.get("junit4").loadRepo();
     CommitRange range =
         new CommitRange(
-            "3c4ab50125f9d5e6375e316c6d1b4930eb7c29c7", "dbbc69abb42d920d2b93a0e17027b4830370d79a");
+            "54b7613484be714a769a8d62f1ac507912e61a01", "9ad61c6bf757be8d8968fd5977ab3ae15b0c5aba");
 
     List<RevCommit> filteredCommits =
-        new JavaLinesChangedFilter(new Git(repo), 50)
+        new JavaLinesChangedFilter(new Git(repo), 100)
             .filter(CommitDAGPathFinders.in(repo, range).dfs());
 
     System.out.println("Total commits  " + filteredCommits.size());
@@ -215,11 +215,8 @@ public final class HPCCode {
             project, ProjectFiles.get("diagnostics/").resolve(projectName + "_full"));
 
     Path output = ProjectFiles.get("comparison_data/").resolve(projectName);
+    boolean inParallel = System.getProperty("inParallel").equals("true");
 
-    if (System.getProperty("inParallel").equals("true")) {
-      MultiGrainDiagFileComparer.compareFilesInParallel(project, output, grainFiles);
-    } else {
-      MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles);
-    }
+    MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, inParallel);
   }
 }

@@ -19,7 +19,9 @@ package com.google.errorprone.bugtrack;
 import com.github.gumtreediff.gen.jdt.AbstractJdtTreeGenerator;
 import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.github.gumtreediff.gen.jdt.JdtVisitor;
+import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
@@ -31,10 +33,14 @@ import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
+import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
+import com.google.googlejavaformat.java.Formatter;
+import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -46,6 +52,7 @@ import org.junit.runners.JUnit4;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -295,18 +302,18 @@ public class ProjectTests {
                 .run("/home/monty/IdeaProjects/java-corpus/comparisons/guice");
     }
 
-
     @Test
     public void compareSinglePair() throws IOException, GitAPIException {
-        CorpusProject project = new GuiceProject();
+        CorpusProject project = new McMMOProject();
 
         DiagnosticsFile oldFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_25/5 81af4ad5ce1c2b28b0617747eca76367addbcb4e");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_full/161 09cba965d3c7bbfb831fdf222f553b628117ff42.50");
 
         DiagnosticsFile newFile = DiagnosticsFile.load(project,
-                "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_25/6 875868e7263491291d4f8bdc1332bfea746ad673");
+                "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_full/179 caec01e9fa6503e6456f5caeb5c38e3964ea7de7.100");
 
         MatchResults results = GitCommitMatcher.compareGit(project, oldFile, newFile)
+                .trackIdentical()
                 .trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker(), newIJMPosTracker()))
                 .match();
 
@@ -321,5 +328,29 @@ public class ProjectTests {
                 project, ProjectFiles.get("java-corpus/diagnostics/guice_full"));
 
         MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, true);
+    }
+
+    @Test
+    public void parseIntoJDT() throws Exception {
+        String code = new Formatter().formatSource("public class Foo {\n void foo() {\n x *= 2;\n }\n }");
+
+        List<String> lines = Splitter.on('\n').splitToList(code);
+        SrcFile f = new SrcFile("foo.java", lines);
+
+        AbstractJdtTreeGenerator treeGenerator =
+                new AbstractJdtTreeGenerator() {
+                    @Override
+                    protected AbstractJdtVisitor createVisitor() {
+                        try {
+                            return new BetterJdtVisitor(new SrcFile("foo.java", lines));
+                        } catch (FormatterException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                };
+
+        TreeContext tree = treeGenerator.generateFromString(f.getSrc());
+
+        System.out.println("done");
     }
 }

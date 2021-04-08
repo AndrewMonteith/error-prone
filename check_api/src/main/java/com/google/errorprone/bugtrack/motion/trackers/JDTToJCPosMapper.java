@@ -16,60 +16,93 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
+import com.github.gumtreediff.tree.ITree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
+import org.eclipse.jdt.core.dom.ASTNode;
 
-public class JDTToJCPosMapper extends TreeScanner<Void, Void> {
+public class JDTToJCPosMapper {
   private final EndPosTable endPosTable;
-  private final long jdtPos;
+  private final JCTree.JCCompilationUnit ast;
 
-  private long closestStartPosition = -1;
-  private long closestEndPosition = Long.MAX_VALUE;
-  private long closestPreferredPosition = -1;
-
-  public JDTToJCPosMapper(EndPosTable endPosTable, final long jdtPos) {
-    this.endPosTable = endPosTable;
-    this.jdtPos = jdtPos;
+  public JDTToJCPosMapper(JCTree.JCCompilationUnit ast) {
+    this.endPosTable = ast.endPositions;
+    this.ast = ast;
   }
 
-  public long getClosestStartPosition() {
-    return closestStartPosition;
+  public NodeLocation map(ITree node) {
+    if (isDocNode(node)) {
+      // Doc comment's positions are all the same in diagnostics
+      return new NodeLocation(node.getPos(), node.getPos(), node.getPos());
+    } else {
+      return mapNonDocNode(node);
+    }
   }
 
-  public long getClosestEndPosition() {
-    return closestEndPosition;
-  }
-
-  public long getClosestPreferredPosition() {
-    return closestPreferredPosition;
-  }
-
-  @Override
-  public Void scan(Tree tree, Void p) {
-    if (tree instanceof JCTree) {
-      JCTree jcTree = (JCTree) tree;
-
-      final long jcStartPos = jcTree.getStartPosition();
-      final long jcEndPos = jcTree.getEndPosition(endPosTable);
-
-      if (jcStartPos < jdtPos && jdtPos < jcEndPos) {
-        // If node is strictly closer then accept it
-        if (closestStartPosition <= jcStartPos && jcEndPos <= closestEndPosition) {
-          closestStartPosition = jcStartPos;
-          closestEndPosition = jcEndPos;
-
-          // Update preferred position if it's closer
-          final int prefPos = jcTree.getPreferredPosition();
-          if (Math.abs(prefPos - jdtPos) < Math.abs(prefPos - closestPreferredPosition)) {
-            closestPreferredPosition = prefPos;
-          }
-        }
-        tree.accept(this, p);
+  private boolean isDocNode(ITree node) {
+    while (node != null) {
+      if (node.getType() == ASTNode.JAVADOC) {
+        return true;
       }
+      node = node.getParent();
+    }
+    return false;
+  }
+
+  private NodeLocation mapNonDocNode(ITree node) {
+    NonDocPosMapper startPosMapper = new NonDocPosMapper(endPosTable, node.getPos());
+    startPosMapper.scan(ast, null);
+
+    NonDocPosMapper endPosMapper = new NonDocPosMapper(endPosTable, node.getPos());
+    endPosMapper.scan(ast, null);
+
+    return new NodeLocation(
+        startPosMapper.closestStartPosition,
+        startPosMapper.closestPreferredPosition,
+        endPosMapper.closestEndPosition);
+  }
+
+  private static class NonDocPosMapper extends TreeScanner<Void, Void> {
+    private final EndPosTable endPosTable;
+    private final long jdtPos;
+
+    private long closestStartPosition = -1;
+    private long closestEndPosition = Long.MAX_VALUE;
+    private long closestPreferredPosition = -1;
+
+    public NonDocPosMapper(EndPosTable endPosTable, final long jdtPos) {
+      this.endPosTable = endPosTable;
+      this.jdtPos = jdtPos;
     }
 
-    return null;
+    @Override
+    public Void scan(Tree tree, Void p) {
+      if (tree instanceof JCTree) {
+        JCTree jcTree = (JCTree) tree;
+
+        final long jcStartPos = jcTree.getStartPosition();
+        final long jcEndPos = jcTree.getEndPosition(endPosTable);
+
+        if ((jcStartPos < jdtPos && jdtPos <= jcEndPos)
+            || (jcStartPos <= jdtPos && jdtPos < jcEndPos)) {
+          // If node is strictly closer then accept it
+          if (closestStartPosition <= jcStartPos && jcEndPos <= closestEndPosition) {
+            closestStartPosition = jcStartPos;
+            closestEndPosition = jcEndPos;
+
+            // Update preferred position if it's closer
+            final int prefPos = jcTree.getPreferredPosition();
+            if (Math.abs(prefPos - jdtPos) < Math.abs(prefPos - closestPreferredPosition)) {
+              closestPreferredPosition = prefPos;
+            }
+          }
+          tree.accept(this, p);
+        }
+      }
+
+      return null;
+    }
   }
 }

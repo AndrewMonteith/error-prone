@@ -137,17 +137,7 @@ public abstract class BaseIJMPosTracker {
   private NodeLocation mapJdtSrcRangeToJCSrcRange(ITree jdtNode) {
     // Find the src buffer range of the closest JC node to matched jdt node's start position
     JCTree.JCCompilationUnit newJCAst = sharedState.loadNewJavacAST(srcFilePair);
-    JDTToJCPosMapper startPosMapper = new JDTToJCPosMapper(newJCAst.endPositions, jdtNode.getPos());
-    startPosMapper.scan(newJCAst, null);
-
-    JDTToJCPosMapper endPosMapper =
-        new JDTToJCPosMapper(newJCAst.endPositions, jdtNode.getEndPos());
-    endPosMapper.scan(newJCAst, null);
-
-    return new NodeLocation(
-        startPosMapper.getClosestStartPosition(),
-        startPosMapper.getClosestPreferredPosition(),
-        endPosMapper.getClosestEndPosition());
+    return new JDTToJCPosMapper(newJCAst).map(jdtNode);
   }
 
   protected Optional<NodeLocation> trackPosition(final long startPos) {
@@ -174,17 +164,5 @@ public abstract class BaseIJMPosTracker {
 
               return locations;
             });
-  }
-
-  protected static class NodeLocation {
-    final long start;
-    final long end;
-    final long pos;
-
-    private NodeLocation(final long start, final long pos, final long end) {
-      this.start = start;
-      this.pos = pos;
-      this.end = end;
-    }
   }
 }

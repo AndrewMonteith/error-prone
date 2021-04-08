@@ -93,17 +93,43 @@ public class BetterJdtVisitor extends JdtVisitor {
 
     if (lineIndex == lines.size()) {
       throw new RuntimeException(
-          "requested wrong token type."
-              + srcFile.getName()
-              + " "
-              + start
-              + " "
-              + token);
+          "requested wrong token type." + srcFile.getName() + " " + start + " " + token);
     }
 
     // we should now be on the <modifiers> <token> <identifier> {
     final int column = lines.get(lineIndex).indexOf(token) + 1;
     return srcFile.getPosition((lineIndex + 1), column);
+  }
+
+  private int findOperationStartPos(Assignment assignment) {
+    // Work backwards from start of assignment RHS until we find a '='
+    int rhsStartPos = assignment.getRightHandSide().getStartPosition();
+
+    while (!srcFile.getSrcExtract(rhsStartPos, rhsStartPos + 1).equals("=")) {
+      --rhsStartPos;
+    }
+
+    return rhsStartPos - 1;
+  }
+
+  @Override
+  public boolean visit(Assignment assignment) {
+    // Added because of
+    // b4179cb9a615d5996a7321b78869d1c731e159fa 1
+    // rds/user/am2857/hpc-work/java-corpus/9674/src/main/java/com/gmail/nossr50/datatypes/skills/subskills/acrobatics/Roll.java 354 10 12413 12416 12476
+    // [NarrowingCompoundAssignment] Compound assignments from double to float hide lossy casts
+    // (see https://errorprone.info/bugpattern/NarrowingCompoundAssignment)
+    // Did you mean 'xp = (float) (xp *ExperienceConfig.getInstance().getFeatherFallXPModifier());'?
+
+    String op = assignment.getOperator().toString();
+    if (op.length() > 1) {
+      // *=, +=, /=, ...
+      final long opStartPos = findOperationStartPos(assignment);
+      pushFakeNode(EntityType.SIMPLE_NAME, (int) opStartPos, op.length());
+      getCurrentParent().setLabel(op);
+      popNode();
+    }
+    return super.visit(assignment);
   }
 
   @Override

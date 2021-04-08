@@ -53,14 +53,14 @@ public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker
     }
 
     if (oldDiag.getEndPos() == -1) {
-      return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().start, -1));
+      return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().startPos, -1));
     }
 
     Optional<List<NodeLocation>> mappedEndPoses = trackEndPosition(oldDiag.getEndPos());
     if (!mappedEndPoses.isPresent() || mappedEndPoses.get().isEmpty()) {
       return mappedStartPos.map(
           srcBufRange ->
-              DiagSrcPosEqualityOracle.byStartAndEndPos(srcBufRange.start, srcBufRange.end));
+              DiagSrcPosEqualityOracle.byStartAndEndPos(srcBufRange.startPos, srcBufRange.endPos));
     }
 
     List<DiagPosEqualityOracle> posOracles =
@@ -68,7 +68,7 @@ public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker
             .map(
                 endPos ->
                     DiagSrcPosEqualityOracle.byStartAndEndPos(
-                        mappedStartPos.get().start, endPos.end))
+                        mappedStartPos.get().startPos, endPos.endPos))
             .collect(Collectors.toList());
 
     return Optional.of(DiagPosEqualityOracle.any(posOracles));

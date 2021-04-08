@@ -41,7 +41,7 @@ public final class IJMPosTracker extends BaseIJMPosTracker implements Diagnostic
     super(srcFilePair, sharedState);
   }
 
-  private long modifyPosition(DatasetDiagnostic diagnostic) {
+  private long modifyAJLCOrJ7ApiDiagnostic(DatasetDiagnostic diagnostic) {
     // The AndroidJdkLibsChecker and Java7APIChecker position point to the '.' which is not included
     // in the JDT AST. Not including the '.''s in AST I imagine is to reduce the size of the tree so
     // we don't want to introduce them. These two diagnostics can point either at a symbol of a
@@ -60,6 +60,10 @@ public final class IJMPosTracker extends BaseIJMPosTracker implements Diagnostic
     } else {
       return diagPos + 1;
     }
+  }
+
+  private long modifyPosition(DatasetDiagnostic diagnostic) {
+    return modifyAJLCOrJ7ApiDiagnostic(diagnostic);
   }
 
   @Override

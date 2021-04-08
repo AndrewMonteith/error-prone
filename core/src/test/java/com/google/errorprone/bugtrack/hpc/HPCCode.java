@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
-import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 public final class HPCCode {
   private static final Map<String, CorpusProject> projects;

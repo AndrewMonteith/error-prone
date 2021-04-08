@@ -396,6 +396,19 @@ Example of "bad" positioning, ie appears halfway in a node
     Did you mean 'public ImmutableMap<String, String[]> getParameterMap() {'?
     2236 points into a middle of a node who's offset is difficult to maintain since the gap may not be uniform
 
+    Intuition: Point at large coarse grained structured that is likely to appear in an AST. Pointing at '.' or ')'
+        aren't likely to be included in AST as AST differencing want trees to be slim and including a dedicated '.'
+        node for everything would bloat them
+
+Example: Tokenized line git based tracking can also get things wrong
+    mcMMO 01a7aa4d1264827d878a9181ade269bd4d019a31..362d036b16082a9fb78972d15570bfbd3c9ea3a6
+     ----DIAGNOSTIC
+     mcMMO/src/main/java/com/gmail/nossr50/util/skills/SkillUtils.java 316 7 11915 11915 11945
+     [UnnecessaryDefaultInEnumSwitch] Switch handles all enum values: move code from the default case to execute after the switch statement to enable checking for non-exhaustive switches.
+     ----DIAGNOSTIC
+     mcMMO/src/main/java/com/gmail/nossr50/util/skills/SkillUtils.java 473 7 17535 17535 17565
+     [UnnecessaryDefaultInEnumSwitch] Switch handles all enum values: move code from the default case to execute after the switch statement to enable checking for non-exhaustive switches. That is, prefer: `switc     h (...) { ... } throw new AssertionError();` to `switch (...) { ... default: throw new AssertionError(); }`
+
 Example of lower resolution missing diagnostics:
     mybatis3 348c9123f2be0dd015ed29fabfafa5ac7e7c7601 -> 1add4b47ed4313d08e8de2821c55fae1d4b4c8bd -> a382a685cae5aff08922399dc2cda63f64860b83 -> 36984dcc37c017f19873d790f3db4f2ddc30501d
                ^ Start of 50                                 ^ Enters in 12                              ^ Leaves in 12                            ^ End of 50

@@ -45,6 +45,22 @@ public class BetterJdtVisitor extends JdtVisitor {
   }
 
   @Override
+  public boolean visit(TypeLiteral typeLiteral) {
+    Type type = typeLiteral.getType();
+    pushNode(type, type.toString());
+    popNode();
+
+    pushFakeNode(
+        EntityType.SIMPLE_NAME,
+        type.getStartPosition() + type.toString().length() + 1,
+        type.toString().length());
+    getCurrentParent().setLabel("class");
+
+    popNode();
+    return false;
+  }
+
+  @Override
   public boolean visit(QualifiedName qualName) {
     if (X_DOT_Y.matcher(qualName.getFullyQualifiedName()).matches()) {
       pushNode(qualName.getQualifier(), qualName.getQualifier().toString());

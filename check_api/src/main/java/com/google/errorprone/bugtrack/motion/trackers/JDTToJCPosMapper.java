@@ -55,7 +55,7 @@ public class JDTToJCPosMapper {
     NonDocPosMapper startPosMapper = new NonDocPosMapper(endPosTable, node.getPos());
     startPosMapper.scan(ast, null);
 
-    NonDocPosMapper endPosMapper = new NonDocPosMapper(endPosTable, node.getPos());
+    NonDocPosMapper endPosMapper = new NonDocPosMapper(endPosTable, node.getEndPos());
     endPosMapper.scan(ast, null);
 
     return new NodeLocation(

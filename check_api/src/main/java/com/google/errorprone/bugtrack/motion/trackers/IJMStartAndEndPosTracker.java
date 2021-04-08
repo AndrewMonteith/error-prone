@@ -53,7 +53,8 @@ public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker
     }
 
     if (oldDiag.getEndPos() == -1) {
-      return Optional.of(DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().startPos, -1));
+      return Optional.of(
+          DiagSrcPosEqualityOracle.byStartAndEndPos(mappedStartPos.get().startPos, -1));
     }
 
     Optional<List<NodeLocation>> mappedEndPoses = trackEndPosition(oldDiag.getEndPos());

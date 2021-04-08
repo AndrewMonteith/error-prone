@@ -16,6 +16,8 @@
 
 package com.google.errorprone.bugtrack.projects;
 
+import com.google.errorprone.bugtrack.harness.scanning.CmdBlobFilesExtractor;
+import com.google.errorprone.bugtrack.harness.scanning.TakeFromBlobFilesExtractor;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import java.nio.file.Path;

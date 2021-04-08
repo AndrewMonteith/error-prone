@@ -44,6 +44,7 @@ public class GrainDiagFile {
   public static List<GrainDiagFile> loadSortedFiles(CorpusProject project, Path files)
       throws IOException {
     try (Stream<Path> fileStream = java.nio.file.Files.list(files)) {
+      System.out.println("Listing files in " + files.toString());
       return fileStream
           .filter(file -> !java.nio.file.Files.isDirectory(file))
           .map(((ThrowingFunction<Path, GrainDiagFile>) file -> new GrainDiagFile(project, file)))

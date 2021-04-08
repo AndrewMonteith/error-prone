@@ -68,7 +68,7 @@ public final class MultiGrainDiagFileComparer {
           GitCommitMatcher.compareGit(project, last, next)
               .trackIdentical()
               .trackPosition(
-                  any(newTokenizedLineTracker(), newIJMStartAndEndTracker(), newIJMPosTracker()))
+                  any(newIJMStartAndEndTracker(), newIJMPosTracker()))
               .match();
     } catch (RuntimeException e) {
       System.out.printf("Failed scanning %s -> %s\n", last.commitId, next.commitId);

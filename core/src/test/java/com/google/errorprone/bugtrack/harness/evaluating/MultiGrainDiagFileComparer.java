@@ -23,6 +23,7 @@ import com.google.common.collect.Lists;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
+import com.google.errorprone.bugtrack.motion.trackers.SpecialDiagTypes;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.util.ThrowingBiConsumer;
 import com.google.errorprone.bugtrack.util.ThrowingConsumer;
@@ -35,7 +36,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.google.errorprone.bugtrack.harness.utils.ListUtils.consecutivePairs;
-import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 public final class MultiGrainDiagFileComparer {
   private final CorpusProject project;
@@ -68,7 +69,10 @@ public final class MultiGrainDiagFileComparer {
           GitCommitMatcher.compareGit(project, last, next)
               .trackIdentical()
               .trackPosition(
-                  any(newIJMStartAndEndTracker(), newIJMPosTracker()))
+                  specific(
+                      SpecialDiagTypes.MULTIPLE_PER_LIME,
+                      newIJMPosTracker(),
+                      any(newIJMStartAndEndTracker(), newIJMPosTracker())))
               .match();
     } catch (RuntimeException e) {
       System.out.printf("Failed scanning %s -> %s\n", last.commitId, next.commitId);

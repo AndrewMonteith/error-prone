@@ -33,6 +33,7 @@ import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
+import com.google.errorprone.bugtrack.motion.trackers.SpecialDiagTypes;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -56,7 +57,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
-import static com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -303,20 +304,26 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new DubboProject();
+    CorpusProject project = new JUnitProject();
 
     DiagnosticsFile oldFile =
         DiagnosticsFile.load(
-            project, "/home/monty/IdeaProjects/java-corpus/diagnostics/dubbo_full/46 33f1726713a4c5f2ce5880613acf2320ae2a4502.12-25");
+            project,
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/junit4_full/34 25495b3e91e346121e3292e8e01a3cc085b644f3.25-50-100");
 
     DiagnosticsFile newFile =
         DiagnosticsFile.load(
-            project, "/home/monty/IdeaProjects/java-corpus/diagnostics/dubbo_full/53 5a67a19280e59aa0f1a1d767dce4b73e6d320e70.12-50");
+            project,
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/junit4_full/44 b19ff583ce5cb5527dab83a1f336c7526463dac4.100");
 
     MatchResults results =
         GitCommitMatcher.compareGit(project, oldFile, newFile)
             .trackIdentical()
-            .trackPosition(any(newIJMStartAndEndTracker(), newIJMPosTracker()))
+            .trackPosition(
+                specific(
+                    SpecialDiagTypes.MULTIPLE_PER_LIME,
+                    newIJMPosTracker(),
+                    any(newIJMStartAndEndTracker(), newIJMPosTracker())))
             .match();
 
     System.out.println(results);

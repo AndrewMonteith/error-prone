@@ -21,7 +21,7 @@ import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.motion.trackers.DPTrackerConstructorFactory;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import com.google.errorprone.bugtrack.motion.trackers.TrackersSharedState;
 import com.google.googlejavaformat.java.FormatterException;
@@ -56,7 +56,7 @@ public class TokenLineTrackerTest {
         SrcFile oldFile = new SrcFile(oldFileName, oldFileSrc);
         SrcFile newFile = new SrcFile(newFileName, newFileSrc);
 
-        DiagnosticPositionTracker positionTracker = DPTrackerConstructorFactory
+        DiagnosticPositionTracker positionTracker = DiagnosticPositionTrackers
                 .newTokenizedLineTracker().create(
                         new SrcFilePair(oldFile, newFile),
                         new TrackersSharedState());

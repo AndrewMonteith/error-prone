@@ -59,13 +59,7 @@ public class DiagnosticsFile {
   }
 
   private static String giveFileNameCorrectRoot(CorpusProject project, String fileName) {
-    // any project file will be <ROOT>/java-corpus/<PROJECT>/...
-    // we want to append ... onto project root
-    Path file = Paths.get(fileName);
-    int corpusName = Iterables.indexOf(file, path -> path.equals(Paths.get("java-corpus")));
-    Path filePath = file.subpath(corpusName + 2, file.getNameCount());
-
-    return project.getRoot().resolve(filePath).toString();
+    return project.getRoot().resolve(fileName).toString();
   }
 
   private static DatasetDiagnostic loadDiagnostic(

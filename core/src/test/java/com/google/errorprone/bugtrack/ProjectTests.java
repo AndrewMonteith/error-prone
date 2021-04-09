@@ -304,17 +304,17 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new JRubyProject();
+    CorpusProject project = new MetricsProject();
 
     DiagnosticsFile oldFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_12/79 8c16d88bd51dd747c3a8beea4f29406460d32385");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics_50/10 b3b27bf2ccc0019af2d979a26666e3d508dc34dd");
 
     DiagnosticsFile newFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_12/80 a38cc23b0cf1d984adcd278261296ace97546b5f");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics_50/11 d3f98a12b65ecbb50cf1d62673285d0b6f262396");
 
     MatchResults results =
         GitCommitMatcher.compareGit(project, oldFile, newFile)

@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.harness.evaluating;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 
@@ -90,6 +91,11 @@ public final class LiveDatasetFilePairLoader implements DiagnosticsFilePairLoade
 
       return loader.load(project, i1, i2);
     };
+  }
+
+  public static DiagnosticsFilePairLoader notMarkedAsSkipped(Path folderOfDiagnosticsFiles) {
+    return new LiveDatasetFilePairLoader(
+        folderOfDiagnosticsFiles, file -> !Files.getFileExtension(file.toString()).equals(".skip"));
   }
 
   private int getRandomId() {

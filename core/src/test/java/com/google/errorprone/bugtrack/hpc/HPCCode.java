@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.hpc;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.GitPathComparer;
 import com.google.errorprone.bugtrack.GitSrcFilePairLoader;
@@ -25,6 +26,8 @@ import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
+import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
+import com.google.errorprone.bugtrack.motion.ExactDiagnosticMatcher;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -44,7 +47,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMPosTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
 
 public final class HPCCode {
   private static final Map<String, CorpusProject> projects;
@@ -79,6 +83,34 @@ public final class HPCCode {
             .filter(CommitDAGPathFinders.in(repo, range).dfs());
 
     System.out.println("Total commits  " + filteredCommits.size());
+  }
+
+  @Test
+  public void runComparisons() throws Exception {
+    String projectName = System.getProperty("project");
+
+    CorpusProject project = loadProject();
+    Path diagnostics = ProjectFiles.get("diagnostics/" + projectName);
+    Path output = ProjectFiles.get("comparisons/" + projectName);
+
+    BugComparerExperiment.forProject(project)
+        .withData(LiveDatasetFilePairLoader.notMarkedAsSkipped(diagnostics))
+        .comparePaths(withGit(project, GitPathComparer::new))
+        .loadDiags(withGit(project, GitSrcFilePairLoader::new))
+        .makeBugComparer1(
+            srcFilePairLoader ->
+                BugComparer.any(
+                    new ExactDiagnosticMatcher(),
+                    new DiagnosticPositionMotionComparer(
+                        srcFilePairLoader, newIJMStartAndEndTracker())))
+        .makeBugComparer2(
+            srcFilePairLoader ->
+                BugComparer.any(
+                    new ExactDiagnosticMatcher(),
+                    new DiagnosticPositionMotionComparer(srcFilePairLoader, newIJMPosTracker())))
+        .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
+        .trials(20)
+        .run(output);
   }
 
   @Before
@@ -140,24 +172,6 @@ public final class HPCCode {
   }
 
   @Test
-  public void foo() throws GitAPIException, IOException, InterruptedException {
-    Repository repo = projects.get("junit4").loadRepo();
-    CommitRange range =
-        new CommitRange(
-            "54b7613484be714a769a8d62f1ac507912e61a01", "9ad61c6bf757be8d8968fd5977ab3ae15b0c5aba");
-
-    List<RevCommit> filteredCommits =
-        new JavaLinesChangedFilter(new Git(repo), 100)
-            .filter(CommitDAGPathFinders.in(repo, range).dfs());
-
-    System.out.println("Total commits  " + filteredCommits.size());
-
-    for (int i = 0; i < filteredCommits.size(); ++i) {
-      System.out.println(i + " " + filteredCommits.get(i).getName());
-    }
-  }
-
-  @Test
   public void betweenCommits() throws GitAPIException, IOException, InterruptedException {
     CorpusProject project = loadProject();
     CommitRange range =
@@ -179,31 +193,17 @@ public final class HPCCode {
             Integer.parseInt(System.getProperty("offset")));
   }
 
-  @Test
-  public void genDubboComparisons() throws Exception {
-    CorpusProject project = new MyBatis3Project();
-    Path diagFolders = ProjectFiles.get("diagnostics/dubbo");
-    IntRanges validSeqFiles = IntRanges.include(0, 158).excludeRange(71, 73);
-
-    BugComparerExperiment.forProject(project)
-        .withData(LiveDatasetFilePairLoader.inSeqNumRange(diagFolders, validSeqFiles))
-        .comparePaths(withGit(project, GitPathComparer::new))
-        .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-        .makeBugComparer1(any(newTokenizedLineTracker(), newIJMStartPosTracker()))
-        .makeBugComparer2(
-            any(
-                newTokenizedLineTracker(),
-                newIJMStartAndEndTracker()) //        files.forEach(projFile ->
-            // helper.addSourceFile(projFile.toFile().toPath()));
-            //        helper.setArgs(ImmutableList.copyOf(Iterables.concat(scan.cmdLineArguments,
-            // ImmutableList.of("-Xjcov"))));
-            //
-            //        return ListUtils.distinct(helper.collectDiagnostics());
-            )
-        .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
-        .trials(Integer.parseInt(System.getProperty("trials")))
-        .run(ProjectFiles.get("comparisons/dubbo").toString());
-  }
+  //  @Test
+  //  public void genDubboComparisons() throws Exception {
+  //
+  //      CorpusProject project = loadProject();
+  //      Path diagnostics = ProjectFiles.get("diagnostics/" + System.getProperty("project"));
+  //      Path diagnostics = ProjectFiles.get("diagnostics/" + System.getProperty("project"));
+  //    runComparisons(
+  //        new DubboProject(),
+  //        ProjectFiles.get("diagnostics/dubbo"),
+  //        ProjectFiles.get("comparisons/dubbo"));
+  //  }
 
   @Test
   public void performSequentialComparisons() throws Exception {

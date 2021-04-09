@@ -197,10 +197,16 @@ public final class MultiGrainDiagFileComparer {
                     () -> {
                       long threadId = Thread.currentThread().getId();
                       for (int i = 0; i < compareTasks.size(); ++i) {
-                        System.out.printf(
-                            "Thread %d [%d / %d]\n", threadId, i + 1, compareTasks.size());
-
                         CompareTask task = compareTasks.get(i);
+
+                        System.out.printf(
+                            "Thread %d [%d / %d] %s -> %s\n",
+                            threadId,
+                            i + 1,
+                            compareTasks.size(),
+                            task.before.commitId,
+                            task.after.commitId);
+
                         MatchResults results = scan(task.before, task.after);
                         task.outputs.forEach((ThrowingConsumer<Path>) results::save);
                       }

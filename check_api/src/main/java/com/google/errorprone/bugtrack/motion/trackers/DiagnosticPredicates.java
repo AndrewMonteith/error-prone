@@ -12,7 +12,11 @@ public class DiagnosticPredicates {
    */
   private static final ImmutableSet<String> MULTIPLE_PER_LIME =
       ImmutableSet.of(
-          "MultiVariableDeclaration", "FieldCanBeFinal", "InitializeInline", "MemberName");
+          "MultiVariableDeclaration",
+          "FieldCanBeFinal",
+          "InitializeInline",
+          "MemberName",
+          "UnusedVariable");
 
   public static Predicate manyInSameRegion() {
     return (srcFile, diag) -> {

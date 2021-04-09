@@ -24,16 +24,22 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GitPathComparer implements PathsComparer {
-  private final Repository repo;
-  private final List<DiffEntry> diffs;
+  private final Map<Path, Path> renames;
 
   public GitPathComparer(Repository repo, RevCommit oldCommit, RevCommit newCommit)
       throws GitAPIException, IOException {
-    this.repo = repo;
-    this.diffs = GitUtils.computeDiffs(repo, oldCommit, newCommit);
+    this.renames =
+        GitUtils.computeDiffs(repo, oldCommit, newCommit).stream()
+            .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
+            .collect(
+                Collectors.toMap(
+                    entry -> Paths.get(entry.getOldPath()),
+                    entry -> Paths.get(entry.getNewPath())));
   }
 
   public GitPathComparer(Repository repo, String oldCommit, String newCommit)
@@ -41,30 +47,8 @@ public class GitPathComparer implements PathsComparer {
     this(repo, GitUtils.parseCommit(repo, oldCommit), GitUtils.parseCommit(repo, newCommit));
   }
 
-  private Path makeRelativeToRepo(Path path) {
-    Path repoRoot = repo.getDirectory().getParentFile().toPath();
-
-    if (path.startsWith(repoRoot)) {
-      return repoRoot.relativize(path);
-    } else {
-      return path;
-    }
-  }
-
   @Override
   public boolean isSameFile(Path oldPath, Path newPath) {
-    if (oldPath.equals(newPath)) {
-      return true;
-    }
-
-    Path relOldPath = makeRelativeToRepo(oldPath);
-    Path relNewPath = makeRelativeToRepo(newPath);
-
-    return diffs.stream()
-        .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
-        .anyMatch(
-            diff ->
-                diff.getOldPath().equals(relOldPath.toString())
-                    && diff.getNewPath().equals(relNewPath.toString()));
+    return renames.getOrDefault(oldPath, oldPath).equals(newPath);
   }
 }

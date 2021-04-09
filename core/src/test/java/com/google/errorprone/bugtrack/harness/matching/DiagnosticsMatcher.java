@@ -75,36 +75,35 @@ public final class DiagnosticsMatcher {
         Sets.newHashSet(Iterables.transform(oldDiagnostics, DatasetDiagnostic::getFileName));
 
     oldFiles.forEach(
-        oldFile -> {
-          oldDiagnostics.forEach(
-              oldDiag -> {
-                if (!oldDiag.getFileName().equals(oldFile)
-                    || matchedDiagnostics.containsKey(oldDiag)) {
-                  return;
-                }
-
-                Collection<DatasetDiagnostic> matching =
-                    newDiagnostics.stream()
-                        .filter(newDiag -> pathsComparer.isSameFile(oldDiag, newDiag))
-                        .filter(
-                            newDiag ->
-                                !matchedDiagnostics.containsValue(newDiag)
-                                    && comparer.areSame(oldDiag, newDiag))
-                        .collect(Collectors.toList());
-
-                if (matching.size() == 1) {
-                  matchedDiagnostics.put(oldDiag, Iterables.getOnlyElement(matching));
-                } else if (matching.size() > 1) {
-                  if (printMultiMatches) {
-                    System.out.println("A diagnostic matched with multiple diagnostics");
-                    System.out.println("Old diagnostic:");
-                    System.out.println(oldDiag);
-                    System.out.println("Candidate new:");
-                    matching.forEach(System.out::println);
+        oldFile ->
+            oldDiagnostics.forEach(
+                oldDiag -> {
+                  if (!oldDiag.getFileName().equals(oldFile)
+                      || matchedDiagnostics.containsKey(oldDiag)) {
+                    return;
                   }
-                }
-              });
-        });
+
+                  Collection<DatasetDiagnostic> matching =
+                      newDiagnostics.stream()
+                          .filter(newDiag -> pathsComparer.isSameFile(oldDiag, newDiag))
+                          .filter(
+                              newDiag ->
+                                  !matchedDiagnostics.containsValue(newDiag)
+                                      && comparer.areSame(oldDiag, newDiag))
+                          .collect(Collectors.toList());
+
+                  if (matching.size() == 1) {
+                    matchedDiagnostics.put(oldDiag, Iterables.getOnlyElement(matching));
+                  } else if (matching.size() > 1) {
+                    if (printMultiMatches) {
+                      System.out.println("A diagnostic matched with multiple diagnostics");
+                      System.out.println("Old diagnostic:");
+                      System.out.println(oldDiag);
+                      System.out.println("Candidate new:");
+                      matching.forEach(System.out::println);
+                    }
+                  }
+                }));
 
     return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
   }

@@ -62,12 +62,17 @@ public class BetterJdtVisitor extends JdtVisitor {
 
   @Override
   public boolean visit(QualifiedName qualName) {
-    if (X_DOT_Y.matcher(qualName.getFullyQualifiedName()).matches()) {
-      pushNode(qualName.getQualifier(), qualName.getQualifier().toString());
-      popNode();
-      pushNode(qualName.getName(), qualName.getName().toString());
-      popNode();
+    ASTNode parent = qualName.getParent();
+    if (parent.getNodeType() == ASTNode.PACKAGE_DECLARATION || parent.getNodeType() == ASTNode.IMPORT_DECLARATION) {
+      return false;
     }
+
+    // Split X_1.X_2...X_(N-1).X_N -> (X_1...X_(N_1)) /\ X_N in AST
+    // As some diagnostics match two for a fully qualified name, one in former and one in latter
+    pushNode(qualName.getQualifier(), qualName.getQualifier().toString());
+    popNode();
+    pushNode(qualName.getName(), qualName.getName().toString());
+    popNode();
 
     return false;
   }

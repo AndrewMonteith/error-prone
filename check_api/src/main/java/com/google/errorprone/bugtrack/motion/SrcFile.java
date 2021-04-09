@@ -26,6 +26,7 @@ import com.sun.tools.javac.util.Position;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class SrcFile {
   private final String name;
@@ -79,6 +80,20 @@ public class SrcFile {
     }
 
     return code;
+  }
+
+  public boolean testSubstring(final long start, final long end, Predicate<Character> pred) {
+    for (int i = (int) start; i < end; ++i) {
+      if (pred.test(charBuf[i])) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public boolean testSubstring(DatasetDiagnostic diag, Predicate<Character> pred) {
+    return testSubstring(diag.getStartPos(), diag.getEndPos(), pred);
   }
 
   public String getSrcExtract(DatasetDiagnostic diagnostic) {

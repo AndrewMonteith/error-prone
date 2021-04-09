@@ -17,7 +17,7 @@ public class DiagnosticPredicates {
   public static Predicate manyInSameRegion() {
     return (srcFile, diag) -> {
       if (MULTIPLE_PER_LIME.contains(diag.getType())) {
-        return srcFile.getSrcExtract(diag).contains(",");
+        return srcFile.testSubstring(diag, letter -> letter == ',');
       } else {
         return false;
       }

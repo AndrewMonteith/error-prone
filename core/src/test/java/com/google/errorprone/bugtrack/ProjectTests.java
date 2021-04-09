@@ -33,7 +33,7 @@ import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
-import com.google.errorprone.bugtrack.motion.trackers.SpecialDiagTypes;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -320,8 +320,8 @@ public class ProjectTests {
         GitCommitMatcher.compareGit(project, oldFile, newFile)
             .trackIdentical()
             .trackPosition(
-                specific(
-                    SpecialDiagTypes.MULTIPLE_PER_LIME,
+                partition(
+                    DiagnosticPredicates.manyInSameRegion(),
                     newIJMPosTracker(),
                     any(newIJMStartAndEndTracker(), newIJMPosTracker())))
             .match();

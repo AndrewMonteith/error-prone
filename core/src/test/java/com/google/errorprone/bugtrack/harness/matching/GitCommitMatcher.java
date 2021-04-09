@@ -60,8 +60,7 @@ public final class GitCommitMatcher {
         new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
   }
 
-  public GitCommitMatcher trackPosition(DiagnosticPositionTrackerConstructor posCtor)
-      throws IOException {
+  public GitCommitMatcher trackPosition(DiagnosticPositionTrackerConstructor posCtor) {
     this.comparers.add(new DiagnosticPositionMotionComparer(srcFilePairLoader, posCtor));
     return this;
   }

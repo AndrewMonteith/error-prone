@@ -23,7 +23,7 @@ import com.google.common.collect.Lists;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
-import com.google.errorprone.bugtrack.motion.trackers.SpecialDiagTypes;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.util.ThrowingBiConsumer;
 import com.google.errorprone.bugtrack.util.ThrowingConsumer;
@@ -69,8 +69,8 @@ public final class MultiGrainDiagFileComparer {
           GitCommitMatcher.compareGit(project, last, next)
               .trackIdentical()
               .trackPosition(
-                  specific(
-                      SpecialDiagTypes.MULTIPLE_PER_LIME,
+                  partition(
+                      DiagnosticPredicates.manyInSameRegion(),
                       newIJMPosTracker(),
                       any(newIJMStartAndEndTracker(), newIJMPosTracker())))
               .match();

@@ -25,7 +25,6 @@ import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,20 +59,21 @@ public final class DiagnosticPositionTrackers {
     return IJMStartAndEndPosTracker::new;
   }
 
-  public static DiagnosticPositionTrackerConstructor specific(
-      Collection<String> diagTypes1,
-      DiagnosticPositionTrackerConstructor comparerForType1s,
-      DiagnosticPositionTrackerConstructor comparerForOthers) {
+  public static DiagnosticPositionTrackerConstructor partition(
+      DiagnosticPredicates.Predicate predicate,
+      DiagnosticPositionTrackerConstructor comparerIfTrue,
+      DiagnosticPositionTrackerConstructor comparerIfFalse) {
     return (srcFilePair, sharedState) -> {
-      LazyConstructor lazyTracker1 = new LazyConstructor(comparerForType1s);
-      LazyConstructor lazyTrackerOthers = new LazyConstructor(comparerForOthers);
+      LazyConstructor lazyTrueComparer = new LazyConstructor(comparerIfTrue);
+      LazyConstructor lazyFalseComparer = new LazyConstructor(comparerIfFalse);
 
-      return (diag) -> {
-        if (diagTypes1.contains(diag.getType())) {
-          return lazyTracker1.get(srcFilePair, sharedState).track(diag);
-        } else {
-          return lazyTrackerOthers.get(srcFilePair, sharedState).track(diag);
-        }
+      return oldDiag -> {
+        DiagnosticPositionTracker tracker =
+            predicate.test(srcFilePair.oldFile, oldDiag)
+                ? lazyTrueComparer.get(srcFilePair, sharedState)
+                : lazyFalseComparer.get(srcFilePair, sharedState);
+
+        return tracker.track(oldDiag);
       };
     };
   }

@@ -46,6 +46,9 @@ import com.sun.source.util.DocTreeScanner;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.JCDiagnostic;
+
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -123,7 +126,14 @@ public final class MissingSummary extends BugChecker
         || hasAnnotation(symbol, "java.lang.Deprecated", state)) {
       return NO_MATCH;
     }
-    return buildDescription(diagnosticPosition(docTreePath, state)).build();
+
+    JCDiagnostic.DiagnosticPosition pos = diagnosticPosition(docTreePath, state);
+    if (pos.getStartPosition() == -1) {
+      // Empty doc comment
+      pos = ((JCTree) state.getPath().getLeaf()).pos();
+    }
+
+    return buildDescription(pos).build();
   }
 
   private Description generateReturnFix(

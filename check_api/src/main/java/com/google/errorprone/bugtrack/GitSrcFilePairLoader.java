@@ -43,11 +43,24 @@ public class GitSrcFilePairLoader implements SrcFilePairLoader {
   }
 
   @Override
-  public SrcFilePair load(Path oldPath, Path newPath)
-      throws IOException, FormatterException {
-    SrcFile oldFile = GitUtils.loadSrcFile(repo, oldCommit, oldPath);
-    SrcFile newFile = GitUtils.loadSrcFile(repo, newCommit, newPath);
+  public SrcFilePair load(Path oldPath, Path newPath) throws IOException, FormatterException {
+    try {
+      SrcFile oldFile = GitUtils.loadSrcFile(repo, oldCommit, oldPath);
+      SrcFile newFile = GitUtils.loadSrcFile(repo, newCommit, newPath);
 
-    return new SrcFilePair(oldFile, newFile);
+      return new SrcFilePair(oldFile, newFile);
+    } catch (FormatterException e) {
+      System.out.println(
+          "Formatter exception on "
+              + oldPath.toString()
+              + " "
+              + " "
+              + newPath.toString()
+              + " in commit "
+              + oldCommit.toObjectId().toString()
+              + " "
+              + newCommit.toObjectId().toString());
+      throw new RuntimeException(e);
+    }
   }
 }

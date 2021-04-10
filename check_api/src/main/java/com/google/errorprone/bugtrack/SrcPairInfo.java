@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion.trackers;
+package com.google.errorprone.bugtrack;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.errorprone.bugtrack.ErrorProneInMemoryFileManagerForCheckApi;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.utils.SingleKeyCell;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.tree.JCTree;
@@ -35,16 +33,17 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public final class TrackersSharedState {
-  private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> oldAstAndContextCell;
-  private final SingleKeyCell<String, Pair<JCTree.JCCompilationUnit, Context>> newAstAndContextCell;
-
+public final class SrcPairInfo {
+  public final SrcFilePair files;
   private final ErrorProneInMemoryFileManagerForCheckApi fileManager;
+  private Lazy<Pair<JCTree.JCCompilationUnit, Context>> oldAstAndContext;
+  private Lazy<Pair<JCTree.JCCompilationUnit, Context>> newAstAndContext;
 
-  public TrackersSharedState() {
+  public SrcPairInfo(SrcFilePair files) {
+    this.files = files;
     this.fileManager = new ErrorProneInMemoryFileManagerForCheckApi();
-    this.oldAstAndContextCell = new SingleKeyCell<>();
-    this.newAstAndContextCell = new SingleKeyCell<>();
+    this.oldAstAndContext = new Lazy<>(() -> loadJavacInfo(files.oldFile, "_old.java"));
+    this.newAstAndContext = new Lazy<>(() -> loadJavacInfo(files.newFile, "_new.java"));
   }
 
   private Pair<JCTree.JCCompilationUnit, Context> parseFileWithJavac(
@@ -73,24 +72,22 @@ public final class TrackersSharedState {
 
   private Pair<JCTree.JCCompilationUnit, Context> loadJavacInfo(SrcFile file, String suffixId) {
     String fileNameId = file.getName() + suffixId;
-
-    return (suffixId.equals("_old.java") ? oldAstAndContextCell : newAstAndContextCell)
-        .get(fileNameId, () -> parseFileWithJavac(fileNameId, file.getLines()));
+    return parseFileWithJavac(fileNameId, file.getLines());
   }
 
-  public JCTree.JCCompilationUnit loadOldJavacAST(SrcFilePair srcFilePair) {
-    return loadJavacInfo(srcFilePair.oldFile, "_old.java").fst;
+  public JCTree.JCCompilationUnit loadOldJavacAST() {
+    return oldAstAndContext.get().fst;
   }
 
-  public Context loadOldJavacContext(SrcFilePair srcFilePair) {
-    return loadJavacInfo(srcFilePair.oldFile, "_old.java").snd;
+  public Context loadOldJavacContext() {
+    return oldAstAndContext.get().snd;
   }
 
-  public JCTree.JCCompilationUnit loadNewJavacAST(SrcFilePair srcFilePair) {
-    return loadJavacInfo(srcFilePair.newFile, "_new.java").fst;
+  public JCTree.JCCompilationUnit loadNewJavacAST() {
+    return newAstAndContext.get().fst;
   }
 
-  public Context loadNewJavacContext(SrcFilePair srcFilePair) {
-    return loadJavacInfo(srcFilePair.newFile, "_new.java").snd;
+  public Context loadNewJavacContext() {
+    return newAstAndContext.get().snd;
   }
 }

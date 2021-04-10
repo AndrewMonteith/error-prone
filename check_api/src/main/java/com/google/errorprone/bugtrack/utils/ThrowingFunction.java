@@ -16,35 +16,17 @@
 
 package com.google.errorprone.bugtrack.utils;
 
-import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
-public class SingleKeyCell<K, V> {
-  private K currentKey;
-  private V value;
-
-  public V get(K key, Supplier<V> valSupplier) {
-    if (!Objects.equals(currentKey, key)) {
-      currentKey = key;
-      value = null;
-      value = valSupplier.get();
+@FunctionalInterface
+public interface ThrowingFunction<T, R> extends Function<T, R> {
+  default R apply(T t) {
+    try {
+      return applyThrows(t);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-
-    return value;
   }
 
-  public V throwableGet(K key, ThrowableSupplier<V> valSupplier) throws Exception {
-    if (!Objects.equals(currentKey, key)) {
-      currentKey = key;
-      value = null;
-      value = valSupplier.get();
-    }
-
-    return value;
-  }
-
-  @FunctionalInterface
-  public interface ThrowableSupplier<T> {
-    T get() throws Exception;
-  }
+  R applyThrows(T t) throws Exception;
 }

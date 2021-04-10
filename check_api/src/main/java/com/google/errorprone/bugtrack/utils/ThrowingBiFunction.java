@@ -14,21 +14,8 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.util;
+package com.google.errorprone.bugtrack.utils;
 
-import java.util.function.Consumer;
-
-@FunctionalInterface
-public interface ThrowingConsumer<T> extends Consumer<T> {
-
-  @Override
-  default void accept(final T elem) {
-    try {
-      acceptThrows(elem);
-    } catch (final Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  void acceptThrows(T elem) throws Exception;
+public interface ThrowingBiFunction<K1, K2, V> {
+  V apply(K1 key1, K2 key2) throws Exception;
 }

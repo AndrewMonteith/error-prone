@@ -27,27 +27,27 @@ import java.nio.file.Paths;
 import java.util.Collection;
 
 public class ProjectFiles {
-  private static final String projRoot;
+  public static final String PROJECT_ROOT;
 
   static {
     String root = System.getenv("ROOT");
     if (root == null || root.isEmpty()) {
-      projRoot = "/home/monty/IdeaProjects/";
+      PROJECT_ROOT = "/home/monty/IdeaProjects/";
     } else {
-      projRoot = root;
+      PROJECT_ROOT = root;
     }
 
-    System.out.println("Initialised project root to " + projRoot);
+    System.out.println("Initialised project root to " + PROJECT_ROOT);
   }
 
   public static Path get(String path) {
-    return Paths.get(projRoot, path);
+    return Paths.get(PROJECT_ROOT, path);
   }
 
   public static Path find(String prefix, String fileName) {
     Collection<File> files =
         FileUtils.listFiles(
-            Paths.get(projRoot, prefix).toFile(),
+            Paths.get(PROJECT_ROOT, prefix).toFile(),
             new NameFileFilter(fileName),
             TrueFileFilter.TRUE);
 

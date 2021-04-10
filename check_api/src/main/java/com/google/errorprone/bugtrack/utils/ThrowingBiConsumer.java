@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.util;
+package com.google.errorprone.bugtrack.utils;
 
 import java.util.function.BiConsumer;
 

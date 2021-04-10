@@ -18,22 +18,18 @@ package com.google.errorprone.bugtrack.harness.matching;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.errorprone.bugtrack.BugComparer;
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.GitPathComparer;
-import com.google.errorprone.bugtrack.PathsComparer;
+import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
+import com.google.errorprone.bugtrack.utils.ThrowingConsumer;
+import com.google.errorprone.bugtrack.utils.ThrowingPredicate;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -41,17 +37,20 @@ public final class DiagnosticsMatcher {
   private static final boolean printMultiMatches = true;
   private final Collection<DatasetDiagnostic> oldDiagnostics;
   private final Collection<DatasetDiagnostic> newDiagnostics;
-  private final BugComparer comparer;
+  private final SrcFilePairLoader srcFilePairLoader;
+  private final BugComparerCtor bugComparerCtor;
   private final PathsComparer pathsComparer;
 
   public DiagnosticsMatcher(
       Collection<DatasetDiagnostic> oldDiagnostics,
       Collection<DatasetDiagnostic> newDiagnostics,
-      BugComparer comparer,
+      SrcFilePairLoader srcFilePairLoader,
+      BugComparerCtor bugComparerCtor,
       PathsComparer pathsComparer) {
     this.oldDiagnostics = oldDiagnostics;
     this.newDiagnostics = newDiagnostics;
-    this.comparer = comparer;
+    this.srcFilePairLoader = srcFilePairLoader;
+    this.bugComparerCtor = bugComparerCtor;
     this.pathsComparer = pathsComparer;
   }
 
@@ -59,57 +58,73 @@ public final class DiagnosticsMatcher {
       CorpusProject project,
       DiagnosticsFile oldDiagFile,
       DiagnosticsFile newDiagFile,
-      BugComparer bugComparer)
+      BugComparerCtor bugComparerCtor)
       throws IOException, GitAPIException {
     return new DiagnosticsMatcher(
         oldDiagFile.diagnostics,
         newDiagFile.diagnostics,
-        bugComparer,
+        new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
+        bugComparerCtor,
         new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
   }
 
-  public MatchResults getResults() {
+  private Collection<DatasetDiagnostic> getDiagnosticsInFile(
+      Collection<DatasetDiagnostic> diagnostics, String file) {
+    return diagnostics.stream()
+        .filter(diag -> diag.getFileName().equals(file))
+        .collect(Collectors.toList());
+  }
+
+  public MatchResults match() {
     Map<DatasetDiagnostic, DatasetDiagnostic> matchedDiagnostics = new HashMap<>();
 
     Set<String> oldFiles =
         Sets.newHashSet(Iterables.transform(oldDiagnostics, DatasetDiagnostic::getFileName));
 
     oldFiles.forEach(
-        oldFile ->
-            oldDiagnostics.forEach(
-                oldDiag -> {
-                  if (!oldDiag.getFileName().equals(oldFile)
-                      || matchedDiagnostics.containsKey(oldDiag)) {
-                    return;
-                  }
+        (ThrowingConsumer<String>)
+            oldFile -> {
+              Optional<Path> newFileOpt = pathsComparer.getNewPath(oldFile);
+              if (!newFileOpt.isPresent()) {
+                return;
+              }
+              String newFile = newFileOpt.get().toString();
 
-                  Collection<DatasetDiagnostic> matching =
-                      newDiagnostics.stream()
-                          .filter(newDiag -> pathsComparer.isSameFile(oldDiag, newDiag))
-                          .filter(
-                              newDiag ->
-                                  !matchedDiagnostics.containsValue(newDiag)
-                                      && comparer.areSame(oldDiag, newDiag))
-                          .collect(Collectors.toList());
+              SrcPairInfo srcPairInfo = new SrcPairInfo(srcFilePairLoader.load(oldFile, newFile));
+              BugComparer comparer = bugComparerCtor.get(srcPairInfo);
 
-                  if (matching.size() == 1) {
-                    matchedDiagnostics.put(oldDiag, Iterables.getOnlyElement(matching));
-                  } else if (matching.size() > 1) {
-                    if (printMultiMatches) {
-                      System.out.println("A diagnostic matched with multiple diagnostics");
-                      System.out.println("Old diagnostic:");
-                      System.out.println(oldDiag);
-                      System.out.println("Candidate new:");
-                      matching.forEach(System.out::println);
-                    }
-                  }
-                }));
+              Collection<DatasetDiagnostic> newFileDiags =
+                  getDiagnosticsInFile(newDiagnostics, newFile);
+
+              getDiagnosticsInFile(oldDiagnostics, oldFile)
+                  .forEach(
+                      oldDiag -> {
+                        Collection<DatasetDiagnostic> matching =
+                            newFileDiags.stream()
+                                .filter(
+                                    (ThrowingPredicate<DatasetDiagnostic>)
+                                        newDiag -> comparer.areSame(oldDiag, newDiag))
+                                .collect(Collectors.toList());
+
+                        if (matching.size() == 1) {
+                          matchedDiagnostics.put(oldDiag, Iterables.getOnlyElement(matching));
+                        } else if (matching.size() > 1) {
+                          if (printMultiMatches) {
+                            System.out.println("A diagnostic matched with multiple diagnostics");
+                            System.out.println("Old diagnostic:");
+                            System.out.println(oldDiag);
+                            System.out.println("Candidate new:");
+                            matching.forEach(System.out::println);
+                          }
+                        }
+                      });
+            });
 
     return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
   }
 
   public void writeToStdout() {
-    System.out.println(getResults());
+    System.out.println(match());
   }
 
   private void writeLogFile(Path file, Consumer<StringBuilder> buildString) throws IOException {
@@ -123,7 +138,7 @@ public final class DiagnosticsMatcher {
       throw new RuntimeException("can only dump matches into directories");
     }
 
-    final MatchResults results = getResults();
+    final MatchResults results = match();
 
     writeLogFile(
         outputDir.resolve("unmatched_old"),

@@ -18,17 +18,37 @@ package com.google.errorprone.bugtrack.motion;
 
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.SrcPairInfo;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 
-public class ExactDiagnosticMatcher implements BugComparer {
+import java.util.Optional;
+
+public class DiagPosMatcher implements BugComparer {
+  private final SrcPairInfo srcPairInfo;
+  private final DiagnosticPositionTracker posTracker;
+
+  public DiagPosMatcher(SrcPairInfo srcPairInfo, DiagnosticPositionTracker posTracker) {
+    this.srcPairInfo = srcPairInfo;
+    this.posTracker = posTracker;
+  }
+
   @Override
   public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
+    if (!oldDiagnostic.isSameType(newDiagnostic)) {
+      return false;
+    }
+
     if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
       return false;
     }
 
-    // We don't use .equals since that accounts for the same file name but the file could have been
-    // renamed since matching guarentees we only match diagnostics in the same file then we need
-    // only compare everything else for equality
-    return oldDiagnostic.refersToSameSource(newDiagnostic);
+    try {
+      Optional<DiagPosEqualityOracle> posEqOracle = posTracker.track(oldDiagnostic);
+
+      return posEqOracle.isPresent() && posEqOracle.get().hasSamePosition(newDiagnostic);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 }

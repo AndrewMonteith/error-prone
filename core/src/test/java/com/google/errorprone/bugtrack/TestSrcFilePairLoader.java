@@ -20,10 +20,11 @@ import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.googlejavaformat.java.FormatterException;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class TestSrcFilePairLoader implements SrcFilePairLoader {
-    @Override
-    public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException, FormatterException {
-        return TestUtils.readTestSrcFilePair(oldDiagnostic.getFileName(), newDiagnostic.getFileName());
-    }
+  @Override
+  public SrcFilePair load(Path oldPath, Path newPath) throws IOException, FormatterException {
+    return TestUtils.readTestSrcFilePair(oldPath.toString(), newPath.toString());
+  }
 }

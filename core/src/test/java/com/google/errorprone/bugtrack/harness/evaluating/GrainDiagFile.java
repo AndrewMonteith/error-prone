@@ -22,7 +22,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.util.ThrowingFunction;
+import com.google.errorprone.bugtrack.utils.ThrowingFunction;
 
 import java.io.IOException;
 import java.nio.file.Path;

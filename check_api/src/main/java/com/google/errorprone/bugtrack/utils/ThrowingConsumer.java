@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.util;
+package com.google.errorprone.bugtrack.utils;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 @FunctionalInterface
-public interface ThrowingFunction<T, R> extends Function<T, R> {
-  default R apply(T t) {
+public interface ThrowingConsumer<T> extends Consumer<T> {
+
+  @Override
+  default void accept(final T elem) {
     try {
-      return applyThrows(t);
-    } catch (Exception e) {
+      acceptThrows(elem);
+    } catch (final Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  R applyThrows(T t) throws Exception;
+  void acceptThrows(T elem) throws Exception;
 }

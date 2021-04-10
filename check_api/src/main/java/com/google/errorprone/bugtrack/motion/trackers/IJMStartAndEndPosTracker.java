@@ -16,13 +16,10 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
-import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
-import com.google.errorprone.bugtrack.motion.SrcFile;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,17 +28,9 @@ import java.util.stream.Collectors;
 
 public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker
     implements DiagnosticPositionTracker {
-  public IJMStartAndEndPosTracker(
-      SrcFilePair srcFilePair,
-      TrackersSharedState sharedState,
-      IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier)
-      throws IOException {
-    super(srcFilePair, sharedState, jdtVisitorSupplier);
-  }
 
-  public IJMStartAndEndPosTracker(SrcFilePair srcFilePair, TrackersSharedState sharedState)
-      throws IOException {
-    super(srcFilePair, sharedState);
+  public IJMStartAndEndPosTracker(SrcPairInfo srcPairInfo) throws IOException {
+    super(srcPairInfo);
   }
 
   @Override

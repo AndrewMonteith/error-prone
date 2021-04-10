@@ -16,12 +16,16 @@
 
 package com.google.errorprone.bugtrack;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.errorprone.bugtrack.signatures.DiagnosticSignature;
 import com.google.errorprone.bugtrack.signatures.SignatureBucket;
 import com.google.errorprone.bugtrack.utils.DiagnosticUtils;
+import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import java.util.List;
 import java.util.Objects;
 
 public class DatasetDiagnostic {

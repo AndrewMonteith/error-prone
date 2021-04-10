@@ -16,8 +16,16 @@
 
 package com.google.errorprone.bugtrack.utils;
 
-import java.io.IOException;
+import java.util.function.Supplier;
 
-public interface IOThrowingFunction<K, V> {
-  V apply(K key) throws IOException;
+public interface ThrowingSupplier<T> extends Supplier<T> {
+  default T get() {
+    try {
+      return getThrows();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  T getThrows() throws Exception;
 }

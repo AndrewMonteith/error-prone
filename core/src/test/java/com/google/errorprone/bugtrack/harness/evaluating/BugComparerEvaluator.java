@@ -22,7 +22,7 @@ import com.google.common.collect.Sets;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.SrcFilePairLoader;
-import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
+import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.googlejavaformat.java.FormatterException;
@@ -220,18 +220,22 @@ public final class BugComparerEvaluator {
       {
         final long now = System.nanoTime();
         MatchResults comparer1Results =
-            GitCommitMatcher.compareGit(
-                    project, oldAndNewDiagFiles.oldFile, oldAndNewDiagFiles.newFile)
-                .track(config.createBugComparer1(oldAndNewDiagFiles))
+            DiagnosticsMatcher.fromFiles(
+                    project,
+                    oldAndNewDiagFiles.oldFile,
+                    oldAndNewDiagFiles.newFile,
+                    config.getBugComparer1Ctor())
                 .match();
         final long now2 = System.nanoTime();
         System.out.println("comparer 1 match took " + (now2 - now));
 
         final long now22 = System.nanoTime();
         MatchResults comparer2Results =
-            GitCommitMatcher.compareGit(
-                    project, oldAndNewDiagFiles.oldFile, oldAndNewDiagFiles.newFile)
-                .track(config.createBugComparer2(oldAndNewDiagFiles))
+            DiagnosticsMatcher.fromFiles(
+                    project,
+                    oldAndNewDiagFiles.oldFile,
+                    oldAndNewDiagFiles.newFile,
+                    config.getBugComparer2Ctor())
                 .match();
         final long now23 = System.nanoTime();
         System.out.println("comparer 2 match took " + (now23 - now22));

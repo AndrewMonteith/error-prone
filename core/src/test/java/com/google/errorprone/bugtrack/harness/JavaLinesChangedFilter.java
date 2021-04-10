@@ -22,7 +22,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.harness.utils.CommitPair;
-import com.google.errorprone.bugtrack.util.ThrowingFunction;
+import com.google.errorprone.bugtrack.utils.ThrowingFunction;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;

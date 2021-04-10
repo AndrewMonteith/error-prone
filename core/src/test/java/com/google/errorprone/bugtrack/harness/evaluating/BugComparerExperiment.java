@@ -16,35 +16,31 @@
 
 package com.google.errorprone.bugtrack.harness.evaluating;
 
-import com.google.errorprone.bugtrack.BugComparer;
+import com.google.errorprone.bugtrack.BugComparerCtor;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.SrcFilePairLoader;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.util.ThrowingTriFunction;
 import com.google.errorprone.bugtrack.utils.GitUtils;
+import com.google.errorprone.bugtrack.utils.ThrowingTriFunction;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.function.Function;
 
 /*
-   This file's code quality is pants. You have been warned.
+   This file's (well all my files) code quality is pants. You have been warned.
    It is purely helper functions for testing, ie a type-safe shoot yourself in the foot DSL
 */
 public final class BugComparerExperiment {
   private final CorpusProject project;
   private DiagnosticsFilePairLoader dataLoader;
-  private DiagnosticsFilePairMapper<BugComparer> bugComparer1;
-  private DiagnosticsFilePairMapper<BugComparer> bugComparer2;
+  private BugComparerCtor bugComparer1Ctor;
+  private BugComparerCtor bugComparer2Ctor;
   private DiagnosticsFilePairMapper<SrcFilePairLoader> srcDiagLoader;
   private DiagnosticsFilePairMapper<PathsComparer> pathsComparerCtor;
   private int numOfTrials = 100;
-  private MissedLikelihoodCalculator likelihoodCalc = MissedLikelihoodCalculatorFactory.zero();
+  private MissedLikelihoodCalculator likelihoodCalc = MissedLikelihoodCalculators.zero();
 
   private BugComparerExperiment(CorpusProject project) {
     this.project = project;
@@ -72,42 +68,14 @@ public final class BugComparerExperiment {
     return this;
   }
 
-  public DiagnosticsFilePairMapper<BugComparer> makeBugPosTracker(
-      DiagnosticPositionTrackerConstructor posTracker) {
-    return oldAndNewDiagFiles ->
-        new DiagnosticPositionMotionComparer(srcDiagLoader.apply(oldAndNewDiagFiles), posTracker);
-  }
-
-  private DiagnosticsFilePairMapper<BugComparer> makeBugPosTracker(Function<SrcFilePairLoader, BugComparer> bugComparerCtor) {
-    return oldAndNewFile -> bugComparerCtor.apply(srcDiagLoader.apply(oldAndNewFile));
-  }
-
-  private BugComparerExperiment setBugComparer1(DiagnosticsFilePairMapper<BugComparer> bugComparer1) {
-    this.bugComparer1 = bugComparer1;
+  public BugComparerExperiment setBugComparer1(BugComparerCtor bugComparer1Ctor) {
+    this.bugComparer1Ctor = bugComparer1Ctor;
     return this;
   }
 
-  public BugComparerExperiment makeBugComparer1(DiagnosticPositionTrackerConstructor posCtor) {
-    return setBugComparer1(makeBugPosTracker(posCtor));
-  }
-
-  public BugComparerExperiment makeBugComparer1(
-      Function<SrcFilePairLoader, BugComparer> bugComparer1Ctor) {
-    return setBugComparer1(makeBugPosTracker(bugComparer1Ctor));
-  }
-
-  private BugComparerExperiment setBugComparer2(DiagnosticsFilePairMapper<BugComparer> bugComparer2) {
-    this.bugComparer2 = bugComparer2;
+  public BugComparerExperiment setBugComparer2(BugComparerCtor bugComparer2Ctor) {
+    this.bugComparer2Ctor = bugComparer2Ctor;
     return this;
-  }
-
-  public BugComparerExperiment makeBugComparer2(
-      Function<SrcFilePairLoader, BugComparer> bugComparer2Ctor) {
-    return setBugComparer2(makeBugPosTracker(bugComparer2Ctor));
-  }
-
-  public BugComparerExperiment makeBugComparer2(DiagnosticPositionTrackerConstructor posCtor) {
-    return setBugComparer2(makeBugPosTracker(posCtor));
   }
 
   public BugComparerExperiment loadDiags(
@@ -133,16 +101,16 @@ public final class BugComparerExperiment {
     }
 
     BugComparerEvaluator eval =
-            new BugComparerEvaluator(project, dataLoader, likelihoodCalc, numOfTrials);
+        new BugComparerEvaluator(project, dataLoader, likelihoodCalc, numOfTrials);
     BugComparerEvaluationConfig evaluationConfig =
-            new BugComparerEvaluationConfig(
-                    bugComparer1, bugComparer2, srcDiagLoader, pathsComparerCtor);
+        new BugComparerEvaluationConfig(
+            bugComparer1Ctor, bugComparer2Ctor, srcDiagLoader, pathsComparerCtor);
 
     eval.compareBugComparers(evaluationConfig, output);
   }
 
   public void run(String output) throws Exception {
-      run(Paths.get(output));
+    run(Paths.get(output));
   }
 
   public BugComparerExperiment trials(int trials) {

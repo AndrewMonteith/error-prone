@@ -66,11 +66,11 @@ public class DiagnosticsFile {
       CorpusProject project, String[] locationDetails, String message) {
     long line = Long.parseLong(locationDetails[1]);
     long col = Long.parseLong(locationDetails[2]);
-    String fileName = giveFileNameCorrectRoot(project, locationDetails[0]);
+//    String fileName = giveFileNameCorrectRoot(project, locationDetails[0]);
 
     if (locationDetails.length == 6) { // old version without position
       return new DatasetDiagnostic(
-          fileName,
+          locationDetails[0],
           line,
           col,
           Long.parseLong(locationDetails[3]),
@@ -79,7 +79,7 @@ public class DiagnosticsFile {
           message);
     } else { // new version with position
       return new DatasetDiagnostic(
-          fileName,
+          locationDetails[0],
           line,
           col,
           Long.parseLong(locationDetails[3]),

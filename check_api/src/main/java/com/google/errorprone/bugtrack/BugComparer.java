@@ -16,6 +16,9 @@
 
 package com.google.errorprone.bugtrack;
 
+import com.google.errorprone.bugtrack.utils.ThrowingPredicate;
+
+import java.io.IOException;
 import java.util.Arrays;
 
 @FunctionalInterface
@@ -24,8 +27,11 @@ public interface BugComparer {
   static BugComparer any(BugComparer... comparers) {
     return (oldDiagnostic, newDiagnostic) ->
         Arrays.stream(comparers)
-            .anyMatch(comparer -> comparer.areSame(oldDiagnostic, newDiagnostic));
+            .anyMatch(
+                ((ThrowingPredicate<BugComparer>)
+                    comparer -> comparer.areSame(oldDiagnostic, newDiagnostic)));
   }
 
-  boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
+  boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
+      throws IOException;
 }

@@ -16,8 +16,8 @@
 
 package com.google.errorprone.bugtrack.harness.evaluating;
 
-public final class MissedLikelihoodCalculatorFactory {
-  private MissedLikelihoodCalculatorFactory() {}
+public final class MissedLikelihoodCalculators {
+  private MissedLikelihoodCalculators() {}
 
   /*
    * Largest substring of 'str2' contained in 'str1' / len of 'str2'

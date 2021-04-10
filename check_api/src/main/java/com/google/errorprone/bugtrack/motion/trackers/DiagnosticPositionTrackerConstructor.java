@@ -17,12 +17,11 @@
 package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.difflib.algorithm.DiffException;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
+import com.google.errorprone.bugtrack.SrcPairInfo;
 
 import java.io.IOException;
 
 @FunctionalInterface
 public interface DiagnosticPositionTrackerConstructor {
-  DiagnosticPositionTracker create(SrcFilePair files, TrackersSharedState sharedState)
-      throws DiffException, IOException;
+  DiagnosticPositionTracker create(SrcPairInfo srcPairInfo) throws IOException, DiffException;
 }

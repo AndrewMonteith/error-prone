@@ -21,7 +21,6 @@ import com.github.gumtreediff.tree.Tree;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.errorprone.bugtrack.motion.trackers.JDTToJCPosMapper;
 import com.google.errorprone.bugtrack.motion.trackers.NodeLocation;
-import com.google.errorprone.bugtrack.motion.trackers.TrackersSharedState;
 import com.google.googlejavaformat.java.FormatterException;
 import com.sun.tools.javac.tree.JCTree;
 import org.junit.Assert;
@@ -57,7 +56,7 @@ public class JDTToJCPosMapperTest {
             "breaking_changes/start_node_changing_new.java");
 
     ITree node = newFakeNode(4989);
-    JCTree.JCCompilationUnit ast = new TrackersSharedState().loadNewJavacAST(srcFilePair);
+    JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
     JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);
@@ -80,7 +79,7 @@ public class JDTToJCPosMapperTest {
             "breaking_changes/start_node_changing_new.java");
 
     ITree node = newFakeNode(2056); // start position of 'constructionProxy' on line 55
-    JCTree.JCCompilationUnit ast = new TrackersSharedState().loadNewJavacAST(srcFilePair);
+    JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
     JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);
@@ -102,7 +101,7 @@ public class JDTToJCPosMapperTest {
             "breaking_changes/start_node_changing_new.java");
 
     ITree node = newFakeNode(2515); // start position of 'methodInvocation' on line 76
-    JCTree.JCCompilationUnit ast = new TrackersSharedState().loadNewJavacAST(srcFilePair);
+    JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
     JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);
@@ -124,7 +123,7 @@ public class JDTToJCPosMapperTest {
             "breaking_changes/start_node_changing_new.java");
 
     ITree node = newFakeNode(2484); // start position of 'Object' on line 76
-    JCTree.JCCompilationUnit ast = new TrackersSharedState().loadNewJavacAST(srcFilePair);
+    JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
     JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);

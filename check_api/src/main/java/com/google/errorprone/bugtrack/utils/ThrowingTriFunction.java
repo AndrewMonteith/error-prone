@@ -16,8 +16,6 @@
 
 package com.google.errorprone.bugtrack.utils;
 
-import java.io.IOException;
-
-public interface IOThrowingSupplier<T> {
-  T get() throws IOException;
+public interface ThrowingTriFunction<K1, K2, K3, V> {
+  V apply(K1 key1, K2 key2, K3 key3) throws Exception;
 }

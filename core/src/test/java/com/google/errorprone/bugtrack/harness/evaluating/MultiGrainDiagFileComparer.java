@@ -20,13 +20,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.errorprone.bugtrack.BugComparers;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
-import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
+import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
-import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
-import com.google.errorprone.bugtrack.util.ThrowingBiConsumer;
-import com.google.errorprone.bugtrack.util.ThrowingConsumer;
+import com.google.errorprone.bugtrack.utils.ThrowingBiConsumer;
+import com.google.errorprone.bugtrack.utils.ThrowingConsumer;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.IOException;
@@ -36,7 +36,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.google.errorprone.bugtrack.harness.utils.ListUtils.consecutivePairs;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 public final class MultiGrainDiagFileComparer {
   private final CorpusProject project;
@@ -63,21 +62,8 @@ public final class MultiGrainDiagFileComparer {
       return resultsCache.get(cp);
     }
 
-    MatchResults results;
-    try {
-      results =
-          GitCommitMatcher.compareGit(project, last, next)
-              .trackIdentical()
-              .trackPosition(
-                  partition(
-                      DiagnosticPredicates.manyInSameRegion(),
-                      newIJMPosTracker(),
-                      any(newIJMStartAndEndTracker(), newIJMPosTracker())))
-              .match();
-    } catch (RuntimeException e) {
-      System.out.printf("Failed scanning %s -> %s\n", last.commitId, next.commitId);
-      throw new RuntimeException(e);
-    }
+    MatchResults results =
+        DiagnosticsMatcher.fromFiles(project, last, next, BugComparers.trackIdentical()).match();
 
     resultsCache.put(cp, results);
 

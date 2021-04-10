@@ -16,14 +16,10 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
-import com.github.difflib.algorithm.DiffException;
-import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
+import com.google.errorprone.bugtrack.Lazy;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
-import com.google.errorprone.bugtrack.motion.SrcFile;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.utils.IOThrowingFunction;
+import com.google.errorprone.bugtrack.utils.ThrowingSupplier;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,46 +28,41 @@ public final class DiagnosticPositionTrackers {
   private DiagnosticPositionTrackers() {}
 
   public static DiagnosticPositionTrackerConstructor newCharacterLineTracker() {
-    return (srcFilePair, sharedState) ->
-        new CharacterLineTracker(srcFilePair.oldFile.getLines(), srcFilePair.newFile.getLines());
+    return srcPairInfo ->
+        new CharacterLineTracker(
+            srcPairInfo.files.oldFile.getLines(), srcPairInfo.files.newFile.getLines());
   }
 
   public static DiagnosticPositionTrackerConstructor newTokenizedLineTracker() {
-    return (srcFilePair, sharedState) ->
+    return srcPairInfo ->
         new TokenizedLineTracker(
             TokenizedLine.tokenizeSrc(
-                srcFilePair.oldFile.getLines(), sharedState.loadOldJavacContext(srcFilePair)),
+                srcPairInfo.files.oldFile.getLines(), srcPairInfo.loadOldJavacContext()),
             TokenizedLine.tokenizeSrc(
-                srcFilePair.newFile.getLines(), sharedState.loadNewJavacContext(srcFilePair)));
+                srcPairInfo.files.newFile.getLines(), srcPairInfo.loadNewJavacContext()));
   }
 
   public static DiagnosticPositionTrackerConstructor newIJMStartPosTracker() {
     return IJMStartPosTracker::new;
   }
 
-  public static DiagnosticPositionTrackerConstructor newIJMStartPosTracker(
-      IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier) {
-    return (srcFilePair, sharedState) ->
-        new IJMStartPosTracker(srcFilePair, sharedState, jdtVisitorSupplier);
-  }
-
   public static DiagnosticPositionTrackerConstructor newIJMStartAndEndTracker() {
     return IJMStartAndEndPosTracker::new;
   }
 
-  public static DiagnosticPositionTrackerConstructor partition(
+  public static DiagnosticPositionTrackerConstructor conditional(
       DiagnosticPredicates.Predicate predicate,
       DiagnosticPositionTrackerConstructor comparerIfTrue,
       DiagnosticPositionTrackerConstructor comparerIfFalse) {
-    return (srcFilePair, sharedState) -> {
-      LazyConstructor lazyTrueComparer = new LazyConstructor(comparerIfTrue);
-      LazyConstructor lazyFalseComparer = new LazyConstructor(comparerIfFalse);
+    return srcPairInfo -> {
+      LazyTracker lazyTrueComparer = new LazyTracker(() -> comparerIfTrue.create(srcPairInfo));
+      LazyTracker lazyFalseComparer = new LazyTracker(() -> comparerIfFalse.create(srcPairInfo));
 
       return oldDiag -> {
         DiagnosticPositionTracker tracker =
-            predicate.test(srcFilePair.oldFile, oldDiag)
-                ? lazyTrueComparer.get(srcFilePair, sharedState)
-                : lazyFalseComparer.get(srcFilePair, sharedState);
+            predicate.test(srcPairInfo.files.oldFile, oldDiag)
+                ? lazyTrueComparer.get()
+                : lazyFalseComparer.get();
 
         return tracker.track(oldDiag);
       };
@@ -82,18 +73,12 @@ public final class DiagnosticPositionTrackers {
     return IJMPosTracker::new;
   }
 
-  public static DiagnosticPositionTrackerConstructor newIJMStartAndEndTracker(
-      IOThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorSupplier) {
-    return (srcFilePair, sharedState) ->
-        new IJMStartAndEndPosTracker(srcFilePair, sharedState, jdtVisitorSupplier);
-  }
-
   public static DiagnosticPositionTrackerConstructor first(
       DiagnosticPositionTrackerConstructor... trackerCtors) {
-    return (srcFilePair, sharedState) -> {
+    return srcPairInfo -> {
       List<DiagnosticPositionTracker> trackers = new ArrayList<>();
       for (DiagnosticPositionTrackerConstructor trackerCtor : trackerCtors) {
-        trackers.add(trackerCtor.create(srcFilePair, sharedState));
+        trackers.add(trackerCtor.create(srcPairInfo));
       }
 
       return diagnostic -> {
@@ -111,10 +96,10 @@ public final class DiagnosticPositionTrackers {
 
   public static DiagnosticPositionTrackerConstructor any(
       DiagnosticPositionTrackerConstructor... trackerCtors) {
-    return (srcFilePair, sharedState) -> {
+    return srcPairInfo -> {
       final List<DiagnosticPositionTracker> trackers = new ArrayList<>();
       for (DiagnosticPositionTrackerConstructor trackerCtor : trackerCtors) {
-        trackers.add(trackerCtor.create(srcFilePair, sharedState));
+        trackers.add(trackerCtor.create(srcPairInfo));
       }
 
       return oldDiag -> {
@@ -139,24 +124,35 @@ public final class DiagnosticPositionTrackers {
     };
   }
 
-  private static class LazyConstructor {
-    private final DiagnosticPositionTrackerConstructor ctor;
-    private DiagnosticPositionTracker tracker;
-
-    public LazyConstructor(DiagnosticPositionTrackerConstructor ctor) {
-      this.ctor = ctor;
-    }
-
-    public DiagnosticPositionTracker get(SrcFilePair srcFilePair, TrackersSharedState sharedState) {
-      if (tracker == null) {
-        try {
-          tracker = ctor.create(srcFilePair, sharedState);
-        } catch (DiffException | IOException e) {
-          throw new RuntimeException(e);
-        }
-      }
-
-      return tracker;
+  private static class LazyTracker extends Lazy<DiagnosticPositionTracker> {
+    public LazyTracker(ThrowingSupplier<DiagnosticPositionTracker> supplier) {
+      super(supplier);
     }
   }
+  //
+  //  private static class LazyConstructor extends Lazy<DiagnosticPositionTracker> {
+  //    public LazyConstructor(DiagnosticPositionTrackerConstructor ctor) {
+  //
+  //    }
+  //
+  //    private final DiagnosticPositionTrackerConstructor ctor;
+  //    private DiagnosticPositionTracker tracker;
+  //
+  //    public LazyConstructor(DiagnosticPositionTrackerConstructor ctor) {
+  //      this.ctor = ctor;
+  //    }
+  //
+  //    public DiagnosticPositionTracker get(SrcFilePair srcFilePair, TrackersSharedState
+  // sharedState) {
+  //      if (tracker == null) {
+  //        try {
+  //          tracker = ctor.create(srcFilePair, sharedState);
+  //        } catch (DiffException | IOException e) {
+  //          throw new RuntimeException(e);
+  //        }
+  //      }
+  //
+  //      return tracker;
+  //    }
+  //  }
 }

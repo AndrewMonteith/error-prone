@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion;
+package com.google.errorprone.bugtrack;
 
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
+import com.github.difflib.algorithm.DiffException;
+import com.google.errorprone.bugtrack.motion.SrcFilePair;
 
 import java.io.IOException;
 
-public interface DiagnosticsDeltaManager {
-  boolean inSameFile(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
+public interface BugComparerCtor {
+    BugComparer get(SrcPairInfo srcPairInfo) throws IOException, DiffException;
 
-  SrcFilePair loadFilesBetweenDiagnostics(
-      DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) throws IOException;
+    default BugComparer get(SrcFilePair srcFilePair) throws IOException, DiffException {
+        return get(new SrcPairInfo(srcFilePair));
+    }
 }

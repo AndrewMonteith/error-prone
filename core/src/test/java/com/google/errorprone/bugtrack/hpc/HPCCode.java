@@ -17,7 +17,6 @@
 package com.google.errorprone.bugtrack.hpc;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.CommitRange;
 import com.google.errorprone.bugtrack.GitPathComparer;
 import com.google.errorprone.bugtrack.GitSrcFilePairLoader;
@@ -26,8 +25,6 @@ import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
-import com.google.errorprone.bugtrack.motion.ExactDiagnosticMatcher;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -46,8 +43,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.errorprone.bugtrack.BugComparers.*;
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMPosTracker;
 import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
 
 public final class HPCCode {
@@ -97,18 +94,9 @@ public final class HPCCode {
         .withData(LiveDatasetFilePairLoader.notMarkedAsSkipped(diagnostics))
         .comparePaths(withGit(project, GitPathComparer::new))
         .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-        .makeBugComparer1(
-            srcFilePairLoader ->
-                BugComparer.any(
-                    new ExactDiagnosticMatcher(),
-                    new DiagnosticPositionMotionComparer(
-                        srcFilePairLoader, newIJMStartAndEndTracker())))
-        .makeBugComparer2(
-            srcFilePairLoader ->
-                BugComparer.any(
-                    new ExactDiagnosticMatcher(),
-                    new DiagnosticPositionMotionComparer(srcFilePairLoader, newIJMPosTracker())))
-        .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
+        .setBugComparer1(any(trackIdentical(), trackPosition(newIJMStartAndEndTracker())))
+        .setBugComparer2(any(trackIdentical(), trackPosition(newIJMStartAndEndTracker())))
+        .findMissedTrackings(MissedLikelihoodCalculators.diagLineSrcOverlap())
         .trials(20)
         .run(output);
   }

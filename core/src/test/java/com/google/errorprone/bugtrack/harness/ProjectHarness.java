@@ -16,19 +16,13 @@
 
 package com.google.errorprone.bugtrack.harness;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.PathsComparer;
-import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import javax.tools.Diagnostic;
@@ -96,37 +90,6 @@ public final class ProjectHarness {
     forEachCommitWithDiagnostics(commits, consumer);
   }
 
-  public void compareTwoCommits(
-      String oldCommitId, String newCommitId, PathsComparer pathsComparer, BugComparer comparer)
-      throws IOException {
-    Repository repo = project.loadRepo();
-    compareTwoCommits(
-        GitUtils.parseCommit(repo, oldCommitId),
-        GitUtils.parseCommit(repo, newCommitId),
-        pathsComparer,
-        comparer);
-  }
-
-  public void compareTwoCommits(
-      RevCommit oldCommit, RevCommit newCommit, PathsComparer pathComparer, BugComparer bugComparer)
-      throws IOException {
-    Collection<DatasetDiagnostic> oldDiagnostics = new ArrayList<>();
-    Collection<DatasetDiagnostic> newDiagnostics = new ArrayList<>();
-
-    forEachCommitWithDiagnostics(
-        ImmutableList.of(oldCommit, newCommit),
-        (commit, diagnostics) -> {
-          Collection<DatasetDiagnostic> sink =
-              (commit == oldCommit) ? oldDiagnostics : newDiagnostics;
-
-          Iterables.transform(diagnostics, DatasetDiagnostic::new).forEach(sink::add);
-        });
-
-    System.out.println(
-        new DiagnosticsMatcher(oldDiagnostics, newDiagnostics, bugComparer, pathComparer)
-            .getResults());
-  }
-
   public void serialiseCommit(RevCommit commit, Path output) throws IOException {
     //        GitUtils.checkoutFiles(project.loadRepo());
 
@@ -148,7 +111,8 @@ public final class ProjectHarness {
       throw new RuntimeException(output + " is not a directory.");
     }
 
-    List<RevCommit> commits = filter.filter(CommitDAGPathFinders.in(project.loadRepo(), range).dfs());
+    List<RevCommit> commits =
+        filter.filter(CommitDAGPathFinders.in(project.loadRepo(), range).dfs());
 
     for (; commitNum < commits.size(); ++commitNum) {
       RevCommit commit = commits.get(commitNum);

@@ -16,27 +16,36 @@
 
 package com.google.errorprone.bugtrack.harness;
 
-import com.google.errorprone.bugtrack.BugComparer;
-import com.google.errorprone.bugtrack.TestUtils;
+import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
-import com.google.errorprone.bugtrack.motion.ExactDiagnosticMatcher;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
+
+/**
+ * Currently broken because of changes to diagnostics matching.
+ * New oracle of whether it works will be human inspection of corpus diagnostics
+ */
 public final class ExactDiagnosticMatcherTest {
   @Test
   public void canMatchDiagnosticsBetweenFiles() {
-    TestUtils.DiagnosticsPair pair =
-        TestUtils.compareDiagnostics(
-            "breaking_changes/no_line_old.java", "breaking_changes/no_line_new.java");
+    Path oldPath = Paths.get("breaking_changes/no_line_old.java");
+    Path newPath = Paths.get("breaking_changes/no_line_old.java");
 
-    BugComparer comparer = new ExactDiagnosticMatcher();
+    TestUtils.DiagnosticsPair pair =
+        TestUtils.compareDiagnostics(oldPath.toString(), newPath.toString());
+
+    BugComparerCtor comparerCtor = BugComparers.trackIdentical();
+    SrcFilePairLoader testLoader = new TestSrcFilePairLoader();
 
     MatchResults results =
         new DiagnosticsMatcher(
-                pair.oldDiagnostics, pair.newDiagnostics, comparer, (oldPath, newPath) -> true)
-            .getResults();
+                pair.oldDiagnostics, pair.newDiagnostics, testLoader, comparerCtor, path -> Optional.of(newPath))
+            .match();
 
     Assert.assertEquals(3, results.getMatchedDiagnostics().size());
   }
@@ -47,12 +56,13 @@ public final class ExactDiagnosticMatcherTest {
         TestUtils.compareDiagnostics(
             "breaking_changes/no_line_old_removed.java", "breaking_changes/no_line_new.java");
 
-    BugComparer comparer = new ExactDiagnosticMatcher();
+    BugComparerCtor comparerCtor = BugComparers.trackIdentical();
+    SrcFilePairLoader testLoader = new TestSrcFilePairLoader();
 
     MatchResults results =
         new DiagnosticsMatcher(
-                pair.oldDiagnostics, pair.newDiagnostics, comparer, (oldPath, newPath) -> true)
-            .getResults();
+                pair.oldDiagnostics, pair.newDiagnostics, testLoader, comparerCtor, path -> Optional.of(path))
+            .match();
 
     Assert.assertEquals(2, results.getUnmatchedNewDiagnostics().size());
   }
@@ -63,12 +73,13 @@ public final class ExactDiagnosticMatcherTest {
         TestUtils.compareDiagnostics(
             "breaking_changes/no_line_old.java", "breaking_changes/no_line_new_removed.java");
 
-    BugComparer comparer = new ExactDiagnosticMatcher();
+    BugComparerCtor comparerCtor = BugComparers.trackIdentical();
+    SrcFilePairLoader testLoader = new TestSrcFilePairLoader();
 
     MatchResults results =
         new DiagnosticsMatcher(
-                pair.oldDiagnostics, pair.newDiagnostics, comparer, (oldPath, newPath) -> true)
-            .getResults();
+                pair.oldDiagnostics, pair.newDiagnostics, testLoader, comparerCtor, path -> Optional.of(path))
+            .match();
 
     Assert.assertEquals(2, results.getUnmatchedOldDiagnostics().size());
   }

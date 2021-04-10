@@ -18,10 +18,21 @@ package com.google.errorprone.bugtrack;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 @FunctionalInterface
 public interface PathsComparer {
-  boolean isSameFile(Path path1, Path path2);
+  Optional<Path> getNewPath(Path oldPath);
+
+  default Optional<Path> getNewPath(String oldPath) {
+    return getNewPath(Paths.get(oldPath));
+  }
+
+  default boolean isSameFile(Path path1, Path path2) {
+    Optional<Path> newPath = getNewPath(path1);
+
+    return newPath.isPresent() && newPath.get().equals(path2);
+  }
 
   default boolean isSameFile(String path1, String path2) {
     return isSameFile(Paths.get(path1), Paths.get(path2));

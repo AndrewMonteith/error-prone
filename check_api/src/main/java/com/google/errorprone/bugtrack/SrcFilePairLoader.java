@@ -20,9 +20,19 @@ import com.google.errorprone.bugtrack.motion.SrcFilePair;
 import com.google.googlejavaformat.java.FormatterException;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @FunctionalInterface
 public interface SrcFilePairLoader {
-  SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
-      throws IOException, FormatterException;
+  SrcFilePair load(Path oldFile, Path newFile) throws IOException, FormatterException;
+
+  default SrcFilePair load(String oldFile, String newFile) throws IOException, FormatterException {
+    return load(Paths.get(oldFile), Paths.get(newFile));
+  }
+
+  default SrcFilePair load(DatasetDiagnostic oldDiag, DatasetDiagnostic newDiag)
+      throws IOException, FormatterException {
+    return load(oldDiag.getFileName(), newDiag.getFileName());
+  }
 }

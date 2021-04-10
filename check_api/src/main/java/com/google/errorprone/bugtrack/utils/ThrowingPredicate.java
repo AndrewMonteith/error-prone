@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.util;
+package com.google.errorprone.bugtrack.utils;
 
-public interface ThrowingBiFunction<K1, K2, V> {
-  V apply(K1 key1, K2 key2) throws Exception;
+import java.util.function.Predicate;
+
+public interface ThrowingPredicate<T> extends Predicate<T> {
+  default boolean test(T t) {
+    try {
+      return testThrows(t);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  boolean testThrows(T t) throws Exception;
 }

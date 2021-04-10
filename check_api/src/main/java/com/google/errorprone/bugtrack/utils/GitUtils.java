@@ -36,6 +36,7 @@ import org.eclipse.jgit.treewalk.filter.PathFilter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 
 public class GitUtils {
@@ -98,10 +99,16 @@ public class GitUtils {
     return formatter.scan(olderCommit, newerCommit);
   }
 
+  // TODO: Remove this stupid method
   private static String makePathRelativeToRepo(Repository repo, String path) {
     String pathToProject = repo.getDirectory().getParentFile().getAbsolutePath() + "/";
 
     return path.startsWith(pathToProject) ? path.replaceFirst(pathToProject, "") : path;
+  }
+
+  public static SrcFile loadSrcFile(Repository repo, RevCommit commit, Path path)
+      throws IOException, FormatterException {
+    return loadSrcFile(repo, commit, path.toString());
   }
 
   public static SrcFile loadSrcFile(Repository repo, RevCommit commit, String path)

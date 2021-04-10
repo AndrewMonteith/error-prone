@@ -14,8 +14,25 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.util;
+package com.google.errorprone.bugtrack;
 
-public interface ThrowingTriFunction<K1, K2, K3, V> {
-  V apply(K1 key1, K2 key2, K3 key3) throws Exception;
+import com.google.errorprone.bugtrack.utils.ThrowingSupplier;
+
+public class Lazy<T> {
+  private final ThrowingSupplier<T> supplier;
+  private T val;
+  private boolean set = false;
+
+  public Lazy(ThrowingSupplier<T> supplier) {
+    this.supplier = supplier;
+  }
+
+  public T get() {
+    if (!set) {
+      set = true;
+      val = supplier.get();
+    }
+
+    return val;
+  }
 }

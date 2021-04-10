@@ -24,6 +24,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class GitSrcFilePairLoader implements SrcFilePairLoader {
   private final Repository repo;
@@ -42,10 +43,10 @@ public class GitSrcFilePairLoader implements SrcFilePairLoader {
   }
 
   @Override
-  public SrcFilePair load(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
+  public SrcFilePair load(Path oldPath, Path newPath)
       throws IOException, FormatterException {
-    SrcFile oldFile = GitUtils.loadSrcFile(repo, oldCommit, oldDiagnostic.getFileName());
-    SrcFile newFile = GitUtils.loadSrcFile(repo, newCommit, newDiagnostic.getFileName());
+    SrcFile oldFile = GitUtils.loadSrcFile(repo, oldCommit, oldPath);
+    SrcFile newFile = GitUtils.loadSrcFile(repo, newCommit, newPath);
 
     return new SrcFilePair(oldFile, newFile);
   }

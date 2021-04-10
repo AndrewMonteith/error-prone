@@ -16,19 +16,19 @@
 
 package com.google.errorprone.bugtrack.harness.evaluating;
 
-import com.google.errorprone.bugtrack.BugComparer;
+import com.google.errorprone.bugtrack.BugComparerCtor;
 import com.google.errorprone.bugtrack.PathsComparer;
 import com.google.errorprone.bugtrack.SrcFilePairLoader;
 
 public final class BugComparerEvaluationConfig {
-  private final DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor;
-  private final DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor;
+  private final BugComparerCtor bugComparer1Ctor;
+  private final BugComparerCtor bugComparer2Ctor;
   private final DiagnosticsFilePairMapper<SrcFilePairLoader> srcFilePairLoader;
   private final DiagnosticsFilePairMapper<PathsComparer> pathsComparer;
 
   public BugComparerEvaluationConfig(
-      DiagnosticsFilePairMapper<BugComparer> bugComparer1Ctor,
-      DiagnosticsFilePairMapper<BugComparer> bugComparer2Ctor,
+      BugComparerCtor bugComparer1Ctor,
+      BugComparerCtor bugComparer2Ctor,
       DiagnosticsFilePairMapper<SrcFilePairLoader> srcFilePairLoader,
       DiagnosticsFilePairMapper<PathsComparer> pathsComparer) {
     this.bugComparer1Ctor = bugComparer1Ctor;
@@ -37,14 +37,12 @@ public final class BugComparerEvaluationConfig {
     this.pathsComparer = pathsComparer;
   }
 
-  public BugComparer createBugComparer1(DiagnosticsFilePairLoader.Pair oldAndNewFile)
-      throws Exception {
-    return bugComparer1Ctor.apply(oldAndNewFile);
+  public BugComparerCtor getBugComparer1Ctor() {
+    return bugComparer1Ctor;
   }
 
-  public BugComparer createBugComparer2(DiagnosticsFilePairLoader.Pair oldAndNewFile)
-      throws Exception {
-    return bugComparer2Ctor.apply(oldAndNewFile);
+  public BugComparerCtor getBugComparer2Ctor() {
+    return bugComparer2Ctor;
   }
 
   public SrcFilePairLoader createSrcFilePairLoader(DiagnosticsFilePairLoader.Pair oldAndNewFile)

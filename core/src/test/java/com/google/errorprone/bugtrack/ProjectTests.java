@@ -27,10 +27,8 @@ import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
-import com.google.errorprone.bugtrack.harness.matching.GitCommitMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
-import com.google.errorprone.bugtrack.motion.DiagnosticPositionMotionComparer;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
@@ -56,6 +54,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
+import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
 import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
@@ -210,51 +210,6 @@ public class ProjectTests {
   }
 
   @Test
-  public void example_DetectingNewBug() throws IOException, GitAPIException {
-    // GIVEN:
-    CorpusProject project = new JSoupProject();
-
-    String oldCommit = "468c5369b52ca45de3c7e54a3d2ddae352495851";
-    String newCommit = "a0b87bf10a9a520b49748c619c868caed8d7a109";
-
-    // THEN:
-    new ProjectHarness(project, Verbosity.VERBOSE)
-        .compareTwoCommits(
-            oldCommit,
-            newCommit,
-            new GitPathComparer(project.loadRepo(), oldCommit, newCommit),
-            new DiagnosticPositionMotionComparer(
-                new GitSrcFilePairLoader(project.loadRepo(), oldCommit, newCommit),
-                newCharacterLineTracker()));
-  }
-
-  @Test
-  public void example_KnownUnmatchedDiagnostics() throws IOException, GitAPIException {
-    // GIVEN:
-    CorpusProject project = new GuiceProject();
-
-    DiagnosticsFile oldDiagFile =
-        DiagnosticsFile.load(
-            project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/8 875868e7263491291d4f8bdc1332bfea746ad673");
-
-    DiagnosticsFile newDiagFile =
-        DiagnosticsFile.load(
-            project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/guice/22 9b371d3663db9db230417f3cc394e72b705d7d7f");
-
-    // WHEN:
-    MatchResults results =
-        GitCommitMatcher.compareGit(project, oldDiagFile, newDiagFile)
-            .trackPosition(first(newTokenizedLineTracker(), newIJMStartPosTracker()))
-            .match();
-
-    // THEN:
-    Assert.assertEquals(6, results.getUnmatchedOldDiagnostics().size());
-    Assert.assertEquals(68, results.getUnmatchedNewDiagnostics().size());
-  }
-
-  @Test
   public void example_serialiseSpecificCommit() throws IOException {
     CorpusProject project = new HazelcastProject();
     String oldCommit = "ad7bb8210bf4812f48fa630bad924ef07f90e596";
@@ -267,64 +222,48 @@ public class ProjectTests {
   }
 
   @Test
-  public void IJMTest() {
-    TestUtils.DiagnosticsPair pair =
-        TestUtils.compareDiagnostics(
-            "breaking_changes/sub_expr_changes_old.java",
-            "breaking_changes/sub_expr_changes_new.java");
-
-    BugComparer comparer =
-        new DiagnosticPositionMotionComparer(
-            new TestSrcFilePairLoader(), first(newTokenizedLineTracker(), newIJMStartPosTracker()));
-
-    new DiagnosticsMatcher(
-            pair.oldDiagnostics, pair.newDiagnostics, comparer, (oldPath, newPath) -> true)
-        .writeToStdout();
-  }
-
-  @Test
   public void compareTokenizedWithTokenizedAndIJM() throws Exception {
     // GIVEN:
-    CorpusProject project = new GuiceProject();
-    String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/guice50";
-    //        IntRanges validSeqFiles = IntRanges.include(0, 131).excludeRange(100, 109).exclude(97,
-    // 117, 119, 122, 127);
+    CorpusProject project = new JSoupProject();
+    String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup_50";
 
     BugComparerExperiment.forProject(project)
         .withData(LiveDatasetFilePairLoader.allFiles(diagFolders))
-        //                .withData(LiveDatasetFilePairLoader.specificPairs(diagFolders, 0, 1))
         .comparePaths(withGit(project, GitPathComparer::new))
         .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-        .makeBugComparer1(any(newTokenizedLineTracker(), newIJMPosTracker()))
-        .makeBugComparer2(any(newTokenizedLineTracker(), newIJMStartAndEndTracker()))
-        .findMissedTrackings(MissedLikelihoodCalculatorFactory.diagLineSrcOverlap())
+        .setBugComparer1(trackPosition(any(newTokenizedLineTracker(), newIJMPosTracker())))
+        .setBugComparer2(trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker())))
+        .findMissedTrackings(MissedLikelihoodCalculators.diagLineSrcOverlap())
         .trials(9)
-        .run("/home/monty/IdeaProjects/java-corpus/comparisons/guice");
+        .run("/home/monty/IdeaProjects/java-corpus/comparisons/jsoup");
   }
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new JRubyProject();
+    CorpusProject project = new McMMOProject();
 
     DiagnosticsFile oldFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_full/old");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_200/65 d599db289717c2ad862787e7287c08413a7048fa");
 
     DiagnosticsFile newFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_full/new");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_200/66 33a68daa9c1920619c11b549eb0560123c4a2b65");
 
-    MatchResults results =
-        GitCommitMatcher.compareGit(project, oldFile, newFile)
-            .trackIdentical()
-            .trackPosition(
-                partition(
+    BugComparerCtor comparer2 =
+        BugComparers.conditional(
+            ((srcPairInfo, diagnostic) -> !srcPairInfo.files.srcChanged),
+            trackIdentical(),
+            trackPosition(
+                conditional(
                     DiagnosticPredicates.manyInSameRegion(),
                     newIJMPosTracker(),
-                    any(newIJMStartAndEndTracker(), newIJMPosTracker())))
-            .match();
+                    any(newIJMStartAndEndTracker(), newIJMPosTracker()))));
+
+    MatchResults results =
+        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, comparer2).match();
 
     System.out.println(results);
   }

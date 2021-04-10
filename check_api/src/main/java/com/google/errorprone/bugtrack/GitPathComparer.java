@@ -25,21 +25,31 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class GitPathComparer implements PathsComparer {
   private final Map<Path, Path> renames;
+  private final Set<Path> deletions;
 
   public GitPathComparer(Repository repo, RevCommit oldCommit, RevCommit newCommit)
       throws GitAPIException, IOException {
+    Collection<DiffEntry> diffs = GitUtils.computeDiffs(repo, oldCommit, newCommit);
     this.renames =
-        GitUtils.computeDiffs(repo, oldCommit, newCommit).stream()
+        diffs.stream()
             .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.RENAME)
             .collect(
                 Collectors.toMap(
                     entry -> Paths.get(entry.getOldPath()),
                     entry -> Paths.get(entry.getNewPath())));
+    this.deletions =
+        diffs.stream()
+            .filter(diff -> diff.getChangeType() == DiffEntry.ChangeType.DELETE)
+            .map(diff -> Paths.get(diff.getOldPath()))
+            .collect(Collectors.toSet());
   }
 
   public GitPathComparer(Repository repo, String oldCommit, String newCommit)
@@ -48,7 +58,10 @@ public class GitPathComparer implements PathsComparer {
   }
 
   @Override
-  public boolean isSameFile(Path oldPath, Path newPath) {
-    return renames.getOrDefault(oldPath, oldPath).equals(newPath);
+  public Optional<Path> getNewPath(Path oldPath) {
+    if (deletions.contains(oldPath)) {
+      return Optional.empty();
+    }
+    return Optional.of(renames.getOrDefault(oldPath, oldPath));
   }
 }

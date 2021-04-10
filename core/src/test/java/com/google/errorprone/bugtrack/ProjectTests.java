@@ -240,17 +240,17 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new McMMOProject();
+    CorpusProject project = new JRubyProject();
 
     DiagnosticsFile oldFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_200/65 d599db289717c2ad862787e7287c08413a7048fa");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_50/47 609a4eadc518012ee97e07e1a56f74457b6615e2");
 
     DiagnosticsFile newFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_200/66 33a68daa9c1920619c11b549eb0560123c4a2b65");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_50/48 6dc364e035abe35bc827d40d102f2f1630d300b6");
 
     BugComparerCtor comparer2 =
         BugComparers.conditional(

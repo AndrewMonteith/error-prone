@@ -20,10 +20,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.errorprone.bugtrack.BugComparerCtor;
 import com.google.errorprone.bugtrack.BugComparers;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.utils.ThrowingBiConsumer;
 import com.google.errorprone.bugtrack.utils.ThrowingConsumer;
@@ -35,7 +37,10 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
+import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
 import static com.google.errorprone.bugtrack.harness.utils.ListUtils.consecutivePairs;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 public final class MultiGrainDiagFileComparer {
   private final CorpusProject project;
@@ -62,8 +67,17 @@ public final class MultiGrainDiagFileComparer {
       return resultsCache.get(cp);
     }
 
-    MatchResults results =
-        DiagnosticsMatcher.fromFiles(project, last, next, BugComparers.trackIdentical()).match();
+    BugComparerCtor comparer =
+        BugComparers.conditional(
+            ((srcPairInfo, diagnostic) -> !srcPairInfo.files.srcChanged),
+            trackIdentical(),
+            trackPosition(
+                conditional(
+                    DiagnosticPredicates.manyInSameRegion(),
+                    newIJMPosTracker(),
+                    any(newIJMStartAndEndTracker(), newIJMPosTracker()))));
+
+    MatchResults results = DiagnosticsMatcher.fromFiles(project, last, next, comparer).match();
 
     resultsCache.put(cp, results);
 

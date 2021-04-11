@@ -1,19 +1,19 @@
 package com.google.errorprone.bugtrack.motion;
 
 import com.google.errorprone.bugtrack.*;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 
 import java.io.IOException;
-import java.util.function.BiFunction;
 
 public final class ConditionalMatcher implements BugComparer {
   private final SrcPairInfo srcPairInfo;
-  private final BiFunction<SrcPairInfo, DatasetDiagnostic, Boolean> diagPredicate;
+  private final DiagnosticPredicates.Predicate diagPredicate;
   private Lazy<BugComparer> comparerIfTrue;
   private Lazy<BugComparer> comparerIfFalse;
 
   public ConditionalMatcher(
       SrcPairInfo srcPairInfo,
-      BiFunction<SrcPairInfo, DatasetDiagnostic, Boolean> diagPredicate,
+      DiagnosticPredicates.Predicate diagPredicate,
       BugComparerCtor comparerIfTrueCtor,
       BugComparerCtor comparerIfFalseCtor) {
     this.srcPairInfo = srcPairInfo;
@@ -26,7 +26,7 @@ public final class ConditionalMatcher implements BugComparer {
   public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
       throws IOException {
     BugComparer comparer =
-        diagPredicate.apply(srcPairInfo, oldDiagnostic)
+        diagPredicate.test(srcPairInfo.files, oldDiagnostic)
             ? comparerIfTrue.get()
             : comparerIfFalse.get();
 

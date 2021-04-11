@@ -2,7 +2,7 @@ package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.motion.SrcFile;
+import com.google.errorprone.bugtrack.motion.SrcFilePair;
 
 public class DiagnosticPredicates {
   /**
@@ -10,7 +10,7 @@ public class DiagnosticPredicates {
    * hence must be discern by it's specific position. Essentially this is a list of diagnostics
    * unsuitable for being track by start and end pos
    */
-  private static final ImmutableSet<String> MULTIPLE_PER_LIME =
+  private static final ImmutableSet<String> MULTIPLE_IN_SAME_REGION =
       ImmutableSet.of(
           "MultiVariableDeclaration",
           "FieldCanBeFinal",
@@ -18,18 +18,33 @@ public class DiagnosticPredicates {
           "MemberName",
           "UnusedVariable");
 
+  /**
+   * Diagnostics who's description can change however we would still want to track the two
+   * individual diagnostics with different descriptions. An example of this is MissingSummary which
+   * for subtle reasons may confuse where the original method declaration you're override is (where
+   * it's in an interface or class), so it's description may alternate between "add overrides method
+   * in ..." and "add implements method in ..." even though they're the same method.
+   */
+  private static final ImmutableSet<String> DESCRIPTIONS_CAN_SYNTACTICALLY_CHANGE =
+      ImmutableSet.of("MissingSummary");
+
   public static Predicate manyInSameRegion() {
-    return (srcFile, diag) -> {
-      if (MULTIPLE_PER_LIME.contains(diag.getType())) {
-        return srcFile.testSubstring(diag, letter -> letter == ',');
+    return (srcFilePair, diag) -> {
+      if (MULTIPLE_IN_SAME_REGION.contains(diag.getType())) {
+        return srcFilePair.oldFile.testSubstring(diag, letter -> letter == ',');
       } else {
         return false;
       }
     };
   }
 
+  public static Predicate canTrackIdentically() {
+    return (srcFilePair, diag) ->
+        !(srcFilePair.srcChanged || diag.getType().equals("MissingSummary"));
+  }
+
   @FunctionalInterface
   public interface Predicate {
-    boolean test(SrcFile file, DatasetDiagnostic diagnostic);
+    boolean test(SrcFilePair srcFilePair, DatasetDiagnostic diagnostic);
   }
 }

@@ -69,7 +69,7 @@ public final class MultiGrainDiagFileComparer {
 
     BugComparerCtor comparer =
         BugComparers.conditional(
-            ((srcPairInfo, diagnostic) -> !srcPairInfo.files.srcChanged),
+            DiagnosticPredicates.canTrackIdentically(),
             trackIdentical(),
             trackPosition(
                 conditional(

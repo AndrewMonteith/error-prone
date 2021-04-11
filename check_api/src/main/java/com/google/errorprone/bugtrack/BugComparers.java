@@ -21,12 +21,12 @@ import com.google.errorprone.bugtrack.motion.ConditionalMatcher;
 import com.google.errorprone.bugtrack.motion.DiagPosMatcher;
 import com.google.errorprone.bugtrack.motion.ExactDiagnosticMatcher;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.utils.ThrowingFunction;
 import com.google.errorprone.bugtrack.utils.ThrowingPredicate;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
 
 public final class BugComparers {
   public static BugComparerCtor trackIdentical() {
@@ -38,7 +38,7 @@ public final class BugComparers {
   }
 
   public static BugComparerCtor conditional(
-      BiFunction<SrcPairInfo, DatasetDiagnostic, Boolean> predicate,
+      DiagnosticPredicates.Predicate predicate,
       BugComparerCtor comparerIfTrue,
       BugComparerCtor comparerIfFalse) {
     return srcPairInfo ->

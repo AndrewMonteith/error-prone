@@ -181,18 +181,6 @@ public final class HPCCode {
             Integer.parseInt(System.getProperty("offset")));
   }
 
-  //  @Test
-  //  public void genDubboComparisons() throws Exception {
-  //
-  //      CorpusProject project = loadProject();
-  //      Path diagnostics = ProjectFiles.get("diagnostics/" + System.getProperty("project"));
-  //      Path diagnostics = ProjectFiles.get("diagnostics/" + System.getProperty("project"));
-  //    runComparisons(
-  //        new DubboProject(),
-  //        ProjectFiles.get("diagnostics/dubbo"),
-  //        ProjectFiles.get("comparisons/dubbo"));
-  //  }
-
   @Test
   public void performSequentialComparisons() throws Exception {
     String projectName = System.getProperty("project");

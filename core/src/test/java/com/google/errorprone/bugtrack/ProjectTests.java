@@ -29,6 +29,7 @@ import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
+import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
@@ -240,21 +241,21 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new JRubyProject();
+    CorpusProject project = new McMMOProject();
 
     DiagnosticsFile oldFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_50/47 609a4eadc518012ee97e07e1a56f74457b6615e2");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_full/151 c6d055cb48b6c706011d2fa692a8a902866a3011.100-50");
 
     DiagnosticsFile newFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby_50/48 6dc364e035abe35bc827d40d102f2f1630d300b6");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_full/152 f1d9f787f4793b9a4ac2065f2a43903570bcf983.50");
 
     BugComparerCtor comparer2 =
         BugComparers.conditional(
-            ((srcPairInfo, diagnostic) -> !srcPairInfo.files.srcChanged),
+            DiagnosticPredicates.canTrackIdentically(),
             trackIdentical(),
             trackPosition(
                 conditional(
@@ -277,6 +278,24 @@ public class ProjectTests {
             project, ProjectFiles.get("java-corpus/diagnostics/guice_full"));
 
     MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, true);
+  }
+
+  @Test
+  public void scanSpecificFiles() {
+    DiagnosticsScan scan =
+        new DiagnosticsScan(
+            "foo",
+            ImmutableList.of(
+                new ProjectFile(
+                    new HazelcastProject(),
+                    "hazelcast/src/main/java/com/hazelcast/cache/impl/DeferredValue.java")),
+            Splitter.on(' ')
+                .splitToList(
+                    "-d /home/monty/IdeaProjects/java-corpus/hazelcast/hazelcast/target/classes -classpath /home/monty/IdeaProjects/java-corpus/hazelcast/hazelcast/target/classes:/home/monty/IdeaProjects/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.9.7/jackson-core-2.9.7.jar:/home/monty/IdeaProjects/.m2/repository/org/snakeyaml/snakeyaml-engine/1.0/snakeyaml-engine-1.0.jar:/home/monty/IdeaProjects/.m2/repository/log4j/log4j/1.2.17/log4j-1.2.17.jar:/home/monty/IdeaProjects/.m2/repository/org/apache/logging/log4j/log4j-api/2.3/log4j-api-2.3.jar:/home/monty/IdeaProjects/.m2/repository/org/apache/logging/log4j/log4j-core/2.3/log4j-core-2.3.jar:/home/monty/IdeaProjects/.m2/repository/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar:/home/monty/IdeaProjects/.m2/repository/com/hazelcast/hazelcast-client-protocol/1.8.0-7/hazelcast-client-protocol-1.8.0-7.jar:/home/monty/IdeaProjects/.m2/repository/org/osgi/org.osgi.core/4.2.0/org.osgi.core-4.2.0.jar:/home/monty/IdeaProjects/.m2/repository/org/codehaus/groovy/groovy-all/2.1.8/groovy-all-2.1.8.jar:/home/monty/IdeaProjects/.m2/repository/org/jruby/jruby-complete/1.7.22/jruby-complete-1.7.22.jar:/home/monty/IdeaProjects/.m2/repository/javax/cache/cache-api/1.1.0/cache-api-1.1.0.jar:/home/monty/IdeaProjects/.m2/repository/com/google/code/findbugs/annotations/3.0.0/annotations-3.0.0.jar: -sourcepath /home/monty/IdeaProjects/java-corpus/hazelcast/hazelcast/src/main/java: -s /home/monty/IdeaProjects/hazelcast/hazelcast/target/generated-sources/annotations -g -target 1.8 -source 8 -encoding UTF-8 -parameters"));
+    Collection<Diagnostic<? extends JavaFileObject>> diagnostics =
+        DiagnosticsCollector.collectDiagnosticsFromScans(ImmutableList.of(scan), Verbosity.VERBOSE);
+
+    diagnostics.forEach(System.out::println);
   }
 
   @Test

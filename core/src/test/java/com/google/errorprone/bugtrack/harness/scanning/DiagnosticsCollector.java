@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
+import com.google.errorprone.bugpatterns.MissingOverride;
 import com.google.errorprone.bugpatterns.javadoc.MissingSummary;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.harness.Verbosity;
@@ -69,7 +70,7 @@ public final class DiagnosticsCollector {
 //    ScannerSupplier scannerSupplier = ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker);
 
     CompilationTestHelper helper =
-        CompilationTestHelper.newInstance(MissingSummary.class, DiagnosticsCollector.class);
+        CompilationTestHelper.newInstance(MissingOverride.class, DiagnosticsCollector.class);
     files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
     helper.setArgs(
         ImmutableList.copyOf(

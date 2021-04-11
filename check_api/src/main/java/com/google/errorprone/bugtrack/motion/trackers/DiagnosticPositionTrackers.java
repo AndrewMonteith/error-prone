@@ -60,7 +60,7 @@ public final class DiagnosticPositionTrackers {
 
       return oldDiag -> {
         DiagnosticPositionTracker tracker =
-            predicate.test(srcPairInfo.files.oldFile, oldDiag)
+            predicate.test(srcPairInfo.files, oldDiag)
                 ? lazyTrueComparer.get()
                 : lazyFalseComparer.get();
 

@@ -40,7 +40,7 @@ public class DiagnosticPredicates {
 
   public static Predicate canTrackIdentically() {
     return (srcFilePair, diag) ->
-        !(srcFilePair.srcChanged || diag.getType().equals("MissingSummary"));
+        !(srcFilePair.srcChanged || DESCRIPTIONS_CAN_SYNTACTICALLY_CHANGE.contains(diag.getType()));
   }
 
   @FunctionalInterface

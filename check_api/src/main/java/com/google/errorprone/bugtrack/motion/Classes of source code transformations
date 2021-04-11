@@ -294,6 +294,18 @@ Case 12. IJM improperly tracks it
         if (party.getMembers().containsKey(playerName)) {
         Note: Tracks party.getmembers() but cannot map playerName so only tracking start position would work here
 
+      mcMMO 149 b125600dac8937a19c5af0c194752a19eeb771ce -> 153 d599db289717c2ad862787e7287c08413a7048fa
+      ----DIAGNOSTIC
+      src/main/java/com/gmail/nossr50/config/Config.java 704 58 21585 21585 21589
+      [BooleanParameter] Use parameter comments to document ambiguous literals
+      Did you mean 'return config.getBoolean("Particles.LargeFireworks", /* def= */true);'?
+        to
+      ----DIAGNOSTIC
+      src/main/java/com/gmail/nossr50/config/Config.java 256 57 8565 8565 8569
+      [BooleanParameter] Use parameter comments to document ambiguous literals
+      Did you mean 'return config.getBoolean("General.AprilFoolsEvent", /* def= */true);'?
+
+
 Case 13. Diagnostics are collected together into 'one diagnostic'
     ProtectedMembersInFinalClass reports multiple locations are one diagnostic
     dubbo/88 19c1af845d51f3537d95ed645e1a7388a7989aa1..119 bef8f6d9013c9f086327939e0c39fe102f47dfbd
@@ -380,6 +392,23 @@ Case 17. Diagnostics moving even though code is unchanged
     Junit checks use a whitelist of known classes containing assert methods
     jsoup moves from org.junit.Assert to org.junit.jupiter.api.Assertions
     which means import statemetns suddenly nuke all junit diagnostics
+
+    mcMMO 9ae58fd2f70b1a6e9514cb4d1a7b0a63e8ffb6e0..29befac27e507d7ab42c7b162223d8da7ea994da
+    Adds diagnostic: ChatColor is unused import on a line not changed by the diff
+
+    mcMMO b8a146f8bd22ec5dedeac37950efdf79e67bca11..6ad9c8e664beeaf0d4b7cb73da2fba73989a7551
+    src/main/java/com/gmail/nossr50/util/sounds/SoundManager.java 70 7 2359 2359 2388 [UnnecessaryDefaultInEnumSwitch]
+    Adding stuff inside the switch makes the default redundant but gnostic is outside changed lines
+
+Case 18. Diagnostics messages can change even if the code remains unchanged
+    mcMMO 63378ae4c14315ba0365129fad625f062ad2233d..7800e48f61d0563f669a2557661f5f617a8cf3b1
+      src/main/java/com/gmail/nossr50/util/StringUtils.java 45 5 1460 1460 -1
+      [MissingCasesInEnumSwitch] Non-exhaustive switch; either add a default or handle the remaining cases: ACACIA_BOAT, ACACIA_BUTTON, ACACIA_DOOR, and 1304 others
+    to:
+      src/main/java/com/gmail/nossr50/util/StringUtils.java 45 5 1460 1460 -1
+      [MissingCasesInEnumSwitch] Non-exhaustive switch; either add a default or handle the remaining cases: ACACIA_BOAT, ACACIA_BUTTON, ACACIA_DOOR, and 1319 others
+    Switch case in other file changes
+
 
 Example of "bad" positioning, ie appears halfway in a node
     875868e7263491291d4f8bdc1332bfea746ad673 1

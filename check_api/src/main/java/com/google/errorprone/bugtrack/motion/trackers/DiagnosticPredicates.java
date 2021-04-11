@@ -26,7 +26,7 @@ public class DiagnosticPredicates {
    * in ..." and "add implements method in ..." even though they're the same method.
    */
   private static final ImmutableSet<String> DESCRIPTIONS_CAN_SYNTACTICALLY_CHANGE =
-      ImmutableSet.of("MissingSummary");
+      ImmutableSet.of("MissingSummary", "FunctionalInterfaceClash");
 
   public static Predicate manyInSameRegion() {
     return (srcFilePair, diag) -> {

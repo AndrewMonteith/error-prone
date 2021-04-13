@@ -53,7 +53,7 @@ public class BetterJdtVisitor extends JdtVisitor {
     pushFakeNode(
         EntityType.SIMPLE_NAME,
         type.getStartPosition() + type.toString().length() + 1,
-        type.toString().length());
+        5);
     getCurrentParent().setLabel("class");
 
     popNode();

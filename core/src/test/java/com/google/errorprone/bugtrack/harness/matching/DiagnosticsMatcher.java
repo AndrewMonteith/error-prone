@@ -55,6 +55,14 @@ public final class DiagnosticsMatcher {
   }
 
   public static DiagnosticsMatcher fromFiles(
+          CorpusProject project,
+          DiagnosticsFile oldDiagFile,
+          DiagnosticsFile newDiagFile)
+      throws IOException, GitAPIException {
+      return fromFiles(project, oldDiagFile, newDiagFile, BugComparers.DEFAULT_COMPARER);
+  }
+
+  public static DiagnosticsMatcher fromFiles(
       CorpusProject project,
       DiagnosticsFile oldDiagFile,
       DiagnosticsFile newDiagFile,

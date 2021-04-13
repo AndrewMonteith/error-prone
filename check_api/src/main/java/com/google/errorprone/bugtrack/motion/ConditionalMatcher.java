@@ -25,8 +25,12 @@ public final class ConditionalMatcher implements BugComparer {
   @Override
   public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
       throws IOException {
+    if (!oldDiagnostic.isSameType(newDiagnostic)) {
+      return false;
+    }
+
     BugComparer comparer =
-        diagPredicate.test(srcPairInfo.files, oldDiagnostic)
+        diagPredicate.test(srcPairInfo.files, oldDiagnostic, newDiagnostic)
             ? comparerIfTrue.get()
             : comparerIfFalse.get();
 

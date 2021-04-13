@@ -32,7 +32,6 @@ import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
-import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -55,7 +54,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
 import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
 import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
@@ -241,30 +239,19 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new McMMOProject();
+    CorpusProject project = new GuiceProject();
 
     DiagnosticsFile oldFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_full/151 c6d055cb48b6c706011d2fa692a8a902866a3011.100-50");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_50/3 dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a");
 
     DiagnosticsFile newFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/mcMMO_full/152 f1d9f787f4793b9a4ac2065f2a43903570bcf983.50");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_50/4 6fd2442814cd268803cfe5b9c920460250f825ca");
 
-    BugComparerCtor comparer2 =
-        BugComparers.conditional(
-            DiagnosticPredicates.canTrackIdentically(),
-            trackIdentical(),
-            trackPosition(
-                conditional(
-                    DiagnosticPredicates.manyInSameRegion(),
-                    newIJMPosTracker(),
-                    any(newIJMStartAndEndTracker(), newIJMPosTracker()))));
-
-    MatchResults results =
-        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, comparer2).match();
+    MatchResults results = DiagnosticsMatcher.fromFiles(project, oldFile, newFile).match();
 
     System.out.println(results);
   }

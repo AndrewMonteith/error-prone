@@ -409,6 +409,16 @@ Case 18. Diagnostics messages can change even if the code remains unchanged
       [MissingCasesInEnumSwitch] Non-exhaustive switch; either add a default or handle the remaining cases: ACACIA_BOAT, ACACIA_BUTTON, ACACIA_DOOR, and 1319 others
     Switch case in other file changes
 
+Case 19. Diagnostic removed even though line it's in unchanged lines
+    guice a533bf26c612003a99996f07f64148ddd1602d06 -> dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a
+    ----DIAGNOSTIC
+    core/test/com/google/inject/spi/InjectorSpiTest.java 113 55 4504 4504 4521
+    [ModifiedButNotUsed] A collection or proto builder was created, but its values were never accessed.
+    ----DIAGNOSTIC
+    core/test/com/google/inject/spi/InjectorSpiTest.java 114 39 4561 4561 4578
+    [ModifiedButNotUsed] A collection or proto builder was created, but its values were never accessed.
+    Changed lines of code make the variables on these unchanged lines suddenly used
+
 
 Example of "bad" positioning, ie appears halfway in a node
     875868e7263491291d4f8bdc1332bfea746ad673 1

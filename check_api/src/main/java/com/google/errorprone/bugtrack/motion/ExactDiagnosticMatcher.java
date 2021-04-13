@@ -26,9 +26,13 @@ public class ExactDiagnosticMatcher implements BugComparer {
       return false;
     }
 
-    // We don't use .equals since that accounts for the same file name but the file could have been
-    // renamed since matching guarentees we only match diagnostics in the same file then we need
-    // only compare everything else for equality
+    if (!oldDiagnostic.isSameType(newDiagnostic)) {
+      return false;
+    }
+
+    // We don't use .equals since that accounts for the same file name but the file could have
+    // been renamed since matching guarentees we only match diagnostics in the same file then we
+    // need only compare everything else for equality
     return oldDiagnostic.refersToSameSource(newDiagnostic);
   }
 }

@@ -21,6 +21,7 @@ import com.google.errorprone.bugtrack.motion.ConditionalMatcher;
 import com.google.errorprone.bugtrack.motion.DiagPosMatcher;
 import com.google.errorprone.bugtrack.motion.ExactDiagnosticMatcher;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.utils.ThrowingFunction;
 import com.google.errorprone.bugtrack.utils.ThrowingPredicate;
@@ -28,7 +29,20 @@ import com.google.errorprone.bugtrack.utils.ThrowingPredicate;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMPosTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
+
 public final class BugComparers {
+  public static final BugComparerCtor DEFAULT_COMPARER =
+      BugComparers.conditional(
+          DiagnosticPredicates.canTrackIdentically(),
+          trackIdentical(),
+          trackPosition(
+              DiagnosticPositionTrackers.conditional(
+                  DiagnosticPredicates.canTrackEndpointsAndPos(),
+                  newIJMPosTracker(),
+                  DiagnosticPositionTrackers.any(newIJMStartAndEndTracker(), newIJMPosTracker()))));
+
   public static BugComparerCtor trackIdentical() {
     return srcPairInfo -> new ExactDiagnosticMatcher();
   }

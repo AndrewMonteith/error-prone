@@ -23,17 +23,21 @@ public class DiagnosticPredicates {
    * individual diagnostics with different descriptions. An example of this is MissingSummary which
    * for subtle reasons may confuse where the original method declaration you're override is (where
    * it's in an interface or class), so it's description may alternate between "add overrides method
-   * in ..." and "add implements method in ..." even though they're the same method.  Another example
-   * is MissingCasesInEnumSwitch who's error message can be "missing cases 1, 2, 3 and N others" others.
-   * That N depends on an enum defined in another file so that message can change.
+   * in ..." and "add implements method in ..." even though they're the same method. Another example
+   * is MissingCasesInEnumSwitch who's error message can be "missing cases 1, 2, 3 and N others"
+   * others. That N depends on an enum defined in another file so that message can change.
    */
   private static final ImmutableSet<String> DESCRIPTIONS_CAN_SYNTACTICALLY_CHANGE =
-      ImmutableSet.of("MissingSummary", "FunctionalInterfaceClash", "MissingCasesInEnumSwitch", "MissingOverride");
+      ImmutableSet.of(
+          "MissingSummary",
+          "FunctionalInterfaceClash",
+          "MissingCasesInEnumSwitch",
+          "MissingOverride");
 
-  public static Predicate manyInSameRegion() {
-    return (srcFilePair, diag) -> {
-      if (MULTIPLE_IN_SAME_REGION.contains(diag.getType())) {
-        return srcFilePair.oldFile.testSubstring(diag, letter -> letter == ',');
+  public static Predicate canTrackEndpointsAndPos() {
+    return (srcFilePair, oldDiag, newDiag) -> {
+      if (MULTIPLE_IN_SAME_REGION.contains(oldDiag.getType())) {
+        return srcFilePair.oldFile.testSubstring(oldDiag, letter -> letter == ',');
       } else {
         return false;
       }
@@ -41,12 +45,22 @@ public class DiagnosticPredicates {
   }
 
   public static Predicate canTrackIdentically() {
-    return (srcFilePair, diag) ->
-        !(srcFilePair.srcChanged || DESCRIPTIONS_CAN_SYNTACTICALLY_CHANGE.contains(diag.getType()));
+    return (srcFilePair, oldDiag, newDiag) -> {
+      if ((oldDiag.getEndPos() == -1 && newDiag.getEndPos() != -1)
+          || (oldDiag.getEndPos() != -1 && newDiag.getEndPos() == -1)) {
+        // Edge case when collecting where sometimes the end diagnostics would have a random '-1'
+        // even though the prior commit we managed to get the end positioon
+        return false;
+      }
+
+      return !(srcFilePair.srcChanged
+          || DESCRIPTIONS_CAN_SYNTACTICALLY_CHANGE.contains(oldDiag.getType()));
+    };
   }
 
   @FunctionalInterface
   public interface Predicate {
-    boolean test(SrcFilePair srcFilePair, DatasetDiagnostic diagnostic);
+    boolean test(
+        SrcFilePair srcFilePair, DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic);
   }
 }

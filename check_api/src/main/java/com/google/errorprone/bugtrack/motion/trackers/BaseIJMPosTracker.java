@@ -26,6 +26,7 @@ import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.utils.ThrowingFunction;
 import com.sun.tools.javac.tree.JCTree;
+import org.eclipse.jdt.core.dom.ASTNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,18 +73,59 @@ public abstract class BaseIJMPosTracker {
     return treeGenerator.generateFromString(src);
   }
 
-  private Optional<ITree> findClosestMatchingJDTNode(final long pos) {
+  private Optional<ITree> findFirstMatchingJDTNode(final long pos) {
     for (ITree node : oldSrcTree.getRoot().postOrder()) {
       if (!node.isMatched()) {
         continue;
       }
 
-      if (node.getPos() <= pos && pos <= node.getPos() + node.getLength()) {
+      if (ITreeUtils.encompasses(node, pos)) {
         return Optional.of(node);
       }
     }
 
     return Optional.empty();
+  }
+
+  private ITree findClosestMatchingNodeInJavadoc(ITree node, final long pos) {
+    // Necessary since JDT's structure for Javadoc's is kinda weird in that there may be
+    // nodes with overlapping [pos, pos+length] but not overlapping labels. For example without
+    // this we could not track
+    //   guice dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a .. dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a
+    //   core/src/com/google/inject/internal/InternalInjectorCreator.java 83 52 3198 3198 3198
+    //   [InvalidLink] The reference `#requireExplicitBindings()` to a method doesn't resolve to
+    // 3198 refers to 'Returns true if' and '@link' nodes in the tree, without this code the
+    // 'Returns true if' node is matched first in postOrder traversal and so mapped to the wrong
+    // position.
+
+    while (node.getType() != ASTNode.JAVADOC) {
+      node = node.getParent();
+    }
+
+    ITree closest = null;
+    for (ITree desc : node.postOrder()) {
+      if (!ITreeUtils.encompasses(desc, pos)) {
+        continue;
+      }
+
+      if (closest == null || ITreeUtils.isCloser(pos, desc.getPos(), closest.getPos())) {
+        closest = desc;
+      }
+    }
+
+    return closest;
+  }
+
+  private Optional<ITree> findClosestMatchingJDTNode(final long pos) {
+    return findFirstMatchingJDTNode(pos)
+        .map(
+            matchingNode -> {
+              if (ITreeUtils.inDocNode(matchingNode)) {
+                matchingNode = findClosestMatchingNodeInJavadoc(matchingNode, pos);
+              }
+
+              return matchingNode;
+            });
   }
 
   private boolean isTemplatedClassNode(ITree tree) {

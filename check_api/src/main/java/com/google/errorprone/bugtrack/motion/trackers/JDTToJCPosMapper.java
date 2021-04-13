@@ -33,22 +33,12 @@ public class JDTToJCPosMapper {
   }
 
   public NodeLocation map(ITree node) {
-    if (isDocNode(node)) {
+    if (ITreeUtils.inDocNode(node)) {
       // Doc comment's positions are all the same in diagnostics
       return new NodeLocation(node.getPos(), node.getPos(), node.getPos());
     } else {
       return mapNonDocNode(node);
     }
-  }
-
-  private boolean isDocNode(ITree node) {
-    while (node != null) {
-      if (node.getType() == ASTNode.JAVADOC) {
-        return true;
-      }
-      node = node.getParent();
-    }
-    return false;
   }
 
   private NodeLocation mapNonDocNode(ITree node) {

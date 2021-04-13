@@ -34,7 +34,7 @@ public class DiagnosticPredicates {
           "MissingCasesInEnumSwitch",
           "MissingOverride");
 
-  public static Predicate canTrackEndpointsAndPos() {
+  public static Predicate cannotTrackEndpoints() {
     return (srcFilePair, oldDiag, newDiag) -> {
       if (MULTIPLE_IN_SAME_REGION.contains(oldDiag.getType())) {
         return srcFilePair.oldFile.testSubstring(oldDiag, letter -> letter == ',');

@@ -39,7 +39,7 @@ public final class BugComparers {
           trackIdentical(),
           trackPosition(
               DiagnosticPositionTrackers.conditional(
-                  DiagnosticPredicates.canTrackEndpointsAndPos(),
+                  DiagnosticPredicates.cannotTrackEndpoints(),
                   newIJMPosTracker(),
                   DiagnosticPositionTrackers.any(newIJMStartAndEndTracker(), newIJMPosTracker()))));
 

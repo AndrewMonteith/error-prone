@@ -205,7 +205,7 @@ public final class BugComparerEvaluator {
     Set<DiagnosticsFilePairLoader.Pair> comparedFiles = new HashSet<>();
 
     for (int trial = 0; trial < trials; ++trial) {
-      DiagnosticsFilePairLoader.Pair oldAndNewDiagFiles = pairLoader.load(project);
+      DiagnosticsFilePairLoader.Pair oldAndNewDiagFiles = pairLoader.load();
       System.out.println(
           "Comparing "
               + oldAndNewDiagFiles.oldFile.commitId

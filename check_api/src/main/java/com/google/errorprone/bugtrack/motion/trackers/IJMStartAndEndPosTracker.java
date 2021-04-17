@@ -35,7 +35,7 @@ public final class IJMStartAndEndPosTracker extends BaseIJMPosTracker
 
   @Override
   public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-    Optional<NodeLocation> mappedStartPos = trackPosition(oldDiag.getStartPos());
+    Optional<NodeLocation> mappedStartPos = trackStartPosition(oldDiag.getStartPos());
 
     if (!mappedStartPos.isPresent()) {
       return Optional.empty();

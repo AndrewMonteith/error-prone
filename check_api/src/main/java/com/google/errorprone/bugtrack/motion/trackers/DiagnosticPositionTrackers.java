@@ -73,6 +73,10 @@ public final class DiagnosticPositionTrackers {
     return IJMPosTracker::new;
   }
 
+  public static DiagnosticPositionTrackerConstructor newBetterIJMPosTracker() {
+    return BetterIJMPosTracker::new;
+  }
+
   public static DiagnosticPositionTrackerConstructor first(
       DiagnosticPositionTrackerConstructor... trackerCtors) {
     return srcPairInfo -> {

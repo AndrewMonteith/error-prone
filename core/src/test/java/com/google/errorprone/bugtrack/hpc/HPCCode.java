@@ -17,14 +17,17 @@
 package com.google.errorprone.bugtrack.hpc;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.errorprone.bugtrack.CommitRange;
-import com.google.errorprone.bugtrack.GitPathComparer;
-import com.google.errorprone.bugtrack.GitSrcFilePairLoader;
+import com.google.common.io.Files;
+import com.google.errorprone.bugtrack.*;
+import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.evaluating.*;
+import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
+import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -43,9 +46,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.errorprone.bugtrack.BugComparers.*;
+import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
+import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 public final class HPCCode {
   private static final Map<String, CorpusProject> projects;
@@ -58,10 +62,7 @@ public final class HPCCode {
     projs.put("junit4", new JUnitProject());
     projs.put("dubbo", new DubboProject());
     projs.put("guice", new GuiceProject());
-    projs.put("mybatis-3", new MyBatis3Project());
-    projs.put("jetty.project", new JettyProject());
     projs.put("hazelcast", new HazelcastProject());
-    projs.put("zxing", new ZXingProject());
     projs.put("mcMMO", new McMMOProject());
     projs.put("cobertura", new CoberturaProject());
     projs.put("jruby", new JRubyProject());
@@ -90,12 +91,24 @@ public final class HPCCode {
     Path diagnostics = ProjectFiles.get("diagnostics/" + projectName);
     Path output = ProjectFiles.get("comparisons/" + projectName);
 
+    BugComparerCtor comparer1 =
+        BugComparers.conditional(
+            DiagnosticPredicates.canTrackIdentically(),
+            trackIdentical(),
+            trackPosition(newBetterIJMPosTracker()));
+
+    BugComparerCtor comparer2 =
+        BugComparers.conditional(
+            DiagnosticPredicates.canTrackIdentically(),
+            trackIdentical(),
+            trackPosition(newIJMStartAndEndTracker()));
+
     BugComparerExperiment.forProject(project)
-        .withData(LiveDatasetFilePairLoader.notMarkedAsSkipped(diagnostics))
+        .withData(RandomDiagFilePairLoader.allFiles(project, diagnostics))
         .comparePaths(withGit(project, GitPathComparer::new))
         .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-        .setBugComparer1(any(trackIdentical(), trackPosition(newIJMStartAndEndTracker())))
-        .setBugComparer2(any(trackIdentical(), trackPosition(newIJMStartAndEndTracker())))
+        .setBugComparer1(comparer1)
+        .setBugComparer2(comparer2)
         .findMissedTrackings(MissedLikelihoodCalculators.diagLineSrcOverlap())
         .trials(20)
         .run(output);
@@ -194,5 +207,53 @@ public final class HPCCode {
     boolean inParallel = System.getProperty("inParallel").equals("true");
 
     MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, inParallel);
+  }
+
+  @Test
+  public void findChangingMessages() throws Exception {
+    Path allDiagnostics = Paths.get("/home/monty/IdeaProjects/java-corpus/diagnostics");
+
+    BugComparerCtor specialMatcher =
+        srcPairInfo ->
+            (oldDiag, newDiag) ->
+                (!srcPairInfo.files.srcChanged)
+                    && oldDiag.getLineNumber() == newDiag.getLineNumber()
+                    && oldDiag.getColumnNumber() == newDiag.getColumnNumber()
+                    && oldDiag.getStartPos() == newDiag.getStartPos()
+                    && oldDiag.getPos() == newDiag.getPos()
+                    && oldDiag.getEndPos() == newDiag.getEndPos()
+                    && oldDiag.getType().equals(newDiag.getType())
+                    && !oldDiag.getMessage().equals(newDiag.getMessage());
+
+    projects.forEach(
+        (name, project) -> {
+          System.out.println("Scanning " + name);
+
+          List<DiagnosticsFile> files =
+              ProjectDiagnosticsFolder.load(project, allDiagnostics.resolve(name));
+
+          for (int i = 0; i < files.size() - 1; ++i) {
+            DiagnosticsFile before = files.get(i);
+            DiagnosticsFile after = files.get(i + 1);
+
+            System.out.println(before.commitId + " -> " + after.commitId);
+
+            try {
+              MatchResults results =
+                  DiagnosticsMatcher.fromFiles(project, before, after, specialMatcher).match();
+
+              results
+                  .getMatchedDiagnostics()
+                  .forEach(
+                      (beforeDiag, afterDiag) -> {
+                        System.out.println("Weird match");
+                        System.out.println(beforeDiag);
+                        System.out.println(afterDiag);
+                      });
+            } catch (IOException | GitAPIException e) {
+              e.printStackTrace();
+            }
+          }
+        });
   }
 }

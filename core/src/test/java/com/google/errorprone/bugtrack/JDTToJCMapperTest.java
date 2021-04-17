@@ -19,7 +19,7 @@ package com.google.errorprone.bugtrack;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.Tree;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.motion.trackers.JDTToJCPosMapper;
+import com.google.errorprone.bugtrack.motion.trackers.JDTToJCMapper;
 import com.google.errorprone.bugtrack.motion.trackers.NodeLocation;
 import com.google.googlejavaformat.java.FormatterException;
 import com.sun.tools.javac.tree.JCTree;
@@ -32,7 +32,7 @@ import java.io.IOException;
  * This class is more a collection of regression tests than is completely testing the functionality
  * of the component.
  */
-public class JDTToJCPosMapperTest {
+public class JDTToJCMapperTest {
 
   private static ITree newFakeNode(final int pos) {
     Tree tree = new Tree(-1, "");
@@ -59,7 +59,7 @@ public class JDTToJCPosMapperTest {
     JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
-    JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);
+    JDTToJCMapper mapper = new JDTToJCMapper(ast);
     NodeLocation mappedNodeLoc = mapper.map(node);
 
     // THEN:
@@ -82,7 +82,7 @@ public class JDTToJCPosMapperTest {
     JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
-    JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);
+    JDTToJCMapper mapper = new JDTToJCMapper(ast);
     NodeLocation mappedNodeLoc = mapper.map(node);
 
     // THEN:
@@ -104,7 +104,7 @@ public class JDTToJCPosMapperTest {
     JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
-    JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);
+    JDTToJCMapper mapper = new JDTToJCMapper(ast);
     NodeLocation mappedNodeLoc = mapper.map(node);
 
     // THEN:
@@ -126,7 +126,7 @@ public class JDTToJCPosMapperTest {
     JCTree.JCCompilationUnit ast = new SrcPairInfo(srcFilePair).loadNewJavacAST();
 
     // WHEN:
-    JDTToJCPosMapper mapper = new JDTToJCPosMapper(ast);
+    JDTToJCMapper mapper = new JDTToJCMapper(ast);
     NodeLocation mappedNodeLoc = mapper.map(node);
 
     // THEN:

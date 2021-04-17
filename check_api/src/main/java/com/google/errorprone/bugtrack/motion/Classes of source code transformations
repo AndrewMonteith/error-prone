@@ -228,10 +228,10 @@ Case 11. IJM cannot track it
 
      mcMMO 7 2b159adefd65717f264d025aaba28b0c866fb5a9..149 76ca7cc88fb810076ab547f3d6571a85e0fcba7d
      ----DIAGNOSTIC
-     /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/listeners/BlockListener.java 398 114 16232 16232 16236
+     src/main/java/com/gmail/nossr50/listeners/BlockListener.java 398 114 16232 16232 16236
        Did you mean 'if (AbilityType.BERSERK.blockCheck(block.getState()) && EventUtils.simulateBlockBreak(block, player, /* shouldArmSwing= */true)) {'?
      ----DIAGNOSTIC
-     /rds/user/am2857/hpc-work/java-corpus/27022/src/main/java/com/gmail/nossr50/listeners/BlockListener.java 593 66 22716 22716 22720
+     src/main/java/com/gmail/nossr50/listeners/BlockListener.java 593 66 22716 22716 22720
        Did you mean 'if (EventUtils.simulateBlockBreak(block, player, /* shouldArmSwing= */true) && mcMMOPlayer.getUnarmedManager().blockCrackerCheck(blockState)) {'?
      Spaghetti conditionals, would have though identical subtree would match it but apparently not
 
@@ -258,22 +258,22 @@ Case 11. IJM cannot track it
 Case 12. IJM improperly tracks it
     dubbo/7 427e2d237aca9cb0fca83b3e17c6bdb1bc2abf86..123 6a7028446bcd76ec75c742ab283c7dc5675144e7
       ---- DIAGNOSTIC
-      /home/monty/IdeaProjects/java-corpus/dubbo/dubbo-configcenter/dubbo-configcenter-api/src/main/java/org/apache/dubbo/configcenter/DynamicConfiguration.java 55 10 2025 2100
+      dubbo-configcenter/dubbo-configcenter-api/src/main/java/org/apache/dubbo/configcenter/DynamicConfiguration.java 55 10 2025 2100
       [UngroupedOverloads] Overloads of 'addListener' are not grouped together; found ungrouped overloads on line(s): 35
       ---- MAPS TO:
-      /home/monty/IdeaProjects/java-corpus/dubbo/dubbo-configcenter/dubbo-configcenter-api/src/main/java/org/apache/dubbo/configcenter/DynamicConfiguration.java 72 10 2753 2831
+      dubbo-configcenter/dubbo-configcenter-api/src/main/java/org/apache/dubbo/configcenter/DynamicConfiguration.java 72 10 2753 2831
       [UngroupedOverloads] Overloads of 'removeListener' are not grouped together; found ungrouped overloads on line(s): 49
     Not too sure as to why it does this...
 
     jsoup/3 18ef323541f6c369824e0c726b2be55880ec36da..65 bd64b0192c7d3485665afdc10805b587df19eab3
     ----DIAGNOSTIC
-    /home/monty/IdeaProjects/java-corpus/jsoup/src/main/java/org/jsoup/helper/HttpConnection.java 615 21 19376 19388 19483
+    src/main/java/org/jsoup/helper/HttpConnection.java 615 21 19376 19388 19483
     [MissingOverride] validateTLSCertificates implements method in Request; expected @Override
         615. public void validateTLSCertificates(boolean value) {
         616.    validateTSLCertificates = value;
         617. }
      to:
-     /home/monty/IdeaProjects/java-corpus/jsoup/src/main/java/org/jsoup/helper/HttpConnection.java 614 21 19293 19305 19422
+     src/main/java/org/jsoup/helper/HttpConnection.java 614 21 19293 19305 19422
      [MissingOverride] sslSocketFactory implements method in Request; expected @Override
         610. public SSLSocketFactory sslSocketFactory() {
         611.    return sslSocketFactory;
@@ -305,6 +305,10 @@ Case 12. IJM improperly tracks it
       [BooleanParameter] Use parameter comments to document ambiguous literals
       Did you mean 'return config.getBoolean("General.AprilFoolsEvent", /* def= */true);'?
 
+      guice 9b371d3663db9db230417f3cc394e72b705d7d7f .. 37c098d55911f55d77a5a72dfafd9b0976bcf257
+        core/src/com/google/inject/internal/ProviderMethodsModule.java 348 14 13430 13453 13517
+        [HashCodeToString] Classes that override hashCode should also consider overriding toString.
+      Did not track since hashCode method was small enough that entire subtree changed
 
 Case 13. Diagnostics are collected together into 'one diagnostic'
     ProtectedMembersInFinalClass reports multiple locations are one diagnostic
@@ -409,6 +413,18 @@ Case 18. Diagnostics messages can change even if the code remains unchanged
       [MissingCasesInEnumSwitch] Non-exhaustive switch; either add a default or handle the remaining cases: ACACIA_BOAT, ACACIA_BUTTON, ACACIA_DOOR, and 1319 others
     Switch case in other file changes
 
+    guice 84e0ce89ba6afa8cbe7ded6e7baa49353167a11f .. 51ba928a1b641afb2f525b28787aaa5ba3bc29cc
+      core/src/com/google/inject/internal/BindingProcessor.java 86 23 2952 2952 2957
+      [BooleanParameter] Use parameter comments to document ambiguous literals
+      Did you mean '/* failIfNotExplicit= */false);'?
+    to
+      core/src/com/google/inject/internal/BindingProcessor.java 86 23 2952 2952 2957
+      [BooleanParameter] Use parameter comments to document ambiguous literals
+      Did you mean '/* atInjectRequired= */false);'?
+    Parameter is external file was renamed causing the diagnostic message to change
+    guice 84e0ce89ba6afa8cbe7ded6e7baa49353167a11f .. 51ba928a1b641afb2f525b28787aaa5ba3bc29cc
+
+
 Case 19. Diagnostic removed even though line it's in unchanged lines
     guice a533bf26c612003a99996f07f64148ddd1602d06 -> dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a
     ----DIAGNOSTIC
@@ -418,6 +434,20 @@ Case 19. Diagnostic removed even though line it's in unchanged lines
     core/test/com/google/inject/spi/InjectorSpiTest.java 114 39 4561 4561 4578
     [ModifiedButNotUsed] A collection or proto builder was created, but its values were never accessed.
     Changed lines of code make the variables on these unchanged lines suddenly used
+
+False positives:
+     guice 20 8c596b2a20e1ebc396ee4c396f165a01ab2d0de4 -> 22 09b7f977ec1ab5b7af9b060a10932316a6e973e2
+     ----DIAGNOSTIC
+     extensions/dagger-adapter/test/com/google/inject/daggeradapter/DaggerAdapterTest.java 256 25 7422 7484 7534
+     [EmptySetMultibindingContributions] @Multibinds is a more efficient and declarative mechanism for ensuring that a set multibinding is present in the graph.
+     (see https://errorprone.info/bugpattern/EmptySetMultibindingContributions)
+     Did you mean '@dagger.Module static abstract class ElementsIntoSetModule {'?
+      to
+     ----DIAGNOSTIC
+     extensions/dagger-adapter/test/com/google/inject/daggeradapter/DaggerAdapterTest.java 149 24 4279 4340 4417
+     [EmptySetMultibindingContributions] @Multibinds is a more efficient and declarative mechanism for ensuring that a set multibinding is present in the graph.
+     (see https://errorprone.info/bugpattern/EmptySetMultibindingContributions)
+     Did you mean '@dagger.Module static abstract class UnsupportedAnnotationStaticModule {'?
 
 
 Example of "bad" positioning, ie appears halfway in a node

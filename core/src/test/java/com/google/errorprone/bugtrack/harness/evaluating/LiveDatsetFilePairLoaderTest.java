@@ -49,7 +49,7 @@ public final class LiveDatsetFilePairLoaderTest {
   @Test
   public void canLoadAllFiles() {
     Assert.assertEquals(
-        5, LiveDatasetFilePairLoader.allFiles(testDiagnosticFiles).getNumberOfFiles());
+        5, RandomDiagFilePairLoader.allFiles(TEST_PROJECT, testDiagnosticFiles).getNumberOfFiles());
   }
 
   @Test
@@ -58,8 +58,8 @@ public final class LiveDatsetFilePairLoaderTest {
     IntRanges range = IntRanges.include(1, 5).excludeRange(2, 3);
 
     // WHEN:
-    LiveDatasetFilePairLoader loader =
-        LiveDatasetFilePairLoader.inSeqNumRange(testDiagnosticFiles, range);
+    RandomDiagFilePairLoader loader =
+        RandomDiagFilePairLoader.inSeqNumRange(TEST_PROJECT, testDiagnosticFiles, range);
 
     // THEN:
     Assert.assertEquals(3, loader.getNumberOfFiles());
@@ -68,12 +68,12 @@ public final class LiveDatsetFilePairLoaderTest {
   @Test
   public void pairsLoadedArentBackwards() throws IOException {
     // GIVEN:
-    LiveDatasetFilePairLoader loader = LiveDatasetFilePairLoader.allFiles(testDiagnosticFiles);
+    RandomDiagFilePairLoader loader = RandomDiagFilePairLoader.allFiles(TEST_PROJECT, testDiagnosticFiles);
 
     // WHEN:
     ArrayList<DiagnosticsFilePairLoader.Pair> pairs = new ArrayList<>();
     for (int i = 0; i < 1000; ++i) {
-      pairs.add(loader.load(TEST_PROJECT));
+      pairs.add(loader.load());
     }
 
     // THEN:

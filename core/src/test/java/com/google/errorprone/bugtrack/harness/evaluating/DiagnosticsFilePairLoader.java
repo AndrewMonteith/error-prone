@@ -23,7 +23,7 @@ import java.io.IOException;
 
 @FunctionalInterface
 public interface DiagnosticsFilePairLoader {
-  Pair load(CorpusProject project) throws IOException;
+  Pair load() throws IOException;
 
   class Pair {
     public final DiagnosticsFile oldFile;

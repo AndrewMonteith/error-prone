@@ -141,7 +141,7 @@ public class LambdaFunctionalInterface extends BugChecker implements MethodTreeM
 
   private static Optional<String> getMappingForFunctionFromTree(Tree param) {
     Optional<Type> type = ofNullable(ASTHelpers.getType(param));
-    return (type == null) ? empty() : getMappingForFunction(type.get().toString());
+    return (!type.isPresent()) ? empty() : getMappingForFunction(type.get().toString());
   }
 
   private static Optional<String> getMappingForFunction(String function) {

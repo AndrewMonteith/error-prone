@@ -22,10 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import org.eclipse.jdt.core.dom.*;
 
-import java.util.regex.Pattern;
-
 public class BetterJdtVisitor extends JdtVisitor {
-  private static final Pattern X_DOT_Y = Pattern.compile("^[a-zA-Z_]\\w*\\.[a-zA-Z_]\\w*$");
 
   private final SrcFile srcFile;
 
@@ -50,10 +47,7 @@ public class BetterJdtVisitor extends JdtVisitor {
     pushNode(type, type.toString());
     popNode();
 
-    pushFakeNode(
-        EntityType.SIMPLE_NAME,
-        type.getStartPosition() + type.toString().length() + 1,
-        5);
+    pushFakeNode(EntityType.SIMPLE_NAME, type.getStartPosition() + type.toString().length() + 1, 5);
     getCurrentParent().setLabel("class");
 
     popNode();
@@ -63,7 +57,8 @@ public class BetterJdtVisitor extends JdtVisitor {
   @Override
   public boolean visit(QualifiedName qualName) {
     ASTNode parent = qualName.getParent();
-    if (parent.getNodeType() == ASTNode.PACKAGE_DECLARATION || parent.getNodeType() == ASTNode.IMPORT_DECLARATION) {
+    if (parent.getNodeType() == ASTNode.PACKAGE_DECLARATION
+        || parent.getNodeType() == ASTNode.IMPORT_DECLARATION) {
       return false;
     }
 
@@ -155,8 +150,7 @@ public class BetterJdtVisitor extends JdtVisitor {
 
   @Override
   public boolean visit(TypeDeclaration typeDecl) {
-    //        Added for guice since position points to class keyword which was not included in the
-    // AST
+    // Added for guice since position points to class keyword which was not included in the AST
     //        a533bf26c612003a99996f07f64148ddd1602d06 1
     //        ----DIAGNOSTIC
     //

@@ -60,7 +60,7 @@ public final class IJMPosTracker extends BaseIJMPosTracker implements Diagnostic
       return Optional.empty();
     }
 
-    return trackPosition(modifyPosition(oldDiag))
+    return trackStartPosition(modifyPosition(oldDiag))
         .map(srcBufferRange -> DiagSrcPosEqualityOracle.byPosition(srcBufferRange.pos));
   }
 }

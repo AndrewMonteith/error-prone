@@ -25,13 +25,15 @@ import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
 import com.google.errorprone.bugtrack.harness.ProjectHarness;
 import com.google.errorprone.bugtrack.harness.Verbosity;
-import com.google.errorprone.bugtrack.harness.evaluating.*;
+import com.google.errorprone.bugtrack.harness.evaluating.GrainDiagFile;
+import com.google.errorprone.bugtrack.harness.evaluating.MultiGrainDiagFileComparer;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -54,9 +56,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
 import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
-import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newBetterIJMPosTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -221,37 +224,33 @@ public class ProjectTests {
   }
 
   @Test
-  public void compareTokenizedWithTokenizedAndIJM() throws Exception {
-    // GIVEN:
-    CorpusProject project = new JSoupProject();
-    String diagFolders = "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup_50";
-
-    BugComparerExperiment.forProject(project)
-        .withData(LiveDatasetFilePairLoader.allFiles(diagFolders))
-        .comparePaths(withGit(project, GitPathComparer::new))
-        .loadDiags(withGit(project, GitSrcFilePairLoader::new))
-        .setBugComparer1(trackPosition(any(newTokenizedLineTracker(), newIJMPosTracker())))
-        .setBugComparer2(trackPosition(any(newTokenizedLineTracker(), newIJMStartAndEndTracker())))
-        .findMissedTrackings(MissedLikelihoodCalculators.diagLineSrcOverlap())
-        .trials(9)
-        .run("/home/monty/IdeaProjects/java-corpus/comparisons/jsoup");
-  }
-
-  @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new GuiceProject();
+    CorpusProject project = new JSoupProject();
 
     DiagnosticsFile oldFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_50/3 dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/19 fd46489cd718ddea7b28f89953265e7ce4ec8372");
 
     DiagnosticsFile newFile =
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/guice_50/4 6fd2442814cd268803cfe5b9c920460250f825ca");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/81 21b01b258952fd6aeb55d061f98321e5b9fe93e0");
 
-    MatchResults results = DiagnosticsMatcher.fromFiles(project, oldFile, newFile).match();
+    BugComparerCtor justEndpoints =
+        BugComparers.conditional(
+            DiagnosticPredicates.canTrackIdentically(),
+            trackIdentical(),
+            trackPosition(newIJMStartAndEndTracker()));
+
+    BugComparerCtor justSingle =
+        BugComparers.conditional(
+            DiagnosticPredicates.canTrackIdentically(),
+            trackIdentical(),
+            trackPosition(newBetterIJMPosTracker()));
+
+    MatchResults results =
+        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, justEndpoints).match();
 
     System.out.println(results);
   }

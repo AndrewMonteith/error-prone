@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
+import com.github.gumtreediff.tree.ITree;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
@@ -24,15 +25,27 @@ import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 import java.io.IOException;
 import java.util.Optional;
 
-public final class IJMStartPosTracker extends BaseIJMPosTracker
-    implements DiagnosticPositionTracker {
-  public IJMStartPosTracker(SrcPairInfo srcPairInfo) throws IOException {
+public class BetterIJMPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
+  private final PreferredPositionMap oldPrefMap;
+  private final PreferredPositionMap newPrefMap;
+
+  public BetterIJMPosTracker(SrcPairInfo srcPairInfo) throws IOException {
     super(srcPairInfo);
+
+    this.oldPrefMap = new PreferredPositionMap(srcPairInfo.loadOldJavacAST());
+    this.newPrefMap = new PreferredPositionMap(srcPairInfo.loadNewJavacAST());
   }
 
   @Override
-  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-    return trackStartPosition(oldDiag.getStartPos())
-        .map(srcBufferRange -> DiagSrcPosEqualityOracle.byStartPos(srcBufferRange.startPos));
+  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiagnostic) {
+    Optional<ITree> oldMatching =
+        ITreeUtils.findClosestNodeThat(
+            oldSrcTree.getRoot(),
+            oldNode -> oldPrefMap.getPreferredPosition(oldNode) == oldDiagnostic.getPos());
+
+    return oldMatching.map(
+        oldNode ->
+            DiagSrcPosEqualityOracle.byPosition(
+                newPrefMap.getPreferredPosition(mappings.getDst(oldNode))));
   }
 }

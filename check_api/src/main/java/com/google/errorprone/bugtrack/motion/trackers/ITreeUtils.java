@@ -19,6 +19,9 @@ package com.google.errorprone.bugtrack.motion.trackers;
 import com.github.gumtreediff.tree.ITree;
 import org.eclipse.jdt.core.dom.ASTNode;
 
+import java.util.Optional;
+import java.util.function.Predicate;
+
 public final class ITreeUtils {
   private ITreeUtils() {}
 
@@ -38,5 +41,66 @@ public final class ITreeUtils {
 
   public static boolean isCloser(final long truePos, final long pos1, final long pos2) {
     return Math.abs(truePos - pos1) < Math.abs(truePos - pos2);
+  }
+
+  private static ITree findClosestMatchingNodeInJavadoc(ITree node, final long pos) {
+    // Necessary since JDT's structure for Javadoc's is kinda weird in that there may be
+    // nodes with overlapping [pos, pos+length] but not overlapping labels. For example without
+    // this we could not track
+    //   guice dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a .. dafa4b0bec4e7ec5e1df75e3fb9a2fdf4920921a
+    //   core/src/com/google/inject/internal/InternalInjectorCreator.java 83 52 3198 3198 3198
+    //   [InvalidLink] The reference `#requireExplicitBindings()` to a method doesn't resolve to
+    // 3198 refers to 'Returns true if' and '@link' nodes in the tree, without this code the
+    // 'Returns true if' node is matched first in postOrder traversal and so mapped to the wrong
+    // position.
+    while (node.getType() != ASTNode.JAVADOC) {
+      node = node.getParent();
+    }
+
+    ITree closest = null;
+    for (ITree desc : node.postOrder()) {
+      if (!ITreeUtils.encompasses(desc, pos)) {
+        continue;
+      }
+
+      if (closest == null || ITreeUtils.isCloser(pos, desc.getPos(), closest.getPos())) {
+        closest = desc;
+      }
+    }
+
+    return closest;
+  }
+
+  private static Optional<ITree> findFirstMatchingJDTNodeThat(
+      ITree root, Predicate<ITree> nodeTest) {
+    for (ITree node : root.postOrder()) {
+      if (!node.isMatched()) {
+        continue;
+      }
+
+      if (nodeTest.test(node)) {
+        return Optional.of(node);
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  private static ITree furtherProcessIfDocNode(ITree node, final long pos) {
+    if (ITreeUtils.inDocNode(node)) {
+      node = findClosestMatchingNodeInJavadoc(node, pos);
+    }
+
+    return node;
+  }
+
+  public static Optional<ITree> findClosestNode(ITree root, final long pos) {
+    return findFirstMatchingJDTNodeThat(root, node -> encompasses(node, pos))
+        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, pos));
+  }
+
+  public static Optional<ITree> findClosestNodeThat(ITree root, Predicate<ITree> test) {
+    return findFirstMatchingJDTNodeThat(root, test)
+        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, matchingNode.getPos()));
   }
 }

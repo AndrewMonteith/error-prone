@@ -17,17 +17,17 @@
 package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.gumtreediff.tree.ITree;
+import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
-import org.eclipse.jdt.core.dom.ASTNode;
 
-public class JDTToJCPosMapper {
+public class JDTToJCMapper {
   private final EndPosTable endPosTable;
   private final JCTree.JCCompilationUnit ast;
 
-  public JDTToJCPosMapper(JCTree.JCCompilationUnit ast) {
+  public JDTToJCMapper(JCTree.JCCompilationUnit ast) {
     this.endPosTable = ast.endPositions;
     this.ast = ast;
   }
@@ -35,17 +35,23 @@ public class JDTToJCPosMapper {
   public NodeLocation map(ITree node) {
     if (ITreeUtils.inDocNode(node)) {
       // Doc comment's positions are all the same in diagnostics
-      return new NodeLocation(node.getPos(), node.getPos(), node.getPos());
+      return NodeLocation.single(node.getPos());
     } else {
       return mapNonDocNode(node);
     }
   }
 
+  public NodeLocation map(final long pos) {
+    PreferredPosMapper prefPosMapper = new PreferredPosMapper(pos);
+    prefPosMapper.scan(ast, null);
+    return NodeLocation.single(prefPosMapper.closestPreferredPosition);
+  }
+
   private NodeLocation mapNonDocNode(ITree node) {
-    NonDocPosMapper startPosMapper = new NonDocPosMapper(endPosTable, node.getPos());
+    NonDocNodeMapper startPosMapper = new NonDocNodeMapper(endPosTable, node.getPos());
     startPosMapper.scan(ast, null);
 
-    NonDocPosMapper endPosMapper = new NonDocPosMapper(endPosTable, node.getEndPos());
+    NonDocNodeMapper endPosMapper = new NonDocNodeMapper(endPosTable, node.getEndPos());
     endPosMapper.scan(ast, null);
 
     return new NodeLocation(
@@ -54,7 +60,30 @@ public class JDTToJCPosMapper {
         endPosMapper.closestEndPosition);
   }
 
-  private static class NonDocPosMapper extends TreeScanner<Void, Void> {
+  private static class PreferredPosMapper extends TreeScanner<Void, Void> {
+    private final long jdtPos;
+
+    private long closestPreferredPosition = Long.MIN_VALUE;
+
+    public PreferredPosMapper(final long jdtPos) {
+      this.jdtPos = jdtPos;
+    }
+
+    @Override
+    public Void scan(Tree tree, Void p) {
+      if (tree instanceof JCTree) {
+        final int prefPos = ((JCTree) tree).getPreferredPosition();
+
+        if (ITreeUtils.isCloser(jdtPos, prefPos, closestPreferredPosition)) {
+          closestPreferredPosition = prefPos;
+        }
+      }
+
+      return null;
+    }
+  }
+
+  private static class NonDocNodeMapper extends TreeScanner<Void, Void> {
     private final EndPosTable endPosTable;
     private final long jdtPos;
 
@@ -62,7 +91,7 @@ public class JDTToJCPosMapper {
     private long closestEndPosition = Long.MAX_VALUE;
     private long closestPreferredPosition = -1;
 
-    public NonDocPosMapper(EndPosTable endPosTable, final long jdtPos) {
+    public NonDocNodeMapper(EndPosTable endPosTable, final long jdtPos) {
       this.endPosTable = endPosTable;
       this.jdtPos = jdtPos;
     }

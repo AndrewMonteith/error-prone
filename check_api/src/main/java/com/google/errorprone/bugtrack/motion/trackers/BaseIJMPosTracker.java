@@ -34,11 +34,10 @@ import java.util.List;
 import java.util.Optional;
 
 public abstract class BaseIJMPosTracker {
+  protected final TreeContext oldSrcTree;
+  protected final TreeContext newSrcTree;
+  protected final MappingStore mappings;
   private final SrcPairInfo srcPairInfo;
-
-  private final TreeContext oldSrcTree;
-  private final TreeContext newSrcTree;
-  private final MappingStore mappings;
 
   protected BaseIJMPosTracker(
       SrcPairInfo srcPairInfo, ThrowingFunction<SrcFile, AbstractJdtVisitor> jdtVisitorFunc)
@@ -97,7 +96,6 @@ public abstract class BaseIJMPosTracker {
     // 3198 refers to 'Returns true if' and '@link' nodes in the tree, without this code the
     // 'Returns true if' node is matched first in postOrder traversal and so mapped to the wrong
     // position.
-
     while (node.getType() != ASTNode.JAVADOC) {
       node = node.getParent();
     }
@@ -174,10 +172,10 @@ public abstract class BaseIJMPosTracker {
   private NodeLocation mapJdtSrcRangeToJCSrcRange(ITree jdtNode) {
     // Find the src buffer range of the closest JC node to matched jdt node's start position
     JCTree.JCCompilationUnit newJCAst = srcPairInfo.loadNewJavacAST();
-    return new JDTToJCPosMapper(newJCAst).map(jdtNode);
+    return new JDTToJCMapper(newJCAst).map(jdtNode);
   }
 
-  protected Optional<NodeLocation> trackPosition(final long startPos) {
+  protected Optional<NodeLocation> trackStartPosition(final long startPos) {
     return findClosestMatchingJDTNode(startPos)
         .map(closestOldJdtNode -> mapJdtSrcRangeToJCSrcRange(mappings.getDst(closestOldJdtNode)));
   }
@@ -185,8 +183,7 @@ public abstract class BaseIJMPosTracker {
   protected Optional<List<NodeLocation>> trackEndPosition(final long endPos) {
     // We return a list since we're going to consider multiple cases for a possible end position
     // If the position refers to a non-generic class (determined syntatically) then we merely return
-    // one location
-    // by tracking the token. Else we track both the token and the 'token<...>'
+    // one location by tracking the token. Else we track both the token and the 'token<...>'
     return findClosestMatchingJDTNode(endPos)
         .map(
             closestOldJdtNode -> {

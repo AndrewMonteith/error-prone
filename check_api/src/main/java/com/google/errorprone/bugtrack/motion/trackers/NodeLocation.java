@@ -10,4 +10,8 @@ public final class NodeLocation {
     this.pos = pos;
     this.endPos = endPos;
   }
+
+  public static NodeLocation single(final long pos) {
+    return new NodeLocation(pos, pos, pos);
+  }
 }

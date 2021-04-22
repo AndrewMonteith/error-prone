@@ -17,7 +17,6 @@
 package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.gumtreediff.tree.ITree;
-import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
@@ -54,10 +53,7 @@ public class JDTToJCMapper {
     NonDocNodeMapper endPosMapper = new NonDocNodeMapper(endPosTable, node.getEndPos());
     endPosMapper.scan(ast, null);
 
-    return new NodeLocation(
-        startPosMapper.closestStartPosition,
-        startPosMapper.closestPreferredPosition,
-        endPosMapper.closestEndPosition);
+    return new NodeLocation(startPosMapper.closestStartPosition, endPosMapper.closestEndPosition);
   }
 
   private static class PreferredPosMapper extends TreeScanner<Void, Void> {
@@ -89,7 +85,6 @@ public class JDTToJCMapper {
 
     private long closestStartPosition = -1;
     private long closestEndPosition = Long.MAX_VALUE;
-    private long closestPreferredPosition = -1;
 
     public NonDocNodeMapper(EndPosTable endPosTable, final long jdtPos) {
       this.endPosTable = endPosTable;
@@ -110,12 +105,6 @@ public class JDTToJCMapper {
           if (closestStartPosition <= jcStartPos && jcEndPos <= closestEndPosition) {
             closestStartPosition = jcStartPos;
             closestEndPosition = jcEndPos;
-
-            // Update preferred position if it's closer
-            final int prefPos = jcTree.getPreferredPosition();
-            if (Math.abs(prefPos - jdtPos) < Math.abs(prefPos - closestPreferredPosition)) {
-              closestPreferredPosition = prefPos;
-            }
           }
           tree.accept(this, p);
         }

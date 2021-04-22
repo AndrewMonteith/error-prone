@@ -38,10 +38,7 @@ public final class BugComparers {
           DiagnosticPredicates.canTrackIdentically(),
           trackIdentical(),
           trackPosition(
-              DiagnosticPositionTrackers.conditional(
-                  DiagnosticPredicates.cannotTrackEndpoints(),
-                  newIJMPosTracker(),
-                  DiagnosticPositionTrackers.any(newIJMStartAndEndTracker(), newIJMPosTracker()))));
+              DiagnosticPositionTrackers.any(newIJMStartAndEndTracker(), newIJMPosTracker())));
 
   public static BugComparerCtor trackIdentical() {
     return srcPairInfo -> new ExactDiagnosticMatcher();

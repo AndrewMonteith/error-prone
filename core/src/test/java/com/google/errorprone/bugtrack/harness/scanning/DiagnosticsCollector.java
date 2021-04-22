@@ -20,8 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.BugCheckerInfo;
 import com.google.errorprone.CompilationTestHelper;
-import com.google.errorprone.bugpatterns.MissingOverride;
-import com.google.errorprone.bugpatterns.javadoc.MissingSummary;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.utils.ListUtils;
@@ -59,18 +57,18 @@ public final class DiagnosticsCollector {
       return Collections.emptyList();
     }
 
-//    Iterable<BugCheckerInfo> allChecksButVarChecker =
-//        Iterables.filter(
-//            Iterables.concat(
-//                BuiltInCheckerSuppliers.ENABLED_ERRORS,
-//                BuiltInCheckerSuppliers.ENABLED_WARNINGS,
-//                BuiltInCheckerSuppliers.DISABLED_CHECKS),
-//            check -> !check.canonicalName().equals("Var"));
-//
-//    ScannerSupplier scannerSupplier = ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker);
+    Iterable<BugCheckerInfo> allChecksButVarChecker =
+        Iterables.filter(
+            Iterables.concat(
+                BuiltInCheckerSuppliers.ENABLED_ERRORS,
+                BuiltInCheckerSuppliers.ENABLED_WARNINGS,
+                BuiltInCheckerSuppliers.DISABLED_CHECKS),
+            check -> !check.canonicalName().equals("Var"));
+
+    ScannerSupplier scannerSupplier = ScannerSupplier.fromBugCheckerInfos(allChecksButVarChecker);
 
     CompilationTestHelper helper =
-        CompilationTestHelper.newInstance(MissingOverride.class, DiagnosticsCollector.class);
+        CompilationTestHelper.newInstance(scannerSupplier, DiagnosticsCollector.class);
     files.forEach(projFile -> helper.addSourceFile(projFile.toFile().toPath()));
     helper.setArgs(
         ImmutableList.copyOf(

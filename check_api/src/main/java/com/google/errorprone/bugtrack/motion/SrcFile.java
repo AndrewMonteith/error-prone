@@ -70,7 +70,6 @@ public class SrcFile {
     return lineMap.getPosition(line, col);
   }
 
-  // start=1 will get first character
   public String getSrcExtract(final int start, final int end) {
     String code = String.valueOf(Arrays.copyOfRange(charBuf, start, end));
     if (code.endsWith(";")) { // normalize since some source ranges are [], some [).

@@ -73,7 +73,7 @@ public class BetterJdtVisitor extends JdtVisitor {
   }
 
   @Override
-  public boolean visit(TryStatement tryStatement) {
+  public boolean visit(TryStatement tryStatement) { // TODO: Try turning this off?
     pushFakeNode(EntityType.SIMPLE_NAME, tryStatement.getStartPosition(), 3);
     getCurrentParent().setLabel("try-sig");
 
@@ -151,15 +151,13 @@ public class BetterJdtVisitor extends JdtVisitor {
   @Override
   public boolean visit(TypeDeclaration typeDecl) {
     // Added for guice since position points to class keyword which was not included in the AST
-    //        a533bf26c612003a99996f07f64148ddd1602d06 1
-    //        ----DIAGNOSTIC
-    //
+    // a533bf26c612003a99996f07f64148ddd1602d06 1
+    // ----DIAGNOSTIC
     // /rds/user/am2857/hpc-work/java-corpus/16933/core/test/com/google/inject/internal/ProxyFactoryTest.java 159 10 4705 4712 4825
     //        [ClassNamedLikeTypeParameter] This class's name looks like a Type Parameter.
     //        (see https://errorprone.info/bugpattern/ClassNamedLikeTypeParameter)
     //        ffb154d0304e7c226e1495e5bf0344ff9313a29c 1
-    //        ----DIAGNOSTIC
-    //
+    // ----DIAGNOSTIC
     // /rds/user/am2857/hpc-work/java-corpus/16933/core/test/com/google/inject/internal/ProxyFactoryTest.java 159 17 4756 4770 4883
     //        [ClassNamedLikeTypeParameter] This class's name looks like a Type Parameter.
     //        (see https://errorprone.info/bugpattern/ClassNamedLikeTypeParameter)

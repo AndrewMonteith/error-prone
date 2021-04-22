@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
+import com.github.gumtreediff.tree.ITree;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
@@ -23,44 +24,58 @@ import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.function.Predicate;
 
-public final class IJMPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
+import static com.google.errorprone.bugtrack.motion.trackers.ITreeUtils.findClosestMatchedNodeThat;
+
+public class IJMPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
   public IJMPosTracker(SrcPairInfo srcPairInfo) throws IOException {
     super(srcPairInfo);
   }
 
-  private long modifyAJLCOrJ7ApiDiagnostic(DatasetDiagnostic diagnostic) {
-    // The AndroidJdkLibsChecker and Java7APIChecker position point to the '.' which is not included
-    // in the JDT AST. Not including the '.''s in AST I imagine is to reduce the size of the tree so
-    // we don't want to introduce them. These two diagnostics can point either at a symbol of a
-    // method call. To discern between the two cases, if the diagnostic's position is the same as
-    // it's start position then it points at a class symbol else it points at a '.'. So if it points
-    // at a '.' then we knock it forward 1 so that hopefully it points at a node.
-    String diagType = diagnostic.getType();
-    final long diagPos = diagnostic.getPos();
+  private Optional<ITree> getMatching(Predicate<ITree> nodeTest) {
+    return findClosestMatchedNodeThat(oldSrcTree.getRoot(), nodeTest).map(mappings::getDst);
+  }
 
-    if (!(diagType.equals("AndroidJdkLibsChecker") || diagType.equals("Java7ApiChecker"))) {
-      return diagPos;
-    }
+  private Optional<DiagPosEqualityOracle> trackPointDiagnostic(final long pos) {
+    return getMatching(node -> node.getPos() == pos)
+        .map(node -> DiagSrcPosEqualityOracle.byPosition(node.getPos()));
+  }
 
-    if (diagnostic.getStartPos() == diagPos) {
-      return diagPos;
-    } else {
-      return diagPos + 1;
+  private long modifySpecificPosition(DatasetDiagnostic diagnostic) {
+    switch (diagnostic.getType()) {
+      case "AndroidJdkLibsChecker":
+      case "Java7ApiChecker:":
+        return diagnostic.getPos() + 1;
+      default:
+        return diagnostic.getPos();
     }
   }
 
-  private long modifyPosition(DatasetDiagnostic diagnostic) {
-    return modifyAJLCOrJ7ApiDiagnostic(diagnostic);
+  private long getNewPosition(ITree oldNode, final long oldPos, ITree newNode) {
+    if (oldPos == oldNode.getPos()) {
+      return newNode.getPos();
+    } else if (oldPos == oldNode.getEndPos()) {
+      return newNode.getEndPos();
+    } else {
+      final long newGuessedPos = newNode.getPos() + (oldPos - oldNode.getPos());
+      return Math.max(newNode.getPos(), Math.min(newNode.getEndPos(), newGuessedPos));
+    }
   }
 
   @Override
-  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-    if (oldDiag.getPos() == -1) {
-      return Optional.empty();
+  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiagnostic) {
+    if (oldDiagnostic.getStartPos() == oldDiagnostic.getEndPos()) {
+      return trackPointDiagnostic(oldDiagnostic.getStartPos());
     }
 
-    return trackStartPosition(modifyPosition(oldDiag))
-        .map(srcBufferRange -> DiagSrcPosEqualityOracle.byPosition(srcBufferRange.pos));
+    final long oldPos = modifySpecificPosition(oldDiagnostic);
+
+    return findClosestMatchedNodeThat(
+            oldSrcTree.getRoot(), node -> ITreeUtils.encompasses(node, oldPos))
+        .map(
+            oldNode ->
+                DiagSrcPosEqualityOracle.byPosition(
+                    getNewPosition(oldNode, oldPos, mappings.getDst(oldNode))));
   }
 }

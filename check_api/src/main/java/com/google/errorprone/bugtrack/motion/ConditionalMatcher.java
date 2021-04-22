@@ -8,8 +8,8 @@ import java.io.IOException;
 public final class ConditionalMatcher implements BugComparer {
   private final SrcPairInfo srcPairInfo;
   private final DiagnosticPredicates.Predicate diagPredicate;
-  private Lazy<BugComparer> comparerIfTrue;
-  private Lazy<BugComparer> comparerIfFalse;
+  private final Lazy<BugComparer> comparerIfTrue;
+  private final Lazy<BugComparer> comparerIfFalse;
 
   public ConditionalMatcher(
       SrcPairInfo srcPairInfo,

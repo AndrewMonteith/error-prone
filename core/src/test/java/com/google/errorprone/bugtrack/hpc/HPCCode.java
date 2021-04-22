@@ -17,7 +17,6 @@
 package com.google.errorprone.bugtrack.hpc;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Files;
 import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
@@ -49,7 +48,8 @@ import java.util.Map;
 import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
 import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMPosTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
 
 public final class HPCCode {
   private static final Map<String, CorpusProject> projects;
@@ -95,7 +95,7 @@ public final class HPCCode {
         BugComparers.conditional(
             DiagnosticPredicates.canTrackIdentically(),
             trackIdentical(),
-            trackPosition(newBetterIJMPosTracker()));
+            trackPosition(newIJMPosTracker()));
 
     BugComparerCtor comparer2 =
         BugComparers.conditional(

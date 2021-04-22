@@ -32,7 +32,7 @@ public final class IJMStartPosTracker extends BaseIJMPosTracker
 
   @Override
   public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-    return trackStartPosition(oldDiag.getStartPos())
+    return trackStartNodePosition(oldDiag.getStartPos())
         .map(srcBufferRange -> DiagSrcPosEqualityOracle.byStartPos(srcBufferRange.startPos));
   }
 }

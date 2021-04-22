@@ -73,10 +73,6 @@ public final class DiagnosticPositionTrackers {
     return IJMPosTracker::new;
   }
 
-  public static DiagnosticPositionTrackerConstructor newBetterIJMPosTracker() {
-    return BetterIJMPosTracker::new;
-  }
-
   public static DiagnosticPositionTrackerConstructor first(
       DiagnosticPositionTrackerConstructor... trackerCtors) {
     return srcPairInfo -> {
@@ -133,30 +129,4 @@ public final class DiagnosticPositionTrackers {
       super(supplier);
     }
   }
-  //
-  //  private static class LazyConstructor extends Lazy<DiagnosticPositionTracker> {
-  //    public LazyConstructor(DiagnosticPositionTrackerConstructor ctor) {
-  //
-  //    }
-  //
-  //    private final DiagnosticPositionTrackerConstructor ctor;
-  //    private DiagnosticPositionTracker tracker;
-  //
-  //    public LazyConstructor(DiagnosticPositionTrackerConstructor ctor) {
-  //      this.ctor = ctor;
-  //    }
-  //
-  //    public DiagnosticPositionTracker get(SrcFilePair srcFilePair, TrackersSharedState
-  // sharedState) {
-  //      if (tracker == null) {
-  //        try {
-  //          tracker = ctor.create(srcFilePair, sharedState);
-  //        } catch (DiffException | IOException e) {
-  //          throw new RuntimeException(e);
-  //        }
-  //      }
-  //
-  //      return tracker;
-  //    }
-  //  }
 }

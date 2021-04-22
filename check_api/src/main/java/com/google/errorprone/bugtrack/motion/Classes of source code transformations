@@ -495,9 +495,9 @@ Perhaps useful things to write about or reference in report:
 
     Nice example of fine grained tracking:
     jsoup 27 2da07a110b04c7d181c04c0fbcfb141035255374..83 77fcaf4dcdc8fd185e2f5d8eb6aa9c425a38bc9b
-        ElementsTest.java UnncessaryParenthesis L:953 -> L:1064
+        ElementTest.java UnncessaryParenthesis L:953 -> L:1064
             assertFalse(e0.hashCode() == (e2.hashCode())); -> assertNotEquals(e0.hashCode(), (e2.hashCode()));
-        ElementsTest.java UnncessaryParenthesis L:954 -> L:1065
+        ElementTest.java UnncessaryParenthesis L:954 -> L:1065
             <similar to above>
 
     jsoup 25 7ff7c43e9fbf4bbaf2b4517b3d4f8a429d87d3bb -> 78 6e3c98c4a578fb7910241e72a5a33014bb8e85f1
@@ -519,8 +519,3 @@ Weird: error prone generates two diagnostics:
     Roll.java 372 35 14867 14893 14912
      [InitializeInline] Initializing variables in their declaring statement is clearer, where possible.
       Did you mean 'damageThreshold, chancePerLevel;'?
-
-
-Possible questions to ask:
-    Is there a relationship between the size of source code described by a diagnostic and how easily it's tracked
-    Is it better to track by specific position or [start, end] pos

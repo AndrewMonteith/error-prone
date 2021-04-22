@@ -99,7 +99,7 @@ public final class ITreeUtils {
         .map(matchingNode -> furtherProcessIfDocNode(matchingNode, pos));
   }
 
-  public static Optional<ITree> findClosestNodeThat(ITree root, Predicate<ITree> test) {
+  public static Optional<ITree> findClosestMatchedNodeThat(ITree root, Predicate<ITree> test) {
     return findFirstMatchingJDTNodeThat(root, test)
         .map(matchingNode -> furtherProcessIfDocNode(matchingNode, matchingNode.getPos()));
   }

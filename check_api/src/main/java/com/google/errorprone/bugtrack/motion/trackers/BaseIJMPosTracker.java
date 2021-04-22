@@ -22,6 +22,7 @@ import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.utils.ThrowingFunction;
@@ -175,15 +176,30 @@ public abstract class BaseIJMPosTracker {
     return new JDTToJCMapper(newJCAst).map(jdtNode);
   }
 
-  protected Optional<NodeLocation> trackStartPosition(final long startPos) {
+  protected Optional<NodeLocation> trackStartNodePosition(final long startPos) {
     return findClosestMatchingJDTNode(startPos)
         .map(closestOldJdtNode -> mapJdtSrcRangeToJCSrcRange(mappings.getDst(closestOldJdtNode)));
   }
 
-  protected Optional<List<NodeLocation>> trackEndPosition(final long endPos) {
+  private long modifyEndPosition(DatasetDiagnostic diagnostic) {
+    switch (diagnostic.getType()) {
+      case "MultiVariableDeclaration":
+      case "FieldCanBeFinal":
+      case "InitializeInline":
+      case "MemberName":
+      case "UnusedVariable":
+        return diagnostic.getEndPos() - 1;
+      default:
+        return diagnostic.getEndPos();
+    }
+  }
+
+  protected Optional<List<NodeLocation>> trackEndPosition(DatasetDiagnostic diagnostic) {
     // We return a list since we're going to consider multiple cases for a possible end position
     // If the position refers to a non-generic class (determined syntatically) then we merely return
     // one location by tracking the token. Else we track both the token and the 'token<...>'
+    final long endPos = modifyEndPosition(diagnostic);
+
     return findClosestMatchingJDTNode(endPos)
         .map(
             closestOldJdtNode -> {

@@ -58,8 +58,7 @@ import java.util.List;
 
 import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
 import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newBetterIJMPosTracker;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -225,32 +224,16 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new JSoupProject();
+    CorpusProject project = new MetricsProject();
 
     DiagnosticsFile oldFile =
-        DiagnosticsFile.load(
-            project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/19 fd46489cd718ddea7b28f89953265e7ce4ec8372");
+        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/2 dc4b5626579c81770556ebf3a44851a663f51282");
 
     DiagnosticsFile newFile =
-        DiagnosticsFile.load(
-            project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jsoup/81 21b01b258952fd6aeb55d061f98321e5b9fe93e0");
-
-    BugComparerCtor justEndpoints =
-        BugComparers.conditional(
-            DiagnosticPredicates.canTrackIdentically(),
-            trackIdentical(),
-            trackPosition(newIJMStartAndEndTracker()));
-
-    BugComparerCtor justSingle =
-        BugComparers.conditional(
-            DiagnosticPredicates.canTrackIdentically(),
-            trackIdentical(),
-            trackPosition(newBetterIJMPosTracker()));
+        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/3 295b976532386e157a7af633652feaa6c96d4e7e");
 
     MatchResults results =
-        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, justEndpoints).match();
+        DiagnosticsMatcher.fromFiles(project, oldFile, newFile).match();
 
     System.out.println(results);
   }

@@ -43,7 +43,7 @@ public final class ITreeUtils {
     return Math.abs(truePos - pos1) < Math.abs(truePos - pos2);
   }
 
-  private static ITree findClosestMatchingNodeInJavadoc(ITree node, final long pos) {
+  public static ITree findClosestMatchingNodeInJavadoc(ITree node, final long pos) {
     // Necessary since JDT's structure for Javadoc's is kinda weird in that there may be
     // nodes with overlapping [pos, pos+length] but not overlapping labels. For example without
     // this we could not track
@@ -57,13 +57,13 @@ public final class ITreeUtils {
       node = node.getParent();
     }
 
-    ITree closest = null;
+    ITree closest = node;
     for (ITree desc : node.postOrder()) {
-      if (!ITreeUtils.encompasses(desc, pos)) {
+      if (!(ITreeUtils.encompasses(desc, pos) && desc.isMatched())) {
         continue;
       }
 
-      if (closest == null || ITreeUtils.isCloser(pos, desc.getPos(), closest.getPos())) {
+      if (ITreeUtils.isCloser(pos, desc.getPos(), closest.getPos())) {
         closest = desc;
       }
     }
@@ -71,22 +71,7 @@ public final class ITreeUtils {
     return closest;
   }
 
-  private static Optional<ITree> findFirstMatchingJDTNodeThat(
-      ITree root, Predicate<ITree> nodeTest) {
-    for (ITree node : root.postOrder()) {
-      if (!node.isMatched()) {
-        continue;
-      }
-
-      if (nodeTest.test(node)) {
-        return Optional.of(node);
-      }
-    }
-
-    return Optional.empty();
-  }
-
-  private static ITree furtherProcessIfDocNode(ITree node, final long pos) {
+  private static ITree processIfDocNode(ITree node, final long pos) {
     if (ITreeUtils.inDocNode(node)) {
       node = findClosestMatchingNodeInJavadoc(node, pos);
     }
@@ -94,13 +79,94 @@ public final class ITreeUtils {
     return node;
   }
 
-  public static Optional<ITree> findClosestNode(ITree root, final long pos) {
-    return findFirstMatchingJDTNodeThat(root, node -> encompasses(node, pos))
-        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, pos));
+  private static <T> Optional<T> findFirst(Iterable<T> iter, Predicate<T> pred) {
+    for (T t : iter) {
+      if (pred.test(t)) {
+        return Optional.of(t);
+      }
+    }
+
+    return Optional.empty();
   }
 
-  public static Optional<ITree> findClosestMatchedNodeThat(ITree root, Predicate<ITree> test) {
-    return findFirstMatchingJDTNodeThat(root, test)
-        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, matchingNode.getPos()));
+  /* Lower = Furthest from root */
+  public static Optional<ITree> findLowestNodeThat(ITree root, Predicate<ITree> acceptNode) {
+    return findFirst(root.postOrder(), acceptNode);
   }
+
+  public static Optional<ITree> findLowestMatchedNodeThat(ITree root, Predicate<ITree> acceptNode) {
+    return findFirst(root.postOrder(), acceptNode.and(ITree::isMatched));
+  }
+
+  /* Highest = Closest to root */
+  public static Optional<ITree> findHighestNodeThat(ITree root, Predicate<ITree> acceptNode) {
+    return findFirst(root.preOrder(), acceptNode);
+  }
+
+  public static Optional<ITree> findHighestMatchedNodeThat(ITree root, Predicate<ITree> acceptNode) {
+    return findFirst(root.preOrder(), acceptNode.and(ITree::isMatched));
+  }
+
+  //  public static Optional<ITree> findDeepestNodeThat(ITree root, Predicate<ITree> acceptNode) {
+  //    for (ITree node : root.postOrder()) {
+  //      if (acceptNode.test(node)) {
+  //        if (node.isMatched()) {
+  //          return Optional.of(node);
+  //        } else {
+  //          return Optional.empty();
+  //        }
+  //      }
+  //    }
+  //
+  //    return Optional.empty();
+  //  }
+  //
+  //  public static Optional<ITree> findDeepestMatchingNodeThat(
+  //      ITree root, Predicate<ITree> acceptNode) {
+  //    for (ITree node : root.postOrder()) {
+  //      if (node.isMatched() && acceptNode.test(node)) {
+  //        return Optional.of(node);
+  //      }
+  //    }
+  //
+  //    return Optional.empty();
+  //  }
+  //
+  //  public static Optional<ITree> findShallowestNodeThat(ITree root, Predicate<ITree> acceptNode)
+  // {
+  //    for (ITree node : root.preOrder()) {
+  //      if (node.isMatched() && acceptNode.test(node)) {
+  //        return Optional.of(node);
+  //      }
+  //    }
+  //
+  //    return Optional.empty();
+  //  }
+  //
+  //  public static Optional<ITree> findDeepestNodeEncompassing(ITree root, final long pos) {
+  //    return findDeepestNodeThat()
+  //  }
+  //
+  //  public static Optional<ITree> findDeepestMatchingNodeEncompassing(ITree root, final long pos)
+  // {
+  //    return findDeepestNodeThat(root, node -> encompasses(node, pos))
+  //        .map(
+  //            matchingNode -> {
+  //              if (inDocNode(matchingNode)) {
+  //                matchingNode = findClosestMatchingNodeInJavadoc(matchingNode, pos);
+  //              }
+  //
+  //              return matchingNode;
+  //            });
+  //  }
+
+  //  public static Optional<ITree> findClosestNode(ITree root, final long pos) {
+  //    return findFirstMatchingJDTNodeThat(root, node -> encompasses(node, pos))
+  //        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, pos));
+  //  }
+  //
+  //  public static Optional<ITree> findClosestMatchedNodeThat(ITree root, Predicate<ITree> test) {
+  //    return findFirstMatchingJDTNodeThat(root, test)
+  //        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, matchingNode.getPos()));
+  //  }
 }

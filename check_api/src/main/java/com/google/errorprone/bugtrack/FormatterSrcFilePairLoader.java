@@ -18,7 +18,6 @@ package com.google.errorprone.bugtrack;
 
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.SrcFilePair;
-import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -26,27 +25,28 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public class GitSrcFilePairLoader implements SrcFilePairLoader {
-  private final Repository repo;
-  private final RevCommit oldCommit;
-  private final RevCommit newCommit;
+public class FormatterSrcFilePairLoader implements SrcFilePairLoader {
+  private final SrcFilePairLoader srcFilePairLoader;
 
-  public GitSrcFilePairLoader(Repository repo, RevCommit oldCommit, RevCommit newCommit) {
-    this.repo = repo;
-    this.oldCommit = oldCommit;
-    this.newCommit = newCommit;
+  public FormatterSrcFilePairLoader(SrcFilePairLoader srcFilePairLoader) {
+    this.srcFilePairLoader = srcFilePairLoader;
   }
 
-  public GitSrcFilePairLoader(Repository repo, String oldCommit, String newCommit)
+  public FormatterSrcFilePairLoader(Repository repo, RevCommit oldCommit, RevCommit newCommit) {
+    this.srcFilePairLoader = new GitSrcFilePairLoader(repo, oldCommit, newCommit);
+  }
+
+  public FormatterSrcFilePairLoader(Repository repo, String oldCommit, String newCommit)
       throws IOException {
-    this(repo, GitUtils.parseCommit(repo, oldCommit), GitUtils.parseCommit(repo, newCommit));
+    this.srcFilePairLoader = new GitSrcFilePairLoader(repo, oldCommit, newCommit);
   }
 
   @Override
-  public SrcFilePair load(Path oldPath, Path newPath) throws IOException, FormatterException {
-    String oldSrc = GitUtils.loadSrc(repo, oldCommit, oldPath);
-    String newSrc = GitUtils.loadSrc(repo, newCommit, newPath);
+  public SrcFilePair load(Path oldFile, Path newFile) throws IOException, FormatterException {
+    SrcFilePair srcFilePair = srcFilePairLoader.load(oldFile, newFile);
 
-    return new SrcFilePair(SrcFile.of(oldPath, oldSrc), SrcFile.of(newPath, newSrc));
+    return new SrcFilePair(
+        SrcFile.format(srcFilePair.oldFile.getName(), srcFilePair.oldFile.getSrc()),
+        SrcFile.format(srcFilePair.newFile.getName(), srcFilePair.newFile.getSrc()));
   }
 }

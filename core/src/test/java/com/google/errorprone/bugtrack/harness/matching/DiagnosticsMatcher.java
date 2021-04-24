@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.harness.matching;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import com.google.errorprone.FormattedRepoSrcPairLoader;
 import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
@@ -55,11 +56,9 @@ public final class DiagnosticsMatcher {
   }
 
   public static DiagnosticsMatcher fromFiles(
-          CorpusProject project,
-          DiagnosticsFile oldDiagFile,
-          DiagnosticsFile newDiagFile)
+      CorpusProject project, DiagnosticsFile oldDiagFile, DiagnosticsFile newDiagFile)
       throws IOException, GitAPIException {
-      return fromFiles(project, oldDiagFile, newDiagFile, BugComparers.DEFAULT_COMPARER);
+    return fromFiles(project, oldDiagFile, newDiagFile, BugComparers.DEFAULT_COMPARER);
   }
 
   public static DiagnosticsMatcher fromFiles(
@@ -71,7 +70,34 @@ public final class DiagnosticsMatcher {
     return new DiagnosticsMatcher(
         oldDiagFile.diagnostics,
         newDiagFile.diagnostics,
-        new GitSrcFilePairLoader(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
+        new FormatterSrcFilePairLoader(
+            project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
+        bugComparerCtor,
+        new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
+  }
+
+  public static DiagnosticsMatcher fromFilesAndPreformattedRepo(
+      CorpusProject project, DiagnosticsFile oldDiagFile, DiagnosticsFile newDiagFile)
+      throws GitAPIException, IOException {
+    return fromFilesAndPreformattedRepo(
+        project, oldDiagFile, newDiagFile, BugComparers.DEFAULT_COMPARER);
+  }
+
+  public static DiagnosticsMatcher fromFilesAndPreformattedRepo(
+      CorpusProject project,
+      DiagnosticsFile oldDiagFile,
+      DiagnosticsFile newDiagFile,
+      BugComparerCtor bugComparerCtor)
+      throws IOException, GitAPIException {
+    Path projectRoot = project.getRoot();
+    Path formattedProject =
+        projectRoot.getParent().resolve(projectRoot.getFileName().toString() + "_formatted");
+
+    return new DiagnosticsMatcher(
+        oldDiagFile.diagnostics,
+        newDiagFile.diagnostics,
+        new FormattedRepoSrcPairLoader(
+            project.loadRepo(), formattedProject, oldDiagFile.commitId, newDiagFile.commitId),
         bugComparerCtor,
         new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
   }
@@ -81,6 +107,24 @@ public final class DiagnosticsMatcher {
     return diagnostics.stream()
         .filter(diag -> diag.getFileName().equals(file))
         .collect(Collectors.toList());
+  }
+
+  private void printNewDiagnosticsThatMatchManyOld(MatchResults results) {
+    Map<DatasetDiagnostic, DatasetDiagnostic> matches = results.getMatchedDiagnostics();
+    Map<DatasetDiagnostic, DatasetDiagnostic> existingMatchings = new HashMap<>();
+
+    matches.forEach(
+        (oldDiag, newDiag) -> {
+          if (existingMatchings.containsKey(newDiag)) {
+            System.out.println("New diagnostic");
+            System.out.println(newDiag);
+            System.out.println("Was matched by");
+            System.out.println(oldDiag);
+            System.out.println(existingMatchings.get(newDiag));
+          } else {
+            existingMatchings.put(oldDiag, newDiag);
+          }
+        });
   }
 
   public MatchResults match() {
@@ -128,7 +172,12 @@ public final class DiagnosticsMatcher {
                       });
             });
 
-    return new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
+    MatchResults results = new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
+    if (printMultiMatches) {
+      printNewDiagnosticsThatMatchManyOld(results);
+    }
+
+    return results;
   }
 
   public void writeToStdout() {

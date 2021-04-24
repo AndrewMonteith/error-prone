@@ -45,8 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
-import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
+import static com.google.errorprone.bugtrack.BugComparers.*;
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
 import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMPosTracker;
 import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
@@ -92,16 +91,20 @@ public final class HPCCode {
     Path output = ProjectFiles.get("comparisons/" + projectName);
 
     BugComparerCtor comparer1 =
-        BugComparers.conditional(
-            DiagnosticPredicates.canTrackIdentically(),
-            trackIdentical(),
-            trackPosition(newIJMPosTracker()));
+        and(
+            matchProblem(),
+            BugComparers.conditional(
+                DiagnosticPredicates.canTrackIdenticalLocation(),
+                matchIdenticalLocation(),
+                trackPosition(newIJMPosTracker())));
 
     BugComparerCtor comparer2 =
-        BugComparers.conditional(
-            DiagnosticPredicates.canTrackIdentically(),
-            trackIdentical(),
-            trackPosition(newIJMStartAndEndTracker()));
+        and(
+            matchProblem(),
+            BugComparers.conditional(
+                DiagnosticPredicates.canTrackIdenticalLocation(),
+                matchIdenticalLocation(),
+                trackPosition(newIJMStartAndEndTracker())));
 
     BugComparerExperiment.forProject(project)
         .withData(RandomDiagFilePairLoader.allFiles(project, diagnostics))

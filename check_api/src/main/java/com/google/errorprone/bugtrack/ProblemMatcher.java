@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package com.google.errorprone.bugtrack.motion.trackers;
+package com.google.errorprone.bugtrack;
 
-import com.google.errorprone.bugtrack.DatasetDiagnostic;
-import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
-import com.google.errorprone.bugtrack.motion.SrcFilePair;
+import java.io.IOException;
 
-import java.util.Optional;
+public final class ProblemMatcher implements BugComparer {
 
-/** @param <T> Position type we're tracking. Currently either DiagnosticPosition or long */
-@FunctionalInterface
-public interface DiagnosticPositionTracker {
-  Optional<DiagPosEqualityOracle> track(DatasetDiagnostic t);
-
-  default boolean shouldAdjustPositions(DatasetDiagnostic oldDiagnostic) {
-    return false;
+  @Override
+  public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
+      throws IOException {
+    return oldDiagnostic.getMessageWithoutFix().equals(newDiagnostic.getMessageWithoutFix());
   }
 }

@@ -44,7 +44,7 @@ public class DiagnosticPredicates {
     };
   }
 
-  public static Predicate canTrackIdentically() {
+  public static Predicate canTrackIdenticalLocation() {
     return (srcFilePair, oldDiag, newDiag) -> {
       if ((oldDiag.getEndPos() == -1 && newDiag.getEndPos() != -1)
           || (oldDiag.getEndPos() != -1 && newDiag.getEndPos() == -1)) {
@@ -53,8 +53,7 @@ public class DiagnosticPredicates {
         return false;
       }
 
-      return !(srcFilePair.srcChanged
-          || DESCRIPTIONS_CAN_SYNTACTICALLY_CHANGE.contains(oldDiag.getType()));
+      return !srcFilePair.srcChanged;
     };
   }
 

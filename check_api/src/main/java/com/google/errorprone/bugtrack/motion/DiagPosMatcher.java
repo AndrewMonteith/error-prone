@@ -42,6 +42,13 @@ public class DiagPosMatcher implements BugComparer {
       return false;
     }
 
+    if (posTracker.shouldAdjustPositions(oldDiagnostic)) {
+      oldDiagnostic =
+          DiagnosticPositionModifiers.modify(srcPairInfo.getOldJdtTree(), oldDiagnostic);
+      newDiagnostic =
+          DiagnosticPositionModifiers.modify(srcPairInfo.getNewJdtTree(), newDiagnostic);
+    }
+
     try {
       Optional<DiagPosEqualityOracle> posEqOracle = posTracker.track(oldDiagnostic);
 

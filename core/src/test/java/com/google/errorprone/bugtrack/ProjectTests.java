@@ -33,7 +33,6 @@ import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
-import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -55,10 +54,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import static com.google.errorprone.bugtrack.BugComparers.trackIdentical;
-import static com.google.errorprone.bugtrack.BugComparers.trackPosition;
-import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -227,13 +222,20 @@ public class ProjectTests {
     CorpusProject project = new MetricsProject();
 
     DiagnosticsFile oldFile =
-        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/2 dc4b5626579c81770556ebf3a44851a663f51282");
+//                DiagnosticsFile.load(project,
+//         "/home/monty/IdeaProjects/java-corpus/diagnostics/old");
+        DiagnosticsFile.load(
+            project,
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/6 d7a925817a8065286511801843671d7f3b10b45b");
 
     DiagnosticsFile newFile =
-        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/3 295b976532386e157a7af633652feaa6c96d4e7e");
+//                DiagnosticsFile.load(project,
+//         "/home/monty/IdeaProjects/java-corpus/diagnostics/new");
+       DiagnosticsFile.load(
+            project,
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/7 6498808239df5e8ace51a816bb4af0fa60ac0d87");
 
-    MatchResults results =
-        DiagnosticsMatcher.fromFiles(project, oldFile, newFile).match();
+    MatchResults results = DiagnosticsMatcher.fromFilesAndPreformattedRepo(project, oldFile, newFile).match();
 
     System.out.println(results);
   }
@@ -269,9 +271,7 @@ public class ProjectTests {
 
   @Test
   public void parseIntoJDT() throws Exception {
-    String code =
-        new Formatter()
-            .formatSource("public class Foo {\n void foo() {\n Class c = Foo.class; \n }\n }");
+    String code = new Formatter().formatSource("public class Foo {\n private int x = 1, y; \n }");
 
     List<String> lines = Splitter.on('\n').splitToList(code);
     SrcFile f = new SrcFile("foo.java", lines);

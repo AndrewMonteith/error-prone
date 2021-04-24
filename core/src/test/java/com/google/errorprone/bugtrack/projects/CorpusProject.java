@@ -20,6 +20,7 @@ import com.google.errorprone.bugtrack.harness.scanning.CheckoutForwader;
 import com.google.errorprone.bugtrack.harness.scanning.CmdBlobFilesExtractor;
 import com.google.errorprone.bugtrack.harness.scanning.CommitForwarder;
 import com.google.errorprone.bugtrack.harness.scanning.TakeFromBlobFilesExtractor;
+import com.google.errorprone.bugtrack.utils.GitUtils;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
@@ -41,12 +42,7 @@ public interface CorpusProject {
   BuildSystem getBuildSystem();
 
   default Repository loadRepo() {
-    try {
-      return FileRepositoryBuilder.create(getRoot().resolve(".git").toFile());
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null;
-    }
+    return GitUtils.loadRepo(getRoot());
   }
 
   default CommitForwarder getForwarder() {

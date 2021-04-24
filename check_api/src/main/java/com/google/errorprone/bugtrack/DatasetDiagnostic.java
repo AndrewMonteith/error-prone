@@ -18,28 +18,26 @@ package com.google.errorprone.bugtrack;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import com.google.errorprone.bugtrack.signatures.DiagnosticSignature;
 import com.google.errorprone.bugtrack.signatures.SignatureBucket;
 import com.google.errorprone.bugtrack.utils.DiagnosticUtils;
-import com.google.errorprone.bugtrack.utils.ProjectFiles;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import java.util.List;
 import java.util.Objects;
 
 public class DatasetDiagnostic {
   private final String fileName;
   private final long lineNumber;
   private final long columnNumber;
-
   private final long startPos;
   private final long pos;
   private final long endPos;
-
   private final String message;
   private final String type;
   private final DiagnosticSignature signature;
+  private final int diagHash;
 
   public DatasetDiagnostic(
       String fileName,
@@ -59,6 +57,9 @@ public class DatasetDiagnostic {
     this.message = message;
     this.type = DiagnosticUtils.extractDiagnosticType(message);
     this.signature = signature;
+
+    this.diagHash =
+        Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, message, fileName);
   }
 
   public DatasetDiagnostic(String fileName, long lineNumber, long columnNumber, String message) {
@@ -98,6 +99,13 @@ public class DatasetDiagnostic {
         SignatureBucket.getSignature(diagnostic));
   }
 
+  private static String getMessageWithoutFix(String message) {
+    return Joiner.on('\n')
+        .join(
+            Iterables.filter(
+                Splitter.on('\n').split(message), line -> !line.startsWith("Did you mean")));
+  }
+
   public long getLineNumber() {
     return lineNumber;
   }
@@ -112,6 +120,10 @@ public class DatasetDiagnostic {
 
   public String getMessage() {
     return message;
+  }
+
+  public String getMessageWithoutFix() {
+    return getMessageWithoutFix(message);
   }
 
   public String getType() {
@@ -181,7 +193,6 @@ public class DatasetDiagnostic {
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        fileName, lineNumber, columnNumber, startPos, pos, endPos, message, fileName);
+    return diagHash;
   }
 }

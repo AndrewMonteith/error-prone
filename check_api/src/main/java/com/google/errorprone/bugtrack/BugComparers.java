@@ -19,7 +19,7 @@ package com.google.errorprone.bugtrack;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.motion.ConditionalMatcher;
 import com.google.errorprone.bugtrack.motion.DiagPosMatcher;
-import com.google.errorprone.bugtrack.motion.ExactDiagnosticMatcher;
+import com.google.errorprone.bugtrack.motion.ExactLocationMatcher;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
@@ -33,15 +33,28 @@ import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionT
 import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.newIJMStartAndEndTracker;
 
 public final class BugComparers {
-  public static final BugComparerCtor DEFAULT_COMPARER =
-      BugComparers.conditional(
-          DiagnosticPredicates.canTrackIdentically(),
-          trackIdentical(),
-          trackPosition(
-              DiagnosticPositionTrackers.any(newIJMStartAndEndTracker(), newIJMPosTracker())));
+  //  public static final BugComparerCtor DEFAULT_COMPARER2 =
+  //      BugComparers.conditional(
+  //          DiagnosticPredicates.canTrackIdentically(),
+  //          trackIdentical(),
+  //          trackPosition(
+  //              DiagnosticPositionTrackers.any(newIJMStartAndEndTracker(), newIJMPosTracker())));
 
-  public static BugComparerCtor trackIdentical() {
-    return srcPairInfo -> new ExactDiagnosticMatcher();
+  public static final BugComparerCtor DEFAULT_COMPARER =
+      and(
+          matchProblem(),
+          conditional(
+              DiagnosticPredicates.canTrackIdenticalLocation(),
+              matchIdenticalLocation(),
+              trackPosition(
+                  DiagnosticPositionTrackers.any(newIJMStartAndEndTracker(), newIJMPosTracker()))));
+
+  public static BugComparerCtor matchProblem() {
+    return srcPairInfo -> new ProblemMatcher();
+  }
+
+  public static BugComparerCtor matchIdenticalLocation() {
+    return srcPairInfo -> new ExactLocationMatcher();
   }
 
   public static BugComparerCtor trackPosition(DiagnosticPositionTrackerConstructor constructor) {
@@ -66,6 +79,20 @@ public final class BugComparers {
       return (oldDiag, newDiag) ->
           comparers.stream()
               .anyMatch(
+                  (ThrowingPredicate<BugComparer>) comparer -> comparer.areSame(oldDiag, newDiag));
+    };
+  }
+
+  public static BugComparerCtor and(BugComparerCtor... ctors) {
+    return srcPairInfo -> {
+      List<BugComparer> comparers =
+          Arrays.stream(ctors)
+              .map((ThrowingFunction<BugComparerCtor, BugComparer>) ctor -> ctor.get(srcPairInfo))
+              .collect(ImmutableList.toImmutableList());
+
+      return (oldDiag, newDiag) ->
+          comparers.stream()
+              .allMatch(
                   (ThrowingPredicate<BugComparer>) comparer -> comparer.areSame(oldDiag, newDiag));
     };
   }

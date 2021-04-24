@@ -24,6 +24,7 @@ import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
 import com.sun.tools.javac.util.Position;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
@@ -39,10 +40,22 @@ public class SrcFile {
     this(fileName, Joiner.on('\n').join(src));
   }
 
-  public SrcFile(String fileName, String source) throws FormatterException {
+  public static SrcFile format(String fileName, String source) throws FormatterException {
+    return of(fileName, new Formatter().formatSource(source));
+  }
+
+  public static SrcFile of(String fileName, String source) {
+    return new SrcFile(fileName, source);
+  }
+
+  public static SrcFile of(Path path, String source) {
+    return new SrcFile(path.toString(), source);
+  }
+
+  private SrcFile(String fileName, String source) {
     this.name = fileName;
-    this.src = ImmutableList.copyOf(Splitter.on('\n').split(new Formatter().formatSource(source)));
-    this.charBuf = Joiner.on('\n').join(this.src).toCharArray();
+    this.src = ImmutableList.copyOf(Splitter.on('\n').split(source));
+    this.charBuf = source.toCharArray();
     this.lineMap = Position.makeLineMap(charBuf, charBuf.length, true);
   }
 

@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
 import com.google.errorprone.DiagnosticTestHelper.LookForCheckNameInDiagnostic;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -68,6 +69,7 @@ public class CompilationTestHelper {
                     "-XDdev",
                     "-parameters",
                     "-XDcompilePolicy=simple",
+                    "-Xjcov",
                     // Don't limit errors/warnings for tests to the default of 100
                     "-Xmaxerrs",
                     "1000000",
@@ -325,6 +327,7 @@ public class CompilationTestHelper {
         this.run = true;
         Result result = compile();
         for (Diagnostic<? extends JavaFileObject> diagnostic : diagnosticHelper.getDiagnostics()) {
+            long l = diagnostic.getEndPosition();
             if (diagnostic.getCode().contains("error.prone.crash")) {
                 fail(diagnostic.getMessage(Locale.ENGLISH));
             }
@@ -379,9 +382,9 @@ public class CompilationTestHelper {
     }
 
     public Result compile() {
-        checkState(!sources.isEmpty(), "No source files to compile");
-        checkState(!run, "doTest should only be called once");
-        this.run = true;
+//        checkState(!sources.isEmpty(), "No source files to compile");
+//        checkState(!run, "doTest should only be called once");
+//        this.run = true;
 
         List<String> processedArgs = buildArguments(overrideClasspath, extraArgs);
         if (checkWellFormed) {
@@ -396,7 +399,7 @@ public class CompilationTestHelper {
                                 /*autoFlush=*/ true),
                         fileManager,
                         diagnosticHelper.collector,
-                        /* options= */ ImmutableList.copyOf(processedArgs),
+                        /* options= */ Iterables.concat(processedArgs, ImmutableList.of("-Xjcov")),
                         /* classes= */ ImmutableList.of(),
                         sources)
                 .call()
@@ -421,7 +424,7 @@ public class CompilationTestHelper {
                                 /*autoFlush=*/ true),
                         fileManager,
                         null,
-                        remainingArgs,
+                        Iterables.concat(remainingArgs, ImmutableList.of("-Xjcov")),
                         null,
                         sources);
         boolean result = task.call();

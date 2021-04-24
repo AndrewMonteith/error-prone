@@ -31,6 +31,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 
@@ -106,12 +107,41 @@ public class GitUtils {
     return path.startsWith(pathToProject) ? path.replaceFirst(pathToProject, "") : path;
   }
 
-  public static SrcFile loadSrcFile(Repository repo, RevCommit commit, Path path)
+  public static String loadSrc(Repository repo, RevCommit commit, Path path) throws IOException {
+    return loadSrc(repo, commit, path.toString());
+  }
+
+  public static String loadSrc(Repository repo, RevCommit commit, String path) throws IOException {
+    RevTree tree = commit.getTree();
+
+    String relativePath = makePathRelativeToRepo(repo, path);
+
+    try (TreeWalk treeWalk = new TreeWalk(repo)) {
+      treeWalk.addTree(tree);
+      treeWalk.setRecursive(true);
+      treeWalk.setFilter(PathFilter.create(relativePath));
+
+      treeWalk.next();
+      ObjectId oId = treeWalk.getObjectId(0);
+
+      if (oId == ObjectId.zeroId()) {
+        throw new IOException(
+            "could not find " + relativePath + " inside the commit " + commit.getName());
+      }
+
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      repo.open(oId).copyTo(stream);
+
+      return stream.toString();
+    }
+  }
+
+  private static SrcFile loadSrcFile(Repository repo, RevCommit commit, Path path)
       throws IOException, FormatterException {
     return loadSrcFile(repo, commit, path.toString());
   }
 
-  public static SrcFile loadSrcFile(Repository repo, RevCommit commit, String path)
+  private static SrcFile loadSrcFile(Repository repo, RevCommit commit, String path)
       throws IOException, FormatterException {
     RevTree tree = commit.getTree();
 
@@ -133,15 +163,15 @@ public class GitUtils {
       ByteArrayOutputStream stream = new ByteArrayOutputStream();
       repo.open(oId).copyTo(stream);
 
-      return new SrcFile(path, stream.toString());
+      return SrcFile.format(path, stream.toString());
     }
   }
 
   public static String loadJavaLine(Repository repo, RevCommit commit, DatasetDiagnostic diag)
       throws IOException, FormatterException {
-    return loadSrcFile(repo, commit, diag.getFileName())
-        .getLines()
-        .get((int) diag.getLineNumber() - 1);
+    return SrcFile.format(diag.getFileName(), loadSrc(repo, commit, diag.getFileName()))
+            .getLines()
+            .get((int) diag.getLineNumber() - 1);
   }
 
   public static List<DiffEntry> computeDiffs(Git git, RevCommit olderCommit, RevCommit newerCommit)
@@ -154,6 +184,14 @@ public class GitUtils {
       new Git(repo).checkout().setName("master").call();
     } catch (GitAPIException e) {
       e.printStackTrace();
+    }
+  }
+
+  public static Repository loadRepo(Path project) {
+    try {
+      return FileRepositoryBuilder.create(project.resolve(".git").toFile());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

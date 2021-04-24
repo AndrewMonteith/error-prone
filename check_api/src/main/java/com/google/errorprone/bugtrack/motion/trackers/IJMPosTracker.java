@@ -22,34 +22,46 @@ import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 import com.google.errorprone.bugtrack.motion.DiagSrcPosEqualityOracle;
 
-import java.io.IOException;
 import java.util.Optional;
-import java.util.function.Predicate;
 
-import static com.google.errorprone.bugtrack.motion.trackers.ITreeUtils.findClosestMatchedNodeThat;
+public class IJMPosTracker implements DiagnosticPositionTracker {
+  private final SrcPairInfo srcPairInfo;
 
-public class IJMPosTracker extends BaseIJMPosTracker implements DiagnosticPositionTracker {
-  public IJMPosTracker(SrcPairInfo srcPairInfo) throws IOException {
-    super(srcPairInfo);
+  public IJMPosTracker(SrcPairInfo srcPairInfo) {
+    this.srcPairInfo = srcPairInfo;
   }
 
-  private Optional<ITree> getMatching(Predicate<ITree> nodeTest) {
-    return findClosestMatchedNodeThat(oldSrcTree.getRoot(), nodeTest).map(mappings::getDst);
+  @Override
+  public boolean shouldAdjustPositions(DatasetDiagnostic oldDiagnostic) {
+    return true;
+  }
+
+  @Override
+  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiagnostic) {
+    if (oldDiagnostic.getStartPos() == oldDiagnostic.getEndPos()) {
+      return trackPointDiagnostic(oldDiagnostic.getStartPos());
+    }
+
+    final long oldPos = oldDiagnostic.getPos();
+
+    Optional<ITree> lowestNode =
+        ITreeUtils.findLowestNodeThat(
+            srcPairInfo.getMatchedOldJdtTree(), node -> ITreeUtils.encompasses(node, oldPos));
+    if (!lowestNode.isPresent() || !lowestNode.get().isMatched()) {
+      return Optional.empty();
+    }
+
+    return lowestNode.map(
+        oldNode ->
+            DiagSrcPosEqualityOracle.byPosition(
+                getNewPosition(oldNode, oldPos, srcPairInfo.getMatch(oldNode))));
   }
 
   private Optional<DiagPosEqualityOracle> trackPointDiagnostic(final long pos) {
-    return getMatching(node -> node.getPos() == pos)
+    return ITreeUtils.findLowestMatchedNodeThat(
+            srcPairInfo.getMatchedOldJdtTree(), node -> node.getPos() == pos)
+        .map(srcPairInfo::getMatch)
         .map(node -> DiagSrcPosEqualityOracle.byPosition(node.getPos()));
-  }
-
-  private long modifySpecificPosition(DatasetDiagnostic diagnostic) {
-    switch (diagnostic.getType()) {
-      case "AndroidJdkLibsChecker":
-      case "Java7ApiChecker:":
-        return diagnostic.getPos() + 1;
-      default:
-        return diagnostic.getPos();
-    }
   }
 
   private long getNewPosition(ITree oldNode, final long oldPos, ITree newNode) {
@@ -61,21 +73,5 @@ public class IJMPosTracker extends BaseIJMPosTracker implements DiagnosticPositi
       final long newGuessedPos = newNode.getPos() + (oldPos - oldNode.getPos());
       return Math.max(newNode.getPos(), Math.min(newNode.getEndPos(), newGuessedPos));
     }
-  }
-
-  @Override
-  public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiagnostic) {
-    if (oldDiagnostic.getStartPos() == oldDiagnostic.getEndPos()) {
-      return trackPointDiagnostic(oldDiagnostic.getStartPos());
-    }
-
-    final long oldPos = modifySpecificPosition(oldDiagnostic);
-
-    return findClosestMatchedNodeThat(
-            oldSrcTree.getRoot(), node -> ITreeUtils.encompasses(node, oldPos))
-        .map(
-            oldNode ->
-                DiagSrcPosEqualityOracle.byPosition(
-                    getNewPosition(oldNode, oldPos, mappings.getDst(oldNode))));
   }
 }

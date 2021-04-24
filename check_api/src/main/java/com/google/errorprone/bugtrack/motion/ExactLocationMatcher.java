@@ -19,20 +19,13 @@ package com.google.errorprone.bugtrack.motion;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
-public class ExactDiagnosticMatcher implements BugComparer {
+public class ExactLocationMatcher implements BugComparer {
   @Override
   public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
-    if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
-      return false;
-    }
-
-    if (!oldDiagnostic.isSameType(newDiagnostic)) {
-      return false;
-    }
-
-    // We don't use .equals since that accounts for the same file name but the file could have
-    // been renamed since matching guarentees we only match diagnostics in the same file then we
-    // need only compare everything else for equality
-    return oldDiagnostic.refersToSameSource(newDiagnostic);
+    return oldDiagnostic.getLineNumber() == newDiagnostic.getLineNumber() &&
+            oldDiagnostic.getColumnNumber() == newDiagnostic.getColumnNumber() &&
+            oldDiagnostic.getStartPos() == newDiagnostic.getStartPos() &&
+            oldDiagnostic.getPos() == newDiagnostic.getPos() &&
+            oldDiagnostic.getEndPos() == newDiagnostic.getEndPos();
   }
 }

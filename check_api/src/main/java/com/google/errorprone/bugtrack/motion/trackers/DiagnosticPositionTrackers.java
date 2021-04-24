@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.motion.trackers;
 
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.Lazy;
 import com.google.errorprone.bugtrack.motion.DiagPosEqualityOracle;
 import com.google.errorprone.bugtrack.utils.ThrowingSupplier;
@@ -23,6 +24,7 @@ import com.google.errorprone.bugtrack.utils.ThrowingSupplier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 public final class DiagnosticPositionTrackers {
   private DiagnosticPositionTrackers() {}
@@ -42,10 +44,6 @@ public final class DiagnosticPositionTrackers {
                 srcPairInfo.files.newFile.getLines(), srcPairInfo.loadNewJavacContext()));
   }
 
-  public static DiagnosticPositionTrackerConstructor newIJMStartPosTracker() {
-    return IJMStartPosTracker::new;
-  }
-
   public static DiagnosticPositionTrackerConstructor newIJMStartAndEndTracker() {
     return IJMStartAndEndPosTracker::new;
   }
@@ -58,40 +56,28 @@ public final class DiagnosticPositionTrackers {
       LazyTracker lazyTrueComparer = new LazyTracker(() -> comparerIfTrue.create(srcPairInfo));
       LazyTracker lazyFalseComparer = new LazyTracker(() -> comparerIfFalse.create(srcPairInfo));
 
-      return oldDiag -> {
-        DiagnosticPositionTracker tracker =
-            predicate.test(srcPairInfo.files, oldDiag, null)
-                ? lazyTrueComparer.get()
-                : lazyFalseComparer.get();
+      Function<DatasetDiagnostic, DiagnosticPositionTracker> chooseTracker =
+          oldDiag ->
+              predicate.test(srcPairInfo.files, oldDiag, null)
+                  ? lazyTrueComparer.get()
+                  : lazyFalseComparer.get();
 
-        return tracker.track(oldDiag);
+      return new DiagnosticPositionTracker() {
+        @Override
+        public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
+          return chooseTracker.apply(oldDiag).track(oldDiag);
+        }
+
+        @Override
+        public boolean shouldAdjustPositions(DatasetDiagnostic oldDiag) {
+          return chooseTracker.apply(oldDiag).shouldAdjustPositions(oldDiag);
+        }
       };
     };
   }
 
   public static DiagnosticPositionTrackerConstructor newIJMPosTracker() {
     return IJMPosTracker::new;
-  }
-
-  public static DiagnosticPositionTrackerConstructor first(
-      DiagnosticPositionTrackerConstructor... trackerCtors) {
-    return srcPairInfo -> {
-      List<DiagnosticPositionTracker> trackers = new ArrayList<>();
-      for (DiagnosticPositionTrackerConstructor trackerCtor : trackerCtors) {
-        trackers.add(trackerCtor.create(srcPairInfo));
-      }
-
-      return diagnostic -> {
-        for (DiagnosticPositionTracker tracker : trackers) {
-          Optional<DiagPosEqualityOracle> posEqOracle = tracker.track(diagnostic);
-          if (posEqOracle.isPresent()) {
-            return posEqOracle;
-          }
-        }
-
-        return Optional.empty();
-      };
-    };
   }
 
   public static DiagnosticPositionTrackerConstructor any(
@@ -102,24 +88,32 @@ public final class DiagnosticPositionTrackers {
         trackers.add(trackerCtor.create(srcPairInfo));
       }
 
-      return oldDiag -> {
-        List<Optional<DiagPosEqualityOracle>> equalityOracles = new ArrayList<>();
+      return new DiagnosticPositionTracker() {
+        @Override
+        public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
+          List<Optional<DiagPosEqualityOracle>> equalityOracles = new ArrayList<>();
 
-        return Optional.of(
-            newDiag -> {
-              for (int i = 0; i < trackers.size(); ++i) {
-                if (equalityOracles.size() <= i) {
-                  equalityOracles.add(i, trackers.get(i).track(oldDiag));
+          return Optional.of(
+              newDiag -> {
+                for (int i = 0; i < trackers.size(); ++i) {
+                  if (equalityOracles.size() <= i) {
+                    equalityOracles.add(i, trackers.get(i).track(oldDiag));
+                  }
+
+                  Optional<DiagPosEqualityOracle> eqOracle = equalityOracles.get(i);
+                  if (eqOracle.isPresent() && eqOracle.get().hasSamePosition(newDiag)) {
+                    return true;
+                  }
                 }
 
-                Optional<DiagPosEqualityOracle> eqOracle = equalityOracles.get(i);
-                if (eqOracle.isPresent() && eqOracle.get().hasSamePosition(newDiag)) {
-                  return true;
-                }
-              }
+                return false;
+              });
+        }
 
-              return false;
-            });
+        @Override
+        public boolean shouldAdjustPositions(DatasetDiagnostic diagnostic) {
+          return trackers.stream().anyMatch(tracker -> tracker.shouldAdjustPositions(diagnostic));
+        }
       };
     };
   }

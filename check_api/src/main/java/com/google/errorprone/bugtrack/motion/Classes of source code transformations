@@ -487,6 +487,9 @@ Example of lower resolution missing diagnostics:
     [MissingSummary] A summary line is required on public/protected Javadocs.
 
 
+Diagnostics which have bad positions that we can fix:
+    MultiVariableDeclaration reports match on end of first identifier. Should report match over all of them ideally
+
 
 Perhaps useful things to write about or reference in report:
     Qualified names of the form 'X.Y' are now a root nodes with to children for X and Y respectively.

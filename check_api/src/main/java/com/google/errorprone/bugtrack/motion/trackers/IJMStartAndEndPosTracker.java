@@ -110,8 +110,8 @@ public final class IJMStartAndEndPosTracker implements DiagnosticPositionTracker
   }
 
   private Optional<NodeLocation> trackStartNodePosition(final long startPos) {
-    return ITreeUtils.findHighestMatchedNodeThat(
-            srcPairInfo.getMatchedOldJdtTree(), node -> node.getPos() == startPos)
+    return ITreeUtils.findHighestMatchedNodeWithPos(
+            srcPairInfo.getMatchedOldJdtTree(), (int) startPos)
         .map(
             closestOldJdtNode ->
                 mapJdtSrcRangeToJCSrcRange(srcPairInfo.getMatch(closestOldJdtNode)));
@@ -121,10 +121,9 @@ public final class IJMStartAndEndPosTracker implements DiagnosticPositionTracker
     // We return a list since we're going to consider multiple cases for a possible end position
     // If the position refers to a non-generic class (determined syntatically) then we merely return
     // one location by tracking the token. Else we track both the token and the 'token<...>'
-    //    final long endPos = modifyEndPosition(diagnostic);
 
-    return ITreeUtils.findHighestMatchedNodeThat(
-            srcPairInfo.getMatchedOldJdtTree(), node -> node.getEndPos() == diagnostic.getEndPos())
+    return ITreeUtils.findHighestMatchedNodeWithEndPos(
+            srcPairInfo.getMatchedOldJdtTree(), (int) diagnostic.getEndPos())
         .map(
             closestOldJdtNode -> {
               ITree newJdtNode = srcPairInfo.getMatch(closestOldJdtNode);

@@ -34,7 +34,7 @@ public final class DiagnosticPositionModifiers {
         ImmutableSet.of(
             ASTNode.VARIABLE_DECLARATION_EXPRESSION,
             ASTNode.VARIABLE_DECLARATION_STATEMENT,
-            ASTNode.SINGLE_VARIABLE_DECLARATION);
+            ASTNode.FIELD_DECLARATION);
 
     final long endOfFirstToken = diagnostic.getEndPos() - 1;
     ITree node = ITreeUtils.findLowestNodeThat(root, n -> encompasses(n, endOfFirstToken)).get();

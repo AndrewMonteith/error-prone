@@ -19,7 +19,9 @@ package com.google.errorprone.bugtrack.motion.trackers;
 import com.github.gumtreediff.tree.ITree;
 import org.eclipse.jdt.core.dom.ASTNode;
 
+import java.util.ArrayDeque;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public final class ITreeUtils {
@@ -103,7 +105,74 @@ public final class ITreeUtils {
     return findFirst(root.preOrder(), acceptNode);
   }
 
-  public static Optional<ITree> findHighestMatchedNodeThat(ITree root, Predicate<ITree> acceptNode) {
+  private static Optional<ITree> findHighestMatchedNodeByPos(
+      ITree root, Function<ITree, Integer> nodePos, final int pos) {
+    ITree current = root;
+    next_node:
+    while (nodePos.apply(current) != pos && !current.isMatched()) {
+      if (current.getChildren().isEmpty()) {
+        return Optional.empty();
+      }
+
+      for (ITree child : current.getChildren()) {
+        if (encompasses(child, pos)) {
+          current = child;
+          continue next_node;
+        }
+      }
+    }
+
+    return Optional.of(current);
+  }
+
+  public static Optional<ITree> findHighestMatchedNodeWithPos(ITree root, final int pos) {
+    return findHighestMatchedNodeByPos(root, ITree::getPos, pos);
+  }
+
+  public static Optional<ITree> findHighestMatchedNodeWithEndPos(ITree root, final int pos) {
+    return findHighestMatchedNodeByPos(root, ITree::getEndPos, pos);
+  }
+
+  public static Optional<ITree> findLowestNodeEncompassing(ITree root, final int pos) {
+    ITree current = root;
+    next_node:
+    while (true) {
+      for (ITree child : current.getChildren()) {
+        if (encompasses(child, pos)) {
+          current = child;
+          continue next_node;
+        }
+      }
+
+      return Optional.of(current);
+    }
+  }
+
+  public static Optional<ITree> findLowestMatchedNodeWithPos(ITree root, final int pos) {
+    ITree current = root;
+    ITree lowest = null;
+
+    next_node:
+    while (true) {
+      if (current.getPos() == pos && current.isMatched()) {
+        lowest = current;
+      }
+
+      for (ITree child : current.getChildren()) {
+        if (encompasses(child, pos)) {
+          current = child;
+          continue next_node;
+        }
+      }
+
+      break;
+    }
+
+    return lowest != null ? Optional.of(lowest) : Optional.empty();
+  }
+
+  public static Optional<ITree> findHighestMatchedNodeThat(
+      ITree root, Predicate<ITree> acceptNode) {
     return findFirst(root.preOrder(), acceptNode.and(ITree::isMatched));
   }
 

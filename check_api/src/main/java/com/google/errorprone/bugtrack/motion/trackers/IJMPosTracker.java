@@ -45,8 +45,7 @@ public class IJMPosTracker implements DiagnosticPositionTracker {
     final long oldPos = oldDiagnostic.getPos();
 
     Optional<ITree> lowestNode =
-        ITreeUtils.findLowestNodeThat(
-            srcPairInfo.getMatchedOldJdtTree(), node -> ITreeUtils.encompasses(node, oldPos));
+        ITreeUtils.findLowestNodeEncompassing(srcPairInfo.getMatchedOldJdtTree(), (int) oldPos);
     if (!lowestNode.isPresent() || !lowestNode.get().isMatched()) {
       return Optional.empty();
     }
@@ -58,8 +57,7 @@ public class IJMPosTracker implements DiagnosticPositionTracker {
   }
 
   private Optional<DiagPosEqualityOracle> trackPointDiagnostic(final long pos) {
-    return ITreeUtils.findLowestMatchedNodeThat(
-            srcPairInfo.getMatchedOldJdtTree(), node -> node.getPos() == pos)
+    return ITreeUtils.findLowestMatchedNodeWithPos(srcPairInfo.getMatchedOldJdtTree(), (int) pos)
         .map(srcPairInfo::getMatch)
         .map(node -> DiagSrcPosEqualityOracle.byPosition(node.getPos()));
   }

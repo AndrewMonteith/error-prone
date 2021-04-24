@@ -35,6 +35,7 @@ public class DatasetDiagnostic {
   private final long pos;
   private final long endPos;
   private final String message;
+  private final String messageWithoutFix;
   private final String type;
   private final DiagnosticSignature signature;
   private final int diagHash;
@@ -57,6 +58,7 @@ public class DatasetDiagnostic {
     this.message = message;
     this.type = DiagnosticUtils.extractDiagnosticType(message);
     this.signature = signature;
+    this.messageWithoutFix = getMessageWithoutFix(message);
 
     this.diagHash =
         Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, message, fileName);
@@ -123,7 +125,7 @@ public class DatasetDiagnostic {
   }
 
   public String getMessageWithoutFix() {
-    return getMessageWithoutFix(message);
+    return messageWithoutFix;
   }
 
   public String getType() {

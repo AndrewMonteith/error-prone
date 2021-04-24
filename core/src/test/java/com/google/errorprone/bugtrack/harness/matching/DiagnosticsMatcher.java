@@ -148,7 +148,8 @@ public final class DiagnosticsMatcher {
               Collection<DatasetDiagnostic> newFileDiags =
                   getDiagnosticsInFile(newDiagnostics, newFile);
 
-              getDiagnosticsInFile(oldDiagnostics, oldFile)
+              oldDiagnostics.stream()
+                  .filter(oldDiag -> oldDiag.getFileName().equals(oldFile))
                   .forEach(
                       oldDiag -> {
                         Collection<DatasetDiagnostic> matching =

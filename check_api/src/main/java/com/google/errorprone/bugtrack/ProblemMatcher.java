@@ -16,13 +16,38 @@
 
 package com.google.errorprone.bugtrack;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+
 import java.io.IOException;
+import java.util.stream.StreamSupport;
 
 public final class ProblemMatcher implements BugComparer {
 
   @Override
   public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
       throws IOException {
-    return oldDiagnostic.getMessageWithoutFix().equals(newDiagnostic.getMessageWithoutFix());
+    return modifyMessage(oldDiagnostic).equals(modifyMessage(newDiagnostic));
+  }
+
+  private static final Joiner JOIN_ON_LINES = Joiner.on('\n');
+  private static final Splitter SPLIT_ON_LINES = Splitter.on('\n');
+
+  private static String sortMessage(String message) {
+    return JOIN_ON_LINES.join(
+        StreamSupport.stream(SPLIT_ON_LINES.split(message).spliterator(), false)
+            .sorted()
+            .iterator());
+  }
+
+  private static String modifyMessage(DatasetDiagnostic diagnostic) {
+    switch (diagnostic.getType()) {
+      case "FunctionalInterfaceClash":
+        return sortMessage(diagnostic.getMessageWithoutFix());
+      case "UngroupedOverloads":
+        return ""; // encodes syntatic information in message so should omit it
+      default:
+        return diagnostic.getMessageWithoutFix();
+    }
   }
 }

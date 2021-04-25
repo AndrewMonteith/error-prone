@@ -81,30 +81,6 @@ public final class ITreeUtils {
     return node;
   }
 
-  private static <T> Optional<T> findFirst(Iterable<T> iter, Predicate<T> pred) {
-    for (T t : iter) {
-      if (pred.test(t)) {
-        return Optional.of(t);
-      }
-    }
-
-    return Optional.empty();
-  }
-
-  /* Lower = Furthest from root */
-  public static Optional<ITree> findLowestNodeThat(ITree root, Predicate<ITree> acceptNode) {
-    return findFirst(root.postOrder(), acceptNode);
-  }
-
-  public static Optional<ITree> findLowestMatchedNodeThat(ITree root, Predicate<ITree> acceptNode) {
-    return findFirst(root.postOrder(), acceptNode.and(ITree::isMatched));
-  }
-
-  /* Highest = Closest to root */
-  public static Optional<ITree> findHighestNodeThat(ITree root, Predicate<ITree> acceptNode) {
-    return findFirst(root.preOrder(), acceptNode);
-  }
-
   private static Optional<ITree> findHighestMatchedNodeByPos(
       ITree root, Function<ITree, Integer> nodePos, final int pos) {
     ITree current = root;
@@ -122,7 +98,7 @@ public final class ITreeUtils {
       }
     }
 
-    return Optional.of(current);
+    return Optional.of(processIfDocNode(current, pos));
   }
 
   public static Optional<ITree> findHighestMatchedNodeWithPos(ITree root, final int pos) {
@@ -144,7 +120,7 @@ public final class ITreeUtils {
         }
       }
 
-      return Optional.of(current);
+      return Optional.of(processIfDocNode(current, pos));
     }
   }
 
@@ -168,74 +144,6 @@ public final class ITreeUtils {
       break;
     }
 
-    return lowest != null ? Optional.of(lowest) : Optional.empty();
+    return lowest != null ? Optional.of(processIfDocNode(lowest, pos)) : Optional.empty();
   }
-
-  public static Optional<ITree> findHighestMatchedNodeThat(
-      ITree root, Predicate<ITree> acceptNode) {
-    return findFirst(root.preOrder(), acceptNode.and(ITree::isMatched));
-  }
-
-  //  public static Optional<ITree> findDeepestNodeThat(ITree root, Predicate<ITree> acceptNode) {
-  //    for (ITree node : root.postOrder()) {
-  //      if (acceptNode.test(node)) {
-  //        if (node.isMatched()) {
-  //          return Optional.of(node);
-  //        } else {
-  //          return Optional.empty();
-  //        }
-  //      }
-  //    }
-  //
-  //    return Optional.empty();
-  //  }
-  //
-  //  public static Optional<ITree> findDeepestMatchingNodeThat(
-  //      ITree root, Predicate<ITree> acceptNode) {
-  //    for (ITree node : root.postOrder()) {
-  //      if (node.isMatched() && acceptNode.test(node)) {
-  //        return Optional.of(node);
-  //      }
-  //    }
-  //
-  //    return Optional.empty();
-  //  }
-  //
-  //  public static Optional<ITree> findShallowestNodeThat(ITree root, Predicate<ITree> acceptNode)
-  // {
-  //    for (ITree node : root.preOrder()) {
-  //      if (node.isMatched() && acceptNode.test(node)) {
-  //        return Optional.of(node);
-  //      }
-  //    }
-  //
-  //    return Optional.empty();
-  //  }
-  //
-  //  public static Optional<ITree> findDeepestNodeEncompassing(ITree root, final long pos) {
-  //    return findDeepestNodeThat()
-  //  }
-  //
-  //  public static Optional<ITree> findDeepestMatchingNodeEncompassing(ITree root, final long pos)
-  // {
-  //    return findDeepestNodeThat(root, node -> encompasses(node, pos))
-  //        .map(
-  //            matchingNode -> {
-  //              if (inDocNode(matchingNode)) {
-  //                matchingNode = findClosestMatchingNodeInJavadoc(matchingNode, pos);
-  //              }
-  //
-  //              return matchingNode;
-  //            });
-  //  }
-
-  //  public static Optional<ITree> findClosestNode(ITree root, final long pos) {
-  //    return findFirstMatchingJDTNodeThat(root, node -> encompasses(node, pos))
-  //        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, pos));
-  //  }
-  //
-  //  public static Optional<ITree> findClosestMatchedNodeThat(ITree root, Predicate<ITree> test) {
-  //    return findFirstMatchingJDTNodeThat(root, test)
-  //        .map(matchingNode -> furtherProcessIfDocNode(matchingNode, matchingNode.getPos()));
-  //  }
 }

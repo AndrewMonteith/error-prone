@@ -37,7 +37,7 @@ public final class DiagnosticPositionModifiers {
             ASTNode.FIELD_DECLARATION);
 
     final long endOfFirstToken = diagnostic.getEndPos() - 1;
-    ITree node = ITreeUtils.findLowestNodeThat(root, n -> encompasses(n, endOfFirstToken)).get();
+    ITree node = ITreeUtils.findLowestNodeEncompassing(root, (int) endOfFirstToken).get();
     while (!multiVarIds.contains(node.getType())) {
       node = node.getParent();
     }

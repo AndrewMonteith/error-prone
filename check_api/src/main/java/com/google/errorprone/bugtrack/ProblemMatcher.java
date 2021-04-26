@@ -27,7 +27,39 @@ public final class ProblemMatcher implements BugComparer {
   @Override
   public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic)
       throws IOException {
-    return modifyMessage(oldDiagnostic).equals(modifyMessage(newDiagnostic));
+    if (oldDiagnostic.getType().equals("MissingOverride")) {
+      return handleMissingOverrideEdgeCase(oldDiagnostic, newDiagnostic);
+    } else {
+      return modifyMessage(oldDiagnostic).equals(modifyMessage(newDiagnostic));
+    }
+  }
+
+  private static boolean handleMissingOverrideEdgeCase(
+      DatasetDiagnostic oldDiag, DatasetDiagnostic newDiag) {
+    String oldMsg = oldDiag.getBriefMessage();
+    String newMsg = newDiag.getBriefMessage();
+
+    // For weird external reasons diagnostics may alternate between thinking a method belongs to
+    // either AbstractCollection or Set. In the first case this means overriding a method, in the
+    // section implementing an interface method. This makes the diagnostic message change it's
+    // format
+    // but in reality they are the same problem, just affected by external factors
+    if ((oldMsg.contains("AbstractCollection") && newMsg.contains("Set"))
+        || oldMsg.contains("Set") && newMsg.contains("AbstractCollection")) {
+      String oldMethodName = extractMethodNameFromMissingOverride(oldMsg);
+      String newMethodName = extractMethodNameFromMissingOverride(newMsg);
+
+      return oldMethodName.equals(newMethodName);
+    } else {
+      return oldMsg.equals(newMsg);
+    }
+  }
+
+  private static String extractMethodNameFromMissingOverride(String missingSummary) {
+    final int firstSpace = missingSummary.indexOf(' ');
+    final int secondSpace = missingSummary.indexOf(' ', firstSpace + 1);
+
+    return missingSummary.substring(firstSpace, secondSpace);
   }
 
   private static final Joiner JOIN_ON_LINES = Joiner.on('\n');
@@ -43,11 +75,11 @@ public final class ProblemMatcher implements BugComparer {
   private static String modifyMessage(DatasetDiagnostic diagnostic) {
     switch (diagnostic.getType()) {
       case "FunctionalInterfaceClash":
-        return sortMessage(diagnostic.getMessageWithoutFix());
+        return sortMessage(diagnostic.getBriefMessage());
       case "UngroupedOverloads":
         return ""; // encodes syntatic information in message so should omit it
       default:
-        return diagnostic.getMessageWithoutFix();
+        return diagnostic.getBriefMessage();
     }
   }
 }

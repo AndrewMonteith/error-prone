@@ -35,7 +35,7 @@ public class DatasetDiagnostic {
   private final long pos;
   private final long endPos;
   private final String message;
-  private final String messageWithoutFix;
+  private final String briefMessage;
   private final String type;
   private final DiagnosticSignature signature;
   private final int diagHash;
@@ -58,7 +58,7 @@ public class DatasetDiagnostic {
     this.message = message;
     this.type = DiagnosticUtils.extractDiagnosticType(message);
     this.signature = signature;
-    this.messageWithoutFix = getMessageWithoutFix(message);
+    this.briefMessage = getBriefMessage(message);
 
     this.diagHash =
         Objects.hash(fileName, lineNumber, columnNumber, startPos, pos, endPos, message, fileName);
@@ -101,11 +101,12 @@ public class DatasetDiagnostic {
         SignatureBucket.getSignature(diagnostic));
   }
 
-  private static String getMessageWithoutFix(String message) {
+  private static String getBriefMessage(String message) {
     return Joiner.on('\n')
         .join(
             Iterables.filter(
-                Splitter.on('\n').split(message), line -> !line.startsWith("Did you mean")));
+                Splitter.on('\n').split(message),
+                line -> !(line.startsWith("Did you mean") || line.startsWith("(see"))));
   }
 
   public long getLineNumber() {
@@ -124,8 +125,8 @@ public class DatasetDiagnostic {
     return message;
   }
 
-  public String getMessageWithoutFix() {
-    return messageWithoutFix;
+  public String getBriefMessage() {
+    return briefMessage;
   }
 
   public String getType() {

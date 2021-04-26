@@ -17,6 +17,7 @@
 package com.google.errorprone.bugtrack.harness.evaluating;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
@@ -41,7 +42,7 @@ public class GrainDiagFile {
     this.diagFile = DiagnosticsFile.load(project, file);
   }
 
-  public static List<GrainDiagFile> loadSortedFiles(CorpusProject project, Path files)
+  public static ImmutableList<GrainDiagFile> loadSortedFiles(CorpusProject project, Path files)
       throws IOException {
     try (Stream<Path> fileStream = java.nio.file.Files.list(files)) {
       System.out.println("Listing files in " + files.toString());
@@ -49,7 +50,7 @@ public class GrainDiagFile {
           .filter(file -> !java.nio.file.Files.isDirectory(file))
           .map(((ThrowingFunction<Path, GrainDiagFile>) file -> new GrainDiagFile(project, file)))
           .sorted(Comparator.comparingInt(grainFile -> grainFile.diagFile.getSeqNum()))
-          .collect(Collectors.toList());
+          .collect(ImmutableList.toImmutableList());
     }
   }
 

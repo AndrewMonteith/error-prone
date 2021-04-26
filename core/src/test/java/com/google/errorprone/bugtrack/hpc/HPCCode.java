@@ -16,7 +16,10 @@
 
 package com.google.errorprone.bugtrack.hpc;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
@@ -30,6 +33,8 @@ import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
+import com.google.errorprone.bugtrack.utils.ThrowingConsumer;
+import com.sun.tools.javac.util.Pair;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -41,9 +46,14 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 import static com.google.errorprone.bugtrack.BugComparers.*;
 import static com.google.errorprone.bugtrack.harness.evaluating.BugComparerExperiment.withGit;
@@ -77,7 +87,7 @@ public final class HPCCode {
 
     List<RevCommit> filteredCommits =
         new JavaLinesChangedFilter(new Git(repo), 200)
-            .filter(CommitDAGPathFinders.in(repo, range).dfs());
+            .filter(CommitDAGPathFinders.in(repo, range).longest());
 
     System.out.println("Total commits  " + filteredCommits.size());
   }
@@ -210,6 +220,41 @@ public final class HPCCode {
     boolean inParallel = System.getProperty("inParallel").equals("true");
 
     MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, inParallel);
+  }
+
+  @Test
+  public void scanInterleavedCommits() throws Exception {
+    String projectName = System.getProperty("project");
+    CorpusProject project = loadProject();
+
+    Path output = ProjectFiles.get("comparison_data/").resolve(projectName);
+
+    ImmutableList<GrainDiagFile> grainFiles =
+        GrainDiagFile.loadSortedFiles(
+            project, ProjectFiles.get("diagnostics/").resolve(projectName + "_full"));
+
+    List<Callable<Void>> tasks =
+        IntStream.range(0, grainFiles.size() - 2)
+            .mapToObj(
+                i ->
+                    (Callable<Void>)
+                        () -> {
+                          DiagnosticsFile before = grainFiles.get(i).getDiagFile();
+                          DiagnosticsFile after = grainFiles.get(i + 1).getDiagFile();
+
+                          String comparison = before.name + " -> " + after.name;
+                          System.out.println(comparison);
+
+                          DiagnosticsMatcher.fromFiles(project, before, after)
+                              .match()
+                              .save(output.resolve(comparison));
+                          return null;
+                        })
+            .collect(ImmutableList.toImmutableList());
+
+    for (Future<Void> voidFuture : new ForkJoinPool().invokeAll(tasks)) {
+      voidFuture.get();
+    }
   }
 
   @Test

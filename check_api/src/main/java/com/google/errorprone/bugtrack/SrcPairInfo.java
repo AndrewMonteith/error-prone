@@ -64,7 +64,6 @@ public final class SrcPairInfo {
   }
 
   private static ITree loadJdtTree(SrcFile file) throws IOException {
-    System.out.println("Loaded tree for " + file.getName());
     String src = file.getSrc();
 
     AbstractJdtTreeGenerator treeGenerator =

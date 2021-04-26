@@ -31,6 +31,7 @@ import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsCollector;
 import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
+import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
 import com.google.errorprone.bugtrack.projects.*;
@@ -40,6 +41,7 @@ import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Assert;
 import org.junit.Test;
@@ -219,25 +221,96 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new MetricsProject();
+    CorpusProject project = new JRubyProject();
 
     DiagnosticsFile oldFile =
-//                DiagnosticsFile.load(project,
-//         "/home/monty/IdeaProjects/java-corpus/diagnostics/old");
+        //                DiagnosticsFile.load(project,
+        //         "/home/monty/IdeaProjects/java-corpus/diagnostics/old");
         DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/6 d7a925817a8065286511801843671d7f3b10b45b");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby/1 605ea8a5dff72df66dbfc6a7548c1c4929024739");
 
     DiagnosticsFile newFile =
-//                DiagnosticsFile.load(project,
-//         "/home/monty/IdeaProjects/java-corpus/diagnostics/new");
-       DiagnosticsFile.load(
+        //                DiagnosticsFile.load(project,
+        //         "/home/monty/IdeaProjects/java-corpus/diagnostics/new");
+        DiagnosticsFile.load(
             project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/metrics/7 6498808239df5e8ace51a816bb4af0fa60ac0d87");
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby/2 65be33e0bb15965255b50db67ade87aff4bc9170");
 
-    MatchResults results = DiagnosticsMatcher.fromFilesAndPreformattedRepo(project, oldFile, newFile).match();
+    MatchResults results = DiagnosticsMatcher.fromFiles(project, oldFile, newFile).match();
 
     System.out.println(results);
+  }
+
+  @Test
+  public void printCommitsScanned() throws IOException, GitAPIException {
+    ImmutableList<CorpusProject> projects =
+        ImmutableList.of(
+            new JSoupProject(),
+            new CheckstyleProject(),
+            new CoberturaProject(),
+            new DubboProject(),
+            new GuiceProject(),
+            new HazelcastProject(),
+            new JRubyProject(),
+            new McMMOProject(),
+            new MetricsProject(),
+            new JUnitProject());
+
+    ImmutableList<List<String>> commitsRanges =
+        ImmutableList.of(
+            ImmutableList.of(
+                "f1110a9021c2caa28cbe3177c0c3a0f5ae326eb4",
+                "ae9a18c9e1382b5d8bad14d09279eda725490c25"),
+            ImmutableList.of(
+                "ec4d06712ab203d31d73c5c6d5c46067f3a6d5b3",
+                "f1e8346ef9dc13c9d778bb35a8821d43d409d003"),
+            ImmutableList.of(
+                "2be4bbb667f41a47143153def1b76880dc85851a",
+                "f986347ec66fe9443c6f48d0995c658ed34c1704"),
+            ImmutableList.of(
+                "1bc1312c300ffa17713a665032d2154b12f91424",
+                "0e381aafb244a9af30a99d291143fcb3e19a2ec7"),
+            ImmutableList.of(
+                "0367f870f7d412918dab2c596bb6b0ac3f4e93ca",
+                "1a299822f02642b5cdc6606430266987d0bb4b24"),
+            ImmutableList.of(
+                "6a5bc11894e312366e82d4c808df31c2d441d0fc",
+                "1d86daea33db15b04bc1da84325f2bda17b44cfb"),
+            ImmutableList.of(
+                "3c4ab50125f9d5e6375e316c6d1b4930eb7c29c7",
+                "dbbc69abb42d920d2b93a0e17027b4830370d79a"),
+            ImmutableList.of(
+                "2e7f56eeb5faaf71d14fe657a35b0b766e2ffe41",
+                "a7ded7e98225b565e6f4a800505efc1f2d593e6c"),
+            ImmutableList.of(
+                "b6d6b748f0fd851d3050f7ba15d8e3c6f3954868",
+                "e4d8a84cb826a43f35bdd369cb8f20f77b205679"),
+            ImmutableList.of(
+                "54b7613484be714a769a8d62f1ac507912e61a01",
+                "9ad61c6bf757be8d8968fd5977ab3ae15b0c5aba"));
+
+    ImmutableList<Integer> grainSizes = ImmutableList.of(50,
+            50,
+            25,
+            50,
+            50,
+            500,
+            50,
+            200,
+            50,
+            100);
+
+    for (int i = 0; i < projects.size(); ++i) {
+      Repository repo = projects.get(i).loadRepo();
+      List<String> commitRange = commitsRanges.get(i);
+
+      CommitRange range = new CommitRange(commitRange.get(0), commitRange.get(1));
+
+      int commits = CommitDAGPathFinders.in(repo, range).longest().size();
+
+      System.out.println("Total commits  " + commits);
+    }
   }
 
   @Test

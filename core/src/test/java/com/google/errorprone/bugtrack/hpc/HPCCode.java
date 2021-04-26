@@ -234,7 +234,7 @@ public final class HPCCode {
             project, ProjectFiles.get("diagnostics/").resolve(projectName + "_full"));
 
     List<Callable<Void>> tasks =
-        IntStream.range(0, grainFiles.size() - 2)
+        IntStream.range(0, grainFiles.size() - 1)
             .mapToObj(
                 i ->
                     (Callable<Void>)

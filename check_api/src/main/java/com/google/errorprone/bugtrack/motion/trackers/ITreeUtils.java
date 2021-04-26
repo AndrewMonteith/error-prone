@@ -123,27 +123,4 @@ public final class ITreeUtils {
       return Optional.of(processIfDocNode(current, pos));
     }
   }
-
-  public static Optional<ITree> findLowestMatchedNodeWithPos(ITree root, final int pos) {
-    ITree current = root;
-    ITree lowest = null;
-
-    next_node:
-    while (true) {
-      if (current.getPos() == pos && current.isMatched()) {
-        lowest = current;
-      }
-
-      for (ITree child : current.getChildren()) {
-        if (encompasses(child, pos)) {
-          current = child;
-          continue next_node;
-        }
-      }
-
-      break;
-    }
-
-    return lowest != null ? Optional.of(processIfDocNode(lowest, pos)) : Optional.empty();
-  }
 }

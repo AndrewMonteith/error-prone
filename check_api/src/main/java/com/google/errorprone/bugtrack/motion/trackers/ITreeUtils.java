@@ -84,8 +84,9 @@ public final class ITreeUtils {
   private static Optional<ITree> findHighestMatchedNodeByPos(
       ITree root, Function<ITree, Integer> nodePos, final int pos) {
     ITree current = root;
+
     next_node:
-    while (nodePos.apply(current) != pos && !current.isMatched()) {
+    while (nodePos.apply(current) != pos || !current.isMatched()) {
       if (current.getChildren().isEmpty()) {
         return Optional.empty();
       }

@@ -449,6 +449,19 @@ False positives:
      (see https://errorprone.info/bugpattern/EmptySetMultibindingContributions)
      Did you mean '@dagger.Module static abstract class UnsupportedAnnotationStaticModule {'?
 
+     mcMMO 149 b125600dac .. 153 d599db2897
+     ----DIAGNOSTIC
+     src/main/java/com/gmail/nossr50/config/Config.java 704 58 21585 21585 21589
+     [BooleanParameter] Use parameter comments to document ambiguous literals
+     (see https://errorprone.info/bugpattern/BooleanParameter)
+     Did you mean 'return config.getBoolean("Particles.LargeFireworks", /* def= */true);'?
+      to
+     ----DIAGNOSTIC
+     src/main/java/com/gmail/nossr50/config/Config.java 256 57 8565 8565 8569
+     [BooleanParameter] Use parameter comments to document ambiguous literals
+     (see https://errorprone.info/bugpattern/BooleanParameter)
+     Did you mean 'return config.getBoolean("General.AprilFoolsEvent", /* def= */true);'?
+
 
 Example of "bad" positioning, ie appears halfway in a node
     875868e7263491291d4f8bdc1332bfea746ad673 1
@@ -489,6 +502,8 @@ Example of lower resolution missing diagnostics:
 
 Diagnostics which have bad positions that we can fix:
     MultiVariableDeclaration reports match on end of first identifier. Should report match over all of them ideally
+    AndroidJdkLibsChecker / Java7ApiChecker points at for Instant.time will have endpoints pointing to entire expression then specific points at 'Instant' and '.', should point to 'Instant', 'time'
+    MethodCanBeStatic points to just the first keyword of the method, eg private?
 
 
 Perhaps useful things to write about or reference in report:

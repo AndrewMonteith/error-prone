@@ -87,16 +87,14 @@ public final class ITreeUtils {
 
     next_node:
     while (nodePos.apply(current) != pos || !current.isMatched()) {
-      if (current.getChildren().isEmpty()) {
-        return Optional.empty();
-      }
-
       for (ITree child : current.getChildren()) {
         if (encompasses(child, pos)) {
           current = child;
           continue next_node;
         }
       }
+
+      return Optional.empty();
     }
 
     return Optional.of(processIfDocNode(current, pos));

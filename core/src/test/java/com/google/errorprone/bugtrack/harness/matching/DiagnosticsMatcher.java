@@ -111,18 +111,18 @@ public final class DiagnosticsMatcher {
 
   private void printNewDiagnosticsThatMatchManyOld(MatchResults results) {
     Map<DatasetDiagnostic, DatasetDiagnostic> matches = results.getMatchedDiagnostics();
-    Map<DatasetDiagnostic, DatasetDiagnostic> existingMatchings = new HashMap<>();
+    Map<DatasetDiagnostic, DatasetDiagnostic> existingNewMatchings = new HashMap<>();
 
     matches.forEach(
         (oldDiag, newDiag) -> {
-          if (existingMatchings.containsKey(newDiag)) {
+          if (existingNewMatchings.containsKey(newDiag)) {
             System.out.println("New diagnostic");
             System.out.println(newDiag);
             System.out.println("Was matched by");
             System.out.println(oldDiag);
-            System.out.println(existingMatchings.get(newDiag));
+            System.out.println(existingNewMatchings.get(newDiag));
           } else {
-            existingMatchings.put(oldDiag, newDiag);
+            existingNewMatchings.put(newDiag, oldDiag);
           }
         });
   }

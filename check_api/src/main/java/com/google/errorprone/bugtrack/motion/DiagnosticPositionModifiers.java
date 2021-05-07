@@ -18,6 +18,7 @@ package com.google.errorprone.bugtrack.motion;
 
 import com.github.gumtreediff.tree.ITree;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Streams;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.trackers.ITreeUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -29,20 +30,26 @@ import static com.google.errorprone.bugtrack.motion.trackers.ITreeUtils.encompas
 public final class DiagnosticPositionModifiers {
   private DiagnosticPositionModifiers() {}
 
+  private static ITree getVariableDeclarationNode(ITree root, DatasetDiagnostic diagnostic) {
+    // Parent of the type node is always the variable dec node.
+    return ITreeUtils.findLowestNodeEncompassing(root, (int) diagnostic.getStartPos())
+        .get()
+        .getParent();
+  }
+
   private static long findEndPosOfFinalToken(ITree root, DatasetDiagnostic diagnostic) {
-    ImmutableSet<Integer> multiVarIds =
-        ImmutableSet.of(
-            ASTNode.VARIABLE_DECLARATION_EXPRESSION,
-            ASTNode.VARIABLE_DECLARATION_STATEMENT,
-            ASTNode.FIELD_DECLARATION);
+    return getVariableDeclarationNode(root, diagnostic).getEndPos();
+  }
 
-    final long endOfFirstToken = diagnostic.getEndPos() - 1;
-    ITree node = ITreeUtils.findLowestNodeEncompassing(root, (int) endOfFirstToken).get();
-    while (!multiVarIds.contains(node.getType())) {
-      node = node.getParent();
-    }
+  private static boolean encompassesMultipleVariables(ITree tree, DatasetDiagnostic diagnostic) {
+    ITree variableDecs = getVariableDeclarationNode(tree, diagnostic);
 
-    return node.getEndPos();
+    final int numberOfNames =
+        Streams.stream(variableDecs.postOrder())
+            .mapToInt(s -> s.getType() == ASTNode.SIMPLE_NAME ? 1 : 0)
+            .sum();
+
+    return numberOfNames > 1;
   }
 
   public static DatasetDiagnostic modify(ITree tree, DatasetDiagnostic diagnostic) {
@@ -55,7 +62,10 @@ public final class DiagnosticPositionModifiers {
       case "InitializeInline":
       case "MemberName":
       case "UnusedVariable":
-        return PositionChanger.on(diagnostic).setEndPos(diagnostic.getEndPos() - 1).build();
+        return PositionChanger.on(diagnostic)
+            .setEndPos(
+                diagnostic.getEndPos() - (encompassesMultipleVariables(tree, diagnostic) ? 1 : 0))
+            .build();
       case "AndroidJdkLibsChecker":
       case "Java7ApiChecker":
         return PositionChanger.on(diagnostic).setPos(diagnostic.getPos() + 1).build();

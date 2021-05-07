@@ -17,46 +17,27 @@
 package com.google.errorprone.bugtrack.motion;
 
 import com.github.gumtreediff.tree.ITree;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Streams;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.trackers.ITreeUtils;
-import org.eclipse.jdt.core.dom.ASTNode;
 
 import java.util.Optional;
-
-import static com.google.errorprone.bugtrack.motion.trackers.ITreeUtils.encompasses;
 
 public final class DiagnosticPositionModifiers {
   private DiagnosticPositionModifiers() {}
 
-  private static ITree getVariableDeclarationNode(ITree root, DatasetDiagnostic diagnostic) {
-    // Parent of the type node is always the variable dec node.
-    return ITreeUtils.findLowestNodeEncompassing(root, (int) diagnostic.getStartPos())
-        .get()
-        .getParent();
-  }
-
-  private static long findEndPosOfFinalToken(ITree root, DatasetDiagnostic diagnostic) {
-    return getVariableDeclarationNode(root, diagnostic).getEndPos();
+  private static long findEndPosOfVariableDecl(ITree root, DatasetDiagnostic diagnostic) {
+    return ITreeUtils.getVarDeclNode(root, (int) diagnostic.getStartPos()).getEndPos();
   }
 
   private static boolean encompassesMultipleVariables(ITree tree, DatasetDiagnostic diagnostic) {
-    ITree variableDecs = getVariableDeclarationNode(tree, diagnostic);
-
-    final int numberOfNames =
-        Streams.stream(variableDecs.postOrder())
-            .mapToInt(s -> s.getType() == ASTNode.SIMPLE_NAME ? 1 : 0)
-            .sum();
-
-    return numberOfNames > 1;
+    return ITreeUtils.countNumberOfVariableIdentifiers(tree, (int) diagnostic.getStartPos()) > 1;
   }
 
   public static DatasetDiagnostic modify(ITree tree, DatasetDiagnostic diagnostic) {
     switch (diagnostic.getType()) {
       case "MultiVariableDeclaration":
         return PositionChanger.on(diagnostic)
-            .setEndPos(findEndPosOfFinalToken(tree, diagnostic))
+            .setEndPos(findEndPosOfVariableDecl(tree, diagnostic))
             .build();
       case "FieldCanBeFinal":
       case "InitializeInline":
@@ -69,6 +50,18 @@ public final class DiagnosticPositionModifiers {
       case "AndroidJdkLibsChecker":
       case "Java7ApiChecker":
         return PositionChanger.on(diagnostic).setPos(diagnostic.getPos() + 1).build();
+      case "MissingSummary":
+      case "InvalidLink":
+        if (diagnostic.getStartPos() != diagnostic.getEndPos()) {
+          return diagnostic;
+        } else {
+          return PositionChanger.on(diagnostic)
+              .setEndPos(
+                  ITreeUtils.findHighestNodeWithPos(tree, (int) diagnostic.getStartPos())
+                      .get()
+                      .getEndPos())
+              .build();
+        }
       default:
         return diagnostic;
     }

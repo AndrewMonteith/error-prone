@@ -17,9 +17,13 @@
 package com.google.errorprone.bugtrack.motion.trackers;
 
 import com.github.gumtreediff.tree.ITree;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Streams;
+import com.google.errorprone.ErrorProneFlags;
 import org.eclipse.jdt.core.dom.ASTNode;
 
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -74,11 +78,7 @@ public final class ITreeUtils {
   }
 
   private static ITree processIfDocNode(ITree node, final long pos) {
-    if (ITreeUtils.inDocNode(node)) {
-      node = findClosestMatchingNodeInJavadoc(node, pos);
-    }
-
-    return node;
+    return inDocNode(node) ? findClosestMatchingNodeInJavadoc(node, pos) : node;
   }
 
   private static Optional<ITree> findHighestMatchedNodeByPos(
@@ -87,8 +87,15 @@ public final class ITreeUtils {
 
     next_node:
     while (nodePos.apply(current) != pos || !current.isMatched()) {
-      for (ITree child : current.getChildren()) {
+      List<ITree> children = current.getChildren();
+
+      for (int i = 0; i < children.size(); ++i) {
+        ITree child = children.get(i);
         if (encompasses(child, pos)) {
+          if (i < children.size() - 1 && nodePos.apply(children.get(i+1)) == pos) {
+            continue;
+          }
+
           current = child;
           continue next_node;
         }
@@ -97,7 +104,7 @@ public final class ITreeUtils {
       return Optional.empty();
     }
 
-    return Optional.of(processIfDocNode(current, pos));
+    return Optional.of(current);
   }
 
   public static Optional<ITree> findHighestMatchedNodeWithPos(ITree root, final int pos) {
@@ -106,6 +113,31 @@ public final class ITreeUtils {
 
   public static Optional<ITree> findHighestMatchedNodeWithEndPos(ITree root, final int pos) {
     return findHighestMatchedNodeByPos(root, ITree::getEndPos, pos);
+  }
+
+  public static Optional<ITree> findHighestNodeWithPos(ITree root, final long pos) {
+    ITree current = root;
+
+    next_node:
+    while (current.getPos() != pos) {
+      List<ITree> children = current.getChildren();
+
+      for (int i = 0; i < children.size(); ++i) {
+        ITree child = children.get(i);
+        if (encompasses(child, pos)) {
+          if (i < children.size() - 1 && children.get(i+1).getPos() == pos) {
+            continue;
+          }
+
+          current = child;
+          continue next_node;
+        }
+      }
+
+      return Optional.empty();
+    }
+
+    return Optional.of(current);
   }
 
   public static Optional<ITree> findLowestNodeEncompassing(ITree root, final int pos) {
@@ -121,5 +153,34 @@ public final class ITreeUtils {
 
       return Optional.of(processIfDocNode(current, pos));
     }
+  }
+
+  public static ITree getVarDeclNode(ITree root, final int pos) {
+    ImmutableSet<Integer> multiVarIds =
+        ImmutableSet.of(
+            ASTNode.VARIABLE_DECLARATION_EXPRESSION,
+            ASTNode.VARIABLE_DECLARATION_STATEMENT,
+            ASTNode.FIELD_DECLARATION,
+            ASTNode.SINGLE_VARIABLE_DECLARATION);
+
+    ITree node = findLowestNodeEncompassing(root, pos).get();
+
+    while (!multiVarIds.contains(node.getType())) {
+      node = node.getParent();
+    }
+
+    return node;
+  }
+
+  public static int countNumberOfVariableIdentifiers(ITree root, final int startPos) {
+    ITree varDeclNodes = getVarDeclNode(root, startPos);
+
+    if (varDeclNodes.getType() == ASTNode.SINGLE_VARIABLE_DECLARATION) {
+      return 1;
+    }
+
+    return Streams.stream(varDeclNodes.preOrder())
+        .mapToInt(node -> node.getType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT ? 1 : 0)
+        .sum();
   }
 }

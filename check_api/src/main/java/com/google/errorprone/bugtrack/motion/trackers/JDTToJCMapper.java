@@ -33,8 +33,9 @@ public class JDTToJCMapper {
 
   public NodeLocation map(ITree node) {
     if (ITreeUtils.inDocNode(node)) {
-      // Doc comment's positions are all the same in diagnostics
-      return NodeLocation.single(node.getPos());
+      // A) Getting into the doc path is pretty hard
+      // B) I don't think there's a trackability difference between JDT and JC
+      return new NodeLocation(node.getPos(), node.getEndPos());
     } else {
       return mapNonDocNode(node);
     }

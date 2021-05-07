@@ -59,7 +59,7 @@ public final class IJMStartAndEndPosTracker implements DiagnosticPositionTracker
 
   @Override
   public Optional<DiagPosEqualityOracle> track(DatasetDiagnostic oldDiag) {
-    Optional<NodeLocation> newStartLoc = trackStartNodePosition(oldDiag.getStartPos());
+    Optional<NodeLocation> newStartLoc = trackStartNodePosition(oldDiag);
     if (!newStartLoc.isPresent()) {
       return Optional.empty();
     }
@@ -104,17 +104,21 @@ public final class IJMStartAndEndPosTracker implements DiagnosticPositionTracker
     return node;
   }
 
-  private NodeLocation mapJdtSrcRangeToJCSrcRange(ITree jdtNode) {
+  private NodeLocation mapJdtSrcRangeToJCSrcRange(DatasetDiagnostic diagnostic, ITree jdtNode) {
     // Find the src buffer range of the closest JC node to matched jdt node's start position
-    return new JDTToJCMapper(srcPairInfo.loadNewJavacAST()).map(jdtNode);
+    if (diagnostic.getStartPos() == diagnostic.getEndPos()) {
+      return new NodeLocation(jdtNode.getPos(), jdtNode.getPos());
+    } else {
+      return new JDTToJCMapper(srcPairInfo.loadNewJavacAST()).map(jdtNode);
+    }
   }
 
-  private Optional<NodeLocation> trackStartNodePosition(final long startPos) {
+  private Optional<NodeLocation> trackStartNodePosition(DatasetDiagnostic diagnostic) {
     return ITreeUtils.findHighestMatchedNodeWithPos(
-            srcPairInfo.getMatchedOldJdtTree(), (int) startPos)
+            srcPairInfo.getMatchedOldJdtTree(), (int) diagnostic.getStartPos())
         .map(
             closestOldJdtNode ->
-                mapJdtSrcRangeToJCSrcRange(srcPairInfo.getMatch(closestOldJdtNode)));
+                mapJdtSrcRangeToJCSrcRange(diagnostic, srcPairInfo.getMatch(closestOldJdtNode)));
   }
 
   private Optional<List<NodeLocation>> trackEndPosition(DatasetDiagnostic diagnostic) {
@@ -130,10 +134,11 @@ public final class IJMStartAndEndPosTracker implements DiagnosticPositionTracker
 
               List<NodeLocation> locations = new ArrayList<>();
               if (isTemplatedClassNode(newJdtNode)) {
-                locations.add(mapJdtSrcRangeToJCSrcRange(findNodeWithAngleBrackets(newJdtNode)));
+                locations.add(
+                    mapJdtSrcRangeToJCSrcRange(diagnostic, findNodeWithAngleBrackets(newJdtNode)));
               }
 
-              locations.add(mapJdtSrcRangeToJCSrcRange(newJdtNode));
+              locations.add(mapJdtSrcRangeToJCSrcRange(diagnostic, newJdtNode));
 
               return locations;
             });

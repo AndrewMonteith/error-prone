@@ -45,7 +45,11 @@ public final class DiagnosticPositionModifiers {
       case "UnusedVariable":
         return PositionChanger.on(diagnostic)
             .setEndPos(
-                diagnostic.getEndPos() - (encompassesMultipleVariables(tree, diagnostic) ? 1 : 0))
+                diagnostic.getEndPos()
+                    - (!ITreeUtils.inMethodDeclaration(tree, diagnostic.getStartPos())
+                            && encompassesMultipleVariables(tree, diagnostic)
+                        ? 1
+                        : 0))
             .build();
       case "AndroidJdkLibsChecker":
       case "Java7ApiChecker":

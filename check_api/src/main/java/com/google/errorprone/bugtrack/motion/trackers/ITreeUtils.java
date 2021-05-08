@@ -155,6 +155,20 @@ public final class ITreeUtils {
     }
   }
 
+  public static boolean inMethodDeclaration(ITree root, final long pos) {
+    ITree node = findLowestNodeEncompassing(root, (int) pos).get();
+
+    while (node != null) {
+      if (node.getType() == ASTNode.METHOD_DECLARATION) {
+        return true;
+      }
+
+      node = node.getParent();
+    }
+
+    return false;
+  }
+
   public static ITree getVarDeclNode(ITree root, final int pos) {
     ImmutableSet<Integer> multiVarIds =
         ImmutableSet.of(

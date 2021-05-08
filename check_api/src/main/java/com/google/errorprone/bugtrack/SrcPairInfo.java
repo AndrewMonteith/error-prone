@@ -56,11 +56,15 @@ public final class SrcPairInfo {
     this.newAstAndContext = new Lazy<>(() -> loadJavacInfo(files.newFile, "_new.java"));
     this.oldJdtTree = new Lazy<>(() -> loadJdtTree(files.oldFile));
     this.newJdtTree = new Lazy<>(() -> loadJdtTree(files.newFile));
-    this.mappings = new Lazy<>(() -> {
-      MappingStore store = new MappingStore();
-      new JavaMatchers.IterativeJavaMatcher_V2(oldJdtTree.get(), newJdtTree.get(), store).match();;
-      return store;
-    });
+    this.mappings =
+        new Lazy<>(
+            () -> {
+              MappingStore store = new MappingStore();
+              new JavaMatchers.IterativeJavaMatcher_V2(oldJdtTree.get(), newJdtTree.get(), store)
+                  .match();
+              ;
+              return store;
+            });
   }
 
   private static ITree loadJdtTree(SrcFile file) throws IOException {
@@ -140,7 +144,11 @@ public final class SrcPairInfo {
     return newJdtTree.get();
   }
 
-  public ITree getMatch(ITree oldNode) {
+  public ITree getMatchDst(ITree oldNode) {
     return mappings.get().getDst(oldNode);
+  }
+
+  public ITree getMatchSrc(ITree newNode) {
+    return mappings.get().getSrc(newNode);
   }
 }

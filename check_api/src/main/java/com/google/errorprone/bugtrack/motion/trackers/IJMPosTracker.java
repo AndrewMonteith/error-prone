@@ -49,7 +49,7 @@ public class IJMPosTracker implements DiagnosticPositionTracker {
     return lowestNode.map(
         oldNode ->
             DiagSrcPosEqualityOracle.byPosition(
-                getNewPosition(oldNode, oldPos, srcPairInfo.getMatch(oldNode))));
+                getNewPosition(oldNode, oldPos, srcPairInfo.getMatchDst(oldNode))));
   }
 
   private long getNewPosition(ITree oldNode, final long oldPos, ITree newNode) {

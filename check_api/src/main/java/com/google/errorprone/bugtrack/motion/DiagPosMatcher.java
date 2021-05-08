@@ -24,6 +24,7 @@ import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
 import com.google.errorprone.bugtrack.motion.trackers.ITreeUtils;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 public class DiagPosMatcher implements BugComparer {
   private final SrcPairInfo srcPairInfo;
@@ -32,6 +33,30 @@ public class DiagPosMatcher implements BugComparer {
   public DiagPosMatcher(SrcPairInfo srcPairInfo, DiagnosticPositionTracker posTracker) {
     this.srcPairInfo = srcPairInfo;
     this.posTracker = posTracker;
+  }
+
+  private DatasetDiagnostic setEndPosToExprEnd(ITree tree, DatasetDiagnostic diagWithoutEndPos) {
+    return DiagnosticPositionChanger.on(diagWithoutEndPos)
+        .setEndPos(
+            ITreeUtils.findLowestNodeEncompassing(tree, (int) diagWithoutEndPos.getPos())
+                .map(ITree::getEndPos)
+                .get())
+        .build();
+  }
+
+  private DatasetDiagnostic setEndPosToEndOfMatched(
+      DatasetDiagnostic diagWithoutEndPos,
+      ITree treeWithDiagEndPos,
+      DatasetDiagnostic diagWithEndPos,
+      Function<ITree, ITree> getMatch) {
+    return DiagnosticPositionChanger.on(diagWithoutEndPos)
+        .setEndPos(
+            ITreeUtils.findHighestMatchedNodeWithEndPos(
+                    treeWithDiagEndPos, (int) diagWithEndPos.getEndPos())
+                .map(getMatch)
+                .map(ITree::getEndPos)
+                .orElse((int) diagWithEndPos.getPos()))
+        .build();
   }
 
   @Override
@@ -44,17 +69,19 @@ public class DiagPosMatcher implements BugComparer {
       return false;
     }
 
-    // Some commits we failed to get the end position? Weird effect outside of our control
-    if (oldDiagnostic.getEndPos() == -1) {
+    // Recovering the end position when of them is missing is quite annoying
+    // But necessary otherwise start and end tracking will seem inferior to the others
+    if (oldDiagnostic.getEndPos() == -1 && newDiagnostic.getEndPos() == -1) {
+      oldDiagnostic = setEndPosToExprEnd(srcPairInfo.getOldJdtTree(), oldDiagnostic);
+      newDiagnostic = setEndPosToExprEnd(srcPairInfo.getNewJdtTree(), newDiagnostic);
+    } else if (oldDiagnostic.getEndPos() == -1) {
       oldDiagnostic =
-          DiagnosticPositionModifiers.recoverEndPosition(
-              oldDiagnostic, srcPairInfo.getOldJdtTree());
-    }
-
-    if (newDiagnostic.getEndPos() == -1) {
+          setEndPosToEndOfMatched(
+              oldDiagnostic, srcPairInfo.getMatchedNewJdtTree(), newDiagnostic, srcPairInfo::getMatchSrc);
+    } else if (newDiagnostic.getEndPos() == -1) {
       newDiagnostic =
-          DiagnosticPositionModifiers.recoverEndPosition(
-              newDiagnostic, srcPairInfo.getNewJdtTree());
+          setEndPosToEndOfMatched(
+              newDiagnostic, srcPairInfo.getMatchedOldJdtTree(), oldDiagnostic, srcPairInfo::getMatchDst);
     }
 
     if (posTracker.shouldAdjustPositions(oldDiagnostic)) {

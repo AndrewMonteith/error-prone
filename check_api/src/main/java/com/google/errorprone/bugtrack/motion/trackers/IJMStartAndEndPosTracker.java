@@ -118,7 +118,7 @@ public final class IJMStartAndEndPosTracker implements DiagnosticPositionTracker
             srcPairInfo.getMatchedOldJdtTree(), (int) diagnostic.getStartPos())
         .map(
             closestOldJdtNode ->
-                mapJdtSrcRangeToJCSrcRange(diagnostic, srcPairInfo.getMatch(closestOldJdtNode)));
+                mapJdtSrcRangeToJCSrcRange(diagnostic, srcPairInfo.getMatchDst(closestOldJdtNode)));
   }
 
   private Optional<List<NodeLocation>> trackEndPosition(DatasetDiagnostic diagnostic) {
@@ -130,7 +130,7 @@ public final class IJMStartAndEndPosTracker implements DiagnosticPositionTracker
             srcPairInfo.getMatchedOldJdtTree(), (int) diagnostic.getEndPos())
         .map(
             closestOldJdtNode -> {
-              ITree newJdtNode = srcPairInfo.getMatch(closestOldJdtNode);
+              ITree newJdtNode = srcPairInfo.getMatchDst(closestOldJdtNode);
 
               List<NodeLocation> locations = new ArrayList<>();
               if (isTemplatedClassNode(newJdtNode)) {

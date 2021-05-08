@@ -16,10 +16,12 @@
 
 package com.google.errorprone.bugtrack.motion;
 
+import com.github.gumtreediff.tree.ITree;
 import com.google.errorprone.bugtrack.BugComparer;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.SrcPairInfo;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTracker;
+import com.google.errorprone.bugtrack.motion.trackers.ITreeUtils;
 
 import java.util.Optional;
 
@@ -40,6 +42,19 @@ public class DiagPosMatcher implements BugComparer {
 
     if (oldDiagnostic.getLineNumber() == -1 || newDiagnostic.getLineNumber() == -1) {
       return false;
+    }
+
+    // Some commits we failed to get the end position? Weird effect outside of our control
+    if (oldDiagnostic.getEndPos() == -1) {
+      oldDiagnostic =
+          DiagnosticPositionModifiers.recoverEndPosition(
+              oldDiagnostic, srcPairInfo.getOldJdtTree());
+    }
+
+    if (newDiagnostic.getEndPos() == -1) {
+      newDiagnostic =
+          DiagnosticPositionModifiers.recoverEndPosition(
+              newDiagnostic, srcPairInfo.getNewJdtTree());
     }
 
     if (posTracker.shouldAdjustPositions(oldDiagnostic)) {

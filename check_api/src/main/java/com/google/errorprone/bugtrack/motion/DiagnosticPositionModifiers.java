@@ -71,6 +71,14 @@ public final class DiagnosticPositionModifiers {
     }
   }
 
+  public static DatasetDiagnostic recoverEndPosition(DatasetDiagnostic diag, ITree tree) {
+    Optional<ITree> highestNode = ITreeUtils.findHighestNodeWithPos(tree, diag.getStartPos());
+
+    return PositionChanger.on(diag)
+        .setEndPos(highestNode.map(ITree::getEndPos).orElse((int) diag.getEndPos()))
+        .build();
+  }
+
   private static class PositionChanger {
     private final DatasetDiagnostic originalDiagnostic;
     private Optional<Long> startPos = Optional.empty();

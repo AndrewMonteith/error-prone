@@ -20,6 +20,8 @@ import com.github.gumtreediff.tree.ITree;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.trackers.ITreeUtils;
 
+import java.util.Optional;
+
 public final class DiagnosticPositionModifiers {
   private DiagnosticPositionModifiers() {}
 
@@ -56,12 +58,12 @@ public final class DiagnosticPositionModifiers {
         if (diagnostic.getStartPos() != diagnostic.getEndPos()) {
           return diagnostic;
         } else {
+          Optional<ITree> highestWithPos =
+              ITreeUtils.findHighestNodeWithPos(tree, (int) diagnostic.getStartPos());
+
           return DiagnosticPositionChanger.on(diagnostic)
-                  .setEndPos(
-                          ITreeUtils.findHighestNodeWithPos(tree, (int) diagnostic.getStartPos())
-                                  .get()
-                                  .getEndPos())
-                  .build();
+              .setEndPos(highestWithPos.map(ITree::getEndPos).orElse((int) diagnostic.getEndPos()))
+              .build();
         }
     }
   }

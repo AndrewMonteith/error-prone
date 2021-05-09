@@ -39,6 +39,11 @@ public class DiagPosMatcher implements BugComparer {
     return DiagnosticPositionChanger.on(diagWithoutEndPos)
         .setEndPos(
             ITreeUtils.findLowestNodeEncompassing(tree, (int) diagWithoutEndPos.getPos())
+                .map(
+                    node ->
+                        node.getType() < 0
+                            ? node.getParent()
+                            : node) // < 0 means artifical node, often added for extra detail
                 .map(ITree::getEndPos)
                 .get())
         .build();
@@ -77,24 +82,33 @@ public class DiagPosMatcher implements BugComparer {
     } else if (oldDiagnostic.getEndPos() == -1) {
       oldDiagnostic =
           setEndPosToEndOfMatched(
-              oldDiagnostic, srcPairInfo.getMatchedNewJdtTree(), newDiagnostic, srcPairInfo::getMatchSrc);
+              oldDiagnostic,
+              srcPairInfo.getMatchedNewJdtTree(),
+              newDiagnostic,
+              srcPairInfo::getMatchSrc);
     } else if (newDiagnostic.getEndPos() == -1) {
       newDiagnostic =
           setEndPosToEndOfMatched(
-              newDiagnostic, srcPairInfo.getMatchedOldJdtTree(), oldDiagnostic, srcPairInfo::getMatchDst);
+              newDiagnostic,
+              srcPairInfo.getMatchedOldJdtTree(),
+              oldDiagnostic,
+              srcPairInfo::getMatchDst);
     }
 
     if (posTracker.shouldAdjustPositions(oldDiagnostic)) {
       oldDiagnostic =
-          DiagnosticPositionModifiers.modify(srcPairInfo.getOldJdtTree(), oldDiagnostic);
+          PositionModifiers.modify(
+              srcPairInfo.files.oldFile, srcPairInfo.getOldJdtTree(), oldDiagnostic);
       newDiagnostic =
-          DiagnosticPositionModifiers.modify(srcPairInfo.getNewJdtTree(), newDiagnostic);
+          PositionModifiers.modify(
+              srcPairInfo.files.newFile, srcPairInfo.getNewJdtTree(), newDiagnostic);
     }
 
     try {
       Optional<DiagPosEqualityOracle> posEqOracle = posTracker.track(oldDiagnostic);
 
-      return posEqOracle.isPresent() && posEqOracle.get().hasSamePosition(newDiagnostic);
+      return posEqOracle.isPresent()
+          && PositionModifiers.modify(posEqOracle.get()).hasSamePosition(newDiagnostic);
     } catch (Exception e) {
       e.printStackTrace();
       return false;

@@ -89,10 +89,11 @@ public final class ITreeUtils {
     while (nodePos.apply(current) != pos || !current.isMatched()) {
       List<ITree> children = current.getChildren();
 
+      // Try find AST node exactly matching
       for (int i = 0; i < children.size(); ++i) {
         ITree child = children.get(i);
         if (encompasses(child, pos)) {
-          if (i < children.size() - 1 && nodePos.apply(children.get(i+1)) == pos) {
+          if (i < children.size() - 1 && nodePos.apply(children.get(i + 1)) == pos) {
             continue;
           }
 
@@ -101,7 +102,11 @@ public final class ITreeUtils {
         }
       }
 
-      return Optional.empty();
+      if (Math.abs(nodePos.apply(current) - pos) <= 1 && current.isMatched()) {
+        return Optional.of(current);
+      } else {
+        return Optional.empty();
+      }
     }
 
     return Optional.of(current);
@@ -125,7 +130,7 @@ public final class ITreeUtils {
       for (int i = 0; i < children.size(); ++i) {
         ITree child = children.get(i);
         if (encompasses(child, pos)) {
-          if (i < children.size() - 1 && children.get(i+1).getPos() == pos) {
+          if (i < children.size() - 1 && children.get(i + 1).getPos() == pos) {
             continue;
           }
 
@@ -134,7 +139,11 @@ public final class ITreeUtils {
         }
       }
 
-      return Optional.empty();
+      if (Math.abs(current.getPos() - pos) <= 1) {
+        return Optional.of(current);
+      } else {
+        return Optional.empty();
+      }
     }
 
     return Optional.of(current);
@@ -155,18 +164,11 @@ public final class ITreeUtils {
     }
   }
 
-  public static boolean inMethodDeclaration(ITree root, final long pos) {
+  public static boolean pointsAtMethodDeclaration(ITree root, final long pos) {
     ITree node = findLowestNodeEncompassing(root, (int) pos).get();
 
-    while (node != null) {
-      if (node.getType() == ASTNode.METHOD_DECLARATION) {
-        return true;
-      }
-
-      node = node.getParent();
-    }
-
-    return false;
+    return node.getType() == ASTNode.METHOD_DECLARATION
+        || node.getParent().getType() == ASTNode.METHOD_DECLARATION;
   }
 
   public static ITree getVarDeclNode(ITree root, final int pos) {

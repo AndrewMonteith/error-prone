@@ -83,6 +83,14 @@ public class SrcFile {
     return lineMap.getPosition(line, col);
   }
 
+  public char getChar(final int i) {
+    return charBuf[i];
+  }
+
+  public char getChar(final long l) {
+    return getChar((int) l);
+  }
+
   public String getSrcExtract(final int start, final int end) {
     String code = String.valueOf(Arrays.copyOfRange(charBuf, start, end));
     if (code.endsWith(";")) { // normalize since some source ranges are [], some [).

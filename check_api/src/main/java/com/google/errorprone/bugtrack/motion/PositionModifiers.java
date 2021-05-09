@@ -19,11 +19,12 @@ package com.google.errorprone.bugtrack.motion;
 import com.github.gumtreediff.tree.ITree;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 import com.google.errorprone.bugtrack.motion.trackers.ITreeUtils;
+import org.eclipse.jdt.core.dom.ASTNode;
 
 import java.util.Optional;
 
-public final class DiagnosticPositionModifiers {
-  private DiagnosticPositionModifiers() {}
+public final class PositionModifiers {
+  private PositionModifiers() {}
 
   private static long findEndPosOfVariableDecl(ITree root, DatasetDiagnostic diagnostic) {
     return ITreeUtils.getVarDeclNode(root, (int) diagnostic.getStartPos()).getEndPos();
@@ -33,24 +34,27 @@ public final class DiagnosticPositionModifiers {
     return ITreeUtils.countNumberOfVariableIdentifiers(tree, (int) diagnostic.getStartPos()) > 1;
   }
 
-  public static DatasetDiagnostic modify(ITree tree, DatasetDiagnostic diagnostic) {
+  public static DatasetDiagnostic modify(
+      SrcFile srcFile, ITree tree, DatasetDiagnostic diagnostic) {
     switch (diagnostic.getType()) {
-      case "MultiVariableDeclaration":
-        return DiagnosticPositionChanger.on(diagnostic)
-            .setEndPos(findEndPosOfVariableDecl(tree, diagnostic))
-            .build();
       case "FieldCanBeFinal":
       case "InitializeInline":
       case "MemberName":
       case "UnusedVariable":
+        char pointingAt = srcFile.getChar(diagnostic.getEndPos() - 1);
         return DiagnosticPositionChanger.on(diagnostic)
-            .setEndPos(
-                diagnostic.getEndPos()
-                    - (!ITreeUtils.inMethodDeclaration(tree, diagnostic.getStartPos())
-                            && encompassesMultipleVariables(tree, diagnostic)
-                        ? 1
-                        : 0))
+            .setEndPos(diagnostic.getEndPos() - (pointingAt == ',' || pointingAt == ';' ? 1 : 0))
             .build();
+      case "MultiVariableDeclaration":
+        return DiagnosticPositionChanger.on(diagnostic)
+            .setEndPos(findEndPosOfVariableDecl(tree, diagnostic))
+            .build();
+      case "RedundantCondition":
+        // For a if (<redundant-condition>), it poinst to the brackets which are not included in the JDT node
+        return DiagnosticPositionChanger.on(diagnostic)
+                .setStartPos(diagnostic.getStartPos() + 1)
+                .setEndPos(diagnostic.getEndPos() - 1)
+                .build();
       case "AndroidJdkLibsChecker":
       case "Java7ApiChecker":
         return DiagnosticPositionChanger.on(diagnostic).setPos(diagnostic.getPos() + 1).build();
@@ -66,5 +70,23 @@ public final class DiagnosticPositionModifiers {
               .build();
         }
     }
+  }
+
+  public static DiagPosEqualityOracle modify(DiagPosEqualityOracle diagPosEqualityOracle) {
+    return diagnostic -> {
+      switch (diagnostic.getType()) {
+        case "FieldCanBeFinal":
+        case "InitializeInline":
+        case "MemberName":
+        case "UnusedVariable":
+          return diagPosEqualityOracle.hasSamePosition(diagnostic)
+              || diagPosEqualityOracle.hasSamePosition(
+                  DiagnosticPositionChanger.on(diagnostic)
+                      .setEndPos(diagnostic.getEndPos() + 1)
+                      .build());
+        default:
+          return diagPosEqualityOracle.hasSamePosition(diagnostic);
+      }
+    };
   }
 }

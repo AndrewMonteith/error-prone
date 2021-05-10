@@ -45,16 +45,7 @@ public class DiagnosticPredicates {
   }
 
   public static Predicate canTrackIdenticalLocation() {
-    return (srcFilePair, oldDiag, newDiag) -> {
-      if ((oldDiag.getEndPos() == -1 && newDiag.getEndPos() != -1)
-          || (oldDiag.getEndPos() != -1 && newDiag.getEndPos() == -1)) {
-        // Edge case when collecting where sometimes the end diagnostics would have a random '-1'
-        // even though the prior commit we managed to get the end positioon
-        return false;
-      }
-
-      return !srcFilePair.srcChanged;
-    };
+    return (srcFilePair, oldDiag, newDiag) -> !srcFilePair.srcChanged;
   }
 
   @FunctionalInterface

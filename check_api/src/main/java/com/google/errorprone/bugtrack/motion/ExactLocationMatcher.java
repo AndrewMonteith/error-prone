@@ -22,10 +22,7 @@ import com.google.errorprone.bugtrack.DatasetDiagnostic;
 public class ExactLocationMatcher implements BugComparer {
   @Override
   public boolean areSame(DatasetDiagnostic oldDiagnostic, DatasetDiagnostic newDiagnostic) {
-    return oldDiagnostic.getLineNumber() == newDiagnostic.getLineNumber() &&
-            oldDiagnostic.getColumnNumber() == newDiagnostic.getColumnNumber() &&
-            oldDiagnostic.getStartPos() == newDiagnostic.getStartPos() &&
-            oldDiagnostic.getPos() == newDiagnostic.getPos() &&
-            oldDiagnostic.getEndPos() == newDiagnostic.getEndPos();
+    return oldDiagnostic.getLineNumber() == newDiagnostic.getLineNumber()
+        && oldDiagnostic.getColumnNumber() == newDiagnostic.getColumnNumber();
   }
 }

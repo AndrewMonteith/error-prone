@@ -64,14 +64,14 @@ public final class HPCCode {
     Map<String, CorpusProject> projs = new HashMap<>();
     projs.put("guice", new GuiceProject());
     projs.put("jsoup", new JSoupProject());
-    projs.put("metrics", new MetricsProject());
-    projs.put("checkstyle", new CheckstyleProject());
-    projs.put("junit4", new JUnitProject());
-    projs.put("dubbo", new DubboProject());
-    projs.put("hazelcast", new HazelcastProject());
-    projs.put("mcMMO", new McMMOProject());
-    projs.put("cobertura", new CoberturaProject());
-    projs.put("jruby", new JRubyProject());
+//    projs.put("metrics", new MetricsProject());
+//    projs.put("checkstyle", new CheckstyleProject());
+//    projs.put("junit4", new JUnitProject());
+//    projs.put("dubbo", new DubboProject());
+//    projs.put("hazelcast", new HazelcastProject());
+//    projs.put("mcMMO", new McMMOProject());
+//    projs.put("cobertura", new CoberturaProject());
+//    projs.put("jruby", new JRubyProject());
 
     projects = ImmutableMap.copyOf(projs);
   }
@@ -277,10 +277,10 @@ public final class HPCCode {
         ImmutableMap.of(
             "character_line_tracker",
             newCharacterLineTracker(),
-            "token_line_tracker",
-            newTokenizedLineTracker(),
-            "ijm_pos_tracker",
-            newIJMPosTracker(),
+//            "token_line_tracker",
+//            newTokenizedLineTracker(),
+//            "ijm_pos_tracker",
+//            newIJMPosTracker(),
             "ijm_start_and_end",
             newIJMStartAndEndTracker(),
             "ijm_joint",
@@ -303,7 +303,8 @@ public final class HPCCode {
                           ImmutableList<DiagnosticsFile> diagFiles =
                               GrainDiagFile.loadSortedFiles(
                                       project,
-                                      ProjectFiles.get("diagnostics/").resolve(projectName))
+                                      ProjectFiles.get("diagnostics/")
+                                          .resolve(projectName + "_full"))
                                   .stream()
                                   .filter(grainFile -> grainFile.hasGrain(maxGrain))
                                   .map(GrainDiagFile::getDiagFile)
@@ -335,25 +336,36 @@ public final class HPCCode {
                                       .append(after.name)
                                       .append("\n");
 
-                                  for (int run = 0; run < 6; ++run) {
+                                  for (int run = 0; run < 7; ++run) {
                                     try {
-
                                       TimingInformation timeInformation = new TimingInformation();
 
                                       DiagnosticsMatcher matcher =
                                           DiagnosticsMatcher.fromFiles(
                                               project, before, after, comparer, timeInformation);
 
-                                      final long ns = System.nanoTime();
                                       matcher.match();
-                                      final long ns2 = System.nanoTime();
+
+                                      if (run == 0) {
+                                        continue; //warmup
+                                      }
 
                                       timerOutput
-                                          .append(ns2 - ns - timeInformation.preprocessingTime)
+                                          .append(timeInformation.timeSpentComparingChangedFiles)
+                                          .append(" ")
+                                          .append(timeInformation.timeSpentComparingUnchangedFiles)
                                           .append("\n");
 
                                       if (run == 5) {
-                                        timerOutput.append(matcher.computeDiffInformation());
+                                        timerOutput
+                                            .append(timeInformation.diagnosticsInChangedFiles)
+                                            .append(" ")
+                                            .append(timeInformation.diagnosticsInUnchangedFiles)
+                                            .append(" ")
+                                            .append(timeInformation.totalChangedLinesProcessed)
+                                            .append(" ")
+                                            .append(timeInformation.totalUnchangedLinesProcessed)
+                                            .append("\n");
                                       }
                                     } catch (IOException | GitAPIException e) {
                                       e.printStackTrace();
@@ -369,7 +381,8 @@ public final class HPCCode {
                         })
             .collect(ImmutableList.toImmutableList());
 
-    tasks.forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
+//    tasks.forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
+      runTasksInParallel(tasks);
   }
 
   @Test

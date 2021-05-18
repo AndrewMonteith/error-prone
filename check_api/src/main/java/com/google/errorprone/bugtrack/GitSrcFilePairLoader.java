@@ -64,14 +64,10 @@ public class GitSrcFilePairLoader implements SrcFilePairLoader {
 
   @Override
   public SrcFilePair load(Path oldPath, Path newPath) throws IOException, FormatterException {
-    final long ns = System.nanoTime();
-
     String oldSrc = GitUtils.loadSrc(repo, oldCommit, oldPath);
     String newSrc = GitUtils.loadSrc(repo, newCommit, newPath);
 
     SrcFilePair result = new SrcFilePair(SrcFile.of(oldPath, oldSrc), SrcFile.of(newPath, newSrc));
-
-    timingInformation.preprocessingTime += (System.nanoTime() - ns);
 
     return result;
   }

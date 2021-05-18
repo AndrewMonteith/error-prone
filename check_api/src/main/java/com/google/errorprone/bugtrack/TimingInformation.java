@@ -17,5 +17,10 @@
 package com.google.errorprone.bugtrack;
 
 public final class TimingInformation {
-    public long preprocessingTime;
+    public long timeSpentComparingUnchangedFiles;
+    public long timeSpentComparingChangedFiles;
+    public int diagnosticsInChangedFiles;
+    public int diagnosticsInUnchangedFiles;
+    public long totalChangedLinesProcessed;
+    public long totalUnchangedLinesProcessed;
 }

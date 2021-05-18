@@ -43,6 +43,22 @@ public final class DiagnosticsMatcher {
   private final SrcFilePairLoader srcFilePairLoader;
   private final BugComparerCtor bugComparerCtor;
   private final PathsComparer pathsComparer;
+  private final TimingInformation timeInformation;
+
+  public DiagnosticsMatcher(
+      Collection<DatasetDiagnostic> oldDiagnostics,
+      Collection<DatasetDiagnostic> newDiagnostics,
+      SrcFilePairLoader srcFilePairLoader,
+      BugComparerCtor bugComparerCtor,
+      PathsComparer pathsComparer,
+      TimingInformation timingInformation) {
+    this.oldDiagnostics = oldDiagnostics;
+    this.newDiagnostics = newDiagnostics;
+    this.srcFilePairLoader = srcFilePairLoader;
+    this.bugComparerCtor = bugComparerCtor;
+    this.pathsComparer = pathsComparer;
+    this.timeInformation = timingInformation;
+  }
 
   public DiagnosticsMatcher(
       Collection<DatasetDiagnostic> oldDiagnostics,
@@ -50,11 +66,13 @@ public final class DiagnosticsMatcher {
       SrcFilePairLoader srcFilePairLoader,
       BugComparerCtor bugComparerCtor,
       PathsComparer pathsComparer) {
-    this.oldDiagnostics = oldDiagnostics;
-    this.newDiagnostics = newDiagnostics;
-    this.srcFilePairLoader = srcFilePairLoader;
-    this.bugComparerCtor = bugComparerCtor;
-    this.pathsComparer = pathsComparer;
+    this(
+        oldDiagnostics,
+        newDiagnostics,
+        srcFilePairLoader,
+        bugComparerCtor,
+        pathsComparer,
+        new TimingInformation());
   }
 
   public static DiagnosticsMatcher fromFiles(
@@ -85,7 +103,8 @@ public final class DiagnosticsMatcher {
         new FormatterSrcFilePairLoader(
             project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId, timeInformation),
         bugComparerCtor,
-        new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
+        new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
+        timeInformation);
   }
 
   public static DiagnosticsMatcher fromFilesAndPreformattedRepo(
@@ -157,6 +176,8 @@ public final class DiagnosticsMatcher {
               SrcPairInfo srcPairInfo = new SrcPairInfo(srcFilePairLoader.load(oldFile, newFile));
               BugComparer comparer = bugComparerCtor.get(srcPairInfo);
 
+              final long ns = System.nanoTime();
+
               Collection<DatasetDiagnostic> newFileDiags =
                   getDiagnosticsInFile(newDiagnostics, newFile);
 
@@ -183,6 +204,26 @@ public final class DiagnosticsMatcher {
                           }
                         }
                       });
+
+              final long matchingTime = System.nanoTime() - ns;
+              final long diagsInFile =
+                  oldDiagnostics.stream()
+                      .filter(oldDiag -> oldDiag.getFileName().equals(oldFile))
+                      .count();
+
+              if (srcPairInfo.files.srcChanged) {
+                timeInformation.totalChangedLinesProcessed +=
+                    (srcPairInfo.files.oldFile.getLines().size()
+                        + srcPairInfo.files.newFile.getLines().size());
+
+                timeInformation.diagnosticsInChangedFiles += diagsInFile;
+                timeInformation.timeSpentComparingChangedFiles += matchingTime;
+              } else {
+                timeInformation.timeSpentComparingUnchangedFiles += matchingTime;
+                timeInformation.totalUnchangedLinesProcessed +=
+                    srcPairInfo.files.oldFile.getLines().size();
+                timeInformation.diagnosticsInUnchangedFiles += diagsInFile;
+              }
             });
 
     MatchResults results = new MatchResults(oldDiagnostics, newDiagnostics, matchedDiagnostics);
@@ -231,35 +272,36 @@ public final class DiagnosticsMatcher {
                 .keySet()
                 .forEach(key -> fileContents.append(matchedDiagnostics.get(key))));
   }
-
-  public String computeDiffInformation() {
-    Set<String> oldFiles =
-        Sets.newHashSet(Iterables.transform(oldDiagnostics, DatasetDiagnostic::getFileName));
-
-    List<Pair<Integer, Integer>> filesChanged = new ArrayList<>();
-
-    oldFiles.forEach(
-        (ThrowingConsumer<String>)
-            oldFile -> {
-              Optional<Path> newFileOpt = pathsComparer.getNewPath(oldFile);
-              if (!newFileOpt.isPresent()) {
-                return;
-              }
-
-              String newFile = newFileOpt.get().toString();
-
-              SrcPairInfo srcPairInfo = new SrcPairInfo(srcFilePairLoader.load(oldFile, newFile));
-
-              filesChanged.add(
-                  new Pair<>(
-                      srcPairInfo.files.oldFile.getLines().size(),
-                      srcPairInfo.files.newFile.getLines().size()));
-            });
-
-    return Joiner.on(' ')
-        .join(
-            filesChanged.stream()
-                .map(s -> "(" + s.fst + " " + s.snd + ")")
-                .collect(Collectors.toList()));
-  }
+  //
+  //  private void addFileInformationToTimingInformation() {
+  //    Set<String> oldFiles =
+  //        Sets.newHashSet(Iterables.transform(oldDiagnostics, DatasetDiagnostic::getFileName));
+  //
+  //    List<Pair<Integer, Integer>> filesChanged = new ArrayList<>();
+  //
+  //    oldFiles.forEach(
+  //        (ThrowingConsumer<String>)
+  //            oldFile -> {
+  //              Optional<Path> newFileOpt = pathsComparer.getNewPath(oldFile);
+  //              if (!newFileOpt.isPresent()) {
+  //                return;
+  //              }
+  //
+  //              String newFile = newFileOpt.get().toString();
+  //
+  //              SrcPairInfo srcPairInfo = new SrcPairInfo(srcFilePairLoader.load(oldFile,
+  // newFile));
+  //
+  //              filesChanged.add(
+  //                  new Pair<>(
+  //                      srcPairInfo.files.oldFile.getLines().size(),
+  //                      srcPairInfo.files.newFile.getLines().size()));
+  //            });
+  //
+  //    return Joiner.on(' ')
+  //        .join(
+  //            filesChanged.stream()
+  //                .map(s -> "(" + s.fst + " " + s.snd + ")")
+  //                .collect(Collectors.toList()));
+  //  }
 }

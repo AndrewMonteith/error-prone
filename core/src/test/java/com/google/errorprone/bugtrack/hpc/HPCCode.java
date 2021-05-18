@@ -316,68 +316,74 @@ public final class HPCCode {
                                 matchIdenticalLocation(),
                                 trackPosition(tracker)));
 
-                    IntStream.range(0, diagFiles.size())
+                    IntStream.range(0, diagFiles.size() - 1)
                         .forEach(
-                            i -> {
-                              allTasks.add(
-                                  () -> {
-                                    DiagnosticsFile before = diagFiles.get(i);
-                                    DiagnosticsFile after = diagFiles.get(i + 1);
+                            i ->
+                                allTasks.add(
+                                    () -> {
+                                      DiagnosticsFile before = diagFiles.get(i);
+                                      DiagnosticsFile after = diagFiles.get(i + 1);
 
-                                    StringBuilder timerOutput = new StringBuilder();
-                                    timerOutput
-                                        .append("Benchmark ")
-                                        .append(projectName)
-                                        .append(" ")
-                                        .append(trackerName)
-                                        .append(" ")
-                                        .append(before.name)
-                                        .append(" ")
-                                        .append(after.name)
-                                        .append("\n");
+                                      StringBuilder timerOutput = new StringBuilder();
+                                      timerOutput
+                                          .append("Benchmark ")
+                                          .append(projectName)
+                                          .append(" ")
+                                          .append(trackerName)
+                                          .append(" ")
+                                          .append(before.name)
+                                          .append(" ")
+                                          .append(after.name)
+                                          .append("\n");
 
-                                    for (int run = 0; run < 7; ++run) {
-                                      try {
-                                        TimingInformation timeInformation = new TimingInformation();
+                                      for (int run = 0; run < 7; ++run) {
+                                        try {
+                                          TimingInformation timeInformation =
+                                              new TimingInformation();
 
-                                        DiagnosticsMatcher matcher =
-                                            DiagnosticsMatcher.fromFiles(
-                                                project, before, after, comparer, timeInformation);
+                                          DiagnosticsMatcher matcher =
+                                              DiagnosticsMatcher.fromFiles(
+                                                  project,
+                                                  before,
+                                                  after,
+                                                  comparer,
+                                                  timeInformation);
 
-                                        matcher.match();
+                                          matcher.match();
 
-                                        if (run == 0) {
-                                          continue; // warmup
-                                        }
+                                          if (run == 0) {
+                                            continue; // warmup
+                                          }
 
-                                        timerOutput
-                                            .append(timeInformation.timeSpentComparingChangedFiles)
-                                            .append(" ")
-                                            .append(
-                                                timeInformation.timeSpentComparingUnchangedFiles)
-                                            .append("\n");
-
-                                        if (run == 6) {
                                           timerOutput
-                                              .append(timeInformation.diagnosticsInChangedFiles)
+                                              .append(
+                                                  timeInformation.timeSpentComparingChangedFiles)
                                               .append(" ")
-                                              .append(timeInformation.diagnosticsInUnchangedFiles)
-                                              .append(" ")
-                                              .append(timeInformation.totalChangedLinesProcessed)
-                                              .append(" ")
-                                              .append(timeInformation.totalUnchangedLinesProcessed)
+                                              .append(
+                                                  timeInformation.timeSpentComparingUnchangedFiles)
                                               .append("\n");
-                                        }
-                                      } catch (IOException | GitAPIException e) {
-                                        e.printStackTrace();
-                                        timerOutput.append("FAILED\n");
-                                      }
-                                    }
 
-                                    System.out.println(timerOutput);
-                                    return null;
-                                  });
-                            });
+                                          if (run == 6) {
+                                            timerOutput
+                                                .append(timeInformation.diagnosticsInChangedFiles)
+                                                .append(" ")
+                                                .append(timeInformation.diagnosticsInUnchangedFiles)
+                                                .append(" ")
+                                                .append(timeInformation.totalChangedLinesProcessed)
+                                                .append(" ")
+                                                .append(
+                                                    timeInformation.totalUnchangedLinesProcessed)
+                                                .append("\n");
+                                          }
+                                        } catch (IOException | GitAPIException e) {
+                                          e.printStackTrace();
+                                          timerOutput.append("FAILED\n");
+                                        }
+                                      }
+
+                                      System.out.println(timerOutput);
+                                      return null;
+                                    }));
                   });
             });
 

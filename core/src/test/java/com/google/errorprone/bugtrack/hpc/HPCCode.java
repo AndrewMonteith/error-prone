@@ -33,6 +33,7 @@ import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
+import com.google.errorprone.bugtrack.utils.ThrowingBiConsumer;
 import com.google.errorprone.bugtrack.utils.ThrowingConsumer;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -64,14 +65,14 @@ public final class HPCCode {
     Map<String, CorpusProject> projs = new HashMap<>();
     projs.put("guice", new GuiceProject());
     projs.put("jsoup", new JSoupProject());
-//    projs.put("metrics", new MetricsProject());
-//    projs.put("checkstyle", new CheckstyleProject());
-//    projs.put("junit4", new JUnitProject());
-//    projs.put("dubbo", new DubboProject());
-//    projs.put("hazelcast", new HazelcastProject());
-//    projs.put("mcMMO", new McMMOProject());
-//    projs.put("cobertura", new CoberturaProject());
-//    projs.put("jruby", new JRubyProject());
+    projs.put("metrics", new MetricsProject());
+    projs.put("checkstyle", new CheckstyleProject());
+    projs.put("junit4", new JUnitProject());
+    projs.put("dubbo", new DubboProject());
+    projs.put("hazelcast", new HazelcastProject());
+    projs.put("mcMMO", new McMMOProject());
+    projs.put("cobertura", new CoberturaProject());
+    projs.put("jruby", new JRubyProject());
 
     projects = ImmutableMap.copyOf(projs);
   }
@@ -277,10 +278,10 @@ public final class HPCCode {
         ImmutableMap.of(
             "character_line_tracker",
             newCharacterLineTracker(),
-//            "token_line_tracker",
-//            newTokenizedLineTracker(),
-//            "ijm_pos_tracker",
-//            newIJMPosTracker(),
+            "token_line_tracker",
+            newTokenizedLineTracker(),
+            "ijm_pos_tracker",
+            newIJMPosTracker(),
             "ijm_start_and_end",
             newIJMStartAndEndTracker(),
             "ijm_joint",
@@ -289,100 +290,100 @@ public final class HPCCode {
     Iterator<Integer> grainSizes =
         ImmutableList.of(50, 50, 25, 50, 50, 500, 50, 200, 50, 100).iterator();
 
-    ImmutableList<Callable<Void>> tasks =
-        projects.entrySet().stream()
-            .map(
-                proj ->
-                    (Callable<Void>)
-                        () -> {
-                          String projectName = proj.getKey();
-                          CorpusProject project = proj.getValue();
+    List<Callable<Void>> allTasks = new ArrayList<>();
 
-                          final int maxGrain = grainSizes.next();
+    projects.forEach(
+        (ThrowingBiConsumer<String, CorpusProject>)
+            (projectName, project) -> {
+              final int maxGrain = grainSizes.next();
 
-                          ImmutableList<DiagnosticsFile> diagFiles =
-                              GrainDiagFile.loadSortedFiles(
-                                      project,
-                                      ProjectFiles.get("diagnostics/")
-                                          .resolve(projectName + "_full"))
-                                  .stream()
-                                  .filter(grainFile -> grainFile.hasGrain(maxGrain))
-                                  .map(GrainDiagFile::getDiagFile)
-                                  .collect(ImmutableList.toImmutableList());
+              ImmutableList<DiagnosticsFile> diagFiles =
+                  GrainDiagFile.loadSortedFiles(
+                          project,
+                          ProjectFiles.get("java-corpus/diagnostics/").resolve(projectName))
+                      .stream()
+                      .filter(grainFile -> grainFile.hasGrain(maxGrain))
+                      .map(GrainDiagFile::getDiagFile)
+                      .collect(ImmutableList.toImmutableList());
 
-                          positionTrackers.forEach(
-                              (trackerName, tracker) -> {
-                                BugComparerCtor comparer =
-                                    and(
-                                        matchProblem(),
-                                        conditional(
-                                            DiagnosticPredicates.canTrackIdenticalLocation(),
-                                            matchIdenticalLocation(),
-                                            trackPosition(tracker)));
+              positionTrackers.forEach(
+                  (trackerName, tracker) -> {
+                    BugComparerCtor comparer =
+                        and(
+                            matchProblem(),
+                            conditional(
+                                DiagnosticPredicates.canTrackIdenticalLocation(),
+                                matchIdenticalLocation(),
+                                trackPosition(tracker)));
 
-                                for (int i = 0; i < diagFiles.size() - 1; ++i) {
-                                  DiagnosticsFile before = diagFiles.get(i);
-                                  DiagnosticsFile after = diagFiles.get(i + 1);
+                    IntStream.range(0, diagFiles.size())
+                        .forEach(
+                            i -> {
+                              allTasks.add(
+                                  () -> {
+                                    DiagnosticsFile before = diagFiles.get(i);
+                                    DiagnosticsFile after = diagFiles.get(i + 1);
 
-                                  StringBuilder timerOutput = new StringBuilder();
-                                  timerOutput
-                                      .append("Benchmark ")
-                                      .append(projectName)
-                                      .append(" ")
-                                      .append(trackerName)
-                                      .append(" ")
-                                      .append(before.name)
-                                      .append(" ")
-                                      .append(after.name)
-                                      .append("\n");
+                                    StringBuilder timerOutput = new StringBuilder();
+                                    timerOutput
+                                        .append("Benchmark ")
+                                        .append(projectName)
+                                        .append(" ")
+                                        .append(trackerName)
+                                        .append(" ")
+                                        .append(before.name)
+                                        .append(" ")
+                                        .append(after.name)
+                                        .append("\n");
 
-                                  for (int run = 0; run < 7; ++run) {
-                                    try {
-                                      TimingInformation timeInformation = new TimingInformation();
+                                    for (int run = 0; run < 7; ++run) {
+                                      try {
+                                        TimingInformation timeInformation = new TimingInformation();
 
-                                      DiagnosticsMatcher matcher =
-                                          DiagnosticsMatcher.fromFiles(
-                                              project, before, after, comparer, timeInformation);
+                                        DiagnosticsMatcher matcher =
+                                            DiagnosticsMatcher.fromFiles(
+                                                project, before, after, comparer, timeInformation);
 
-                                      matcher.match();
+                                        matcher.match();
 
-                                      if (run == 0) {
-                                        continue; //warmup
-                                      }
+                                        if (run == 0) {
+                                          continue; // warmup
+                                        }
 
-                                      timerOutput
-                                          .append(timeInformation.timeSpentComparingChangedFiles)
-                                          .append(" ")
-                                          .append(timeInformation.timeSpentComparingUnchangedFiles)
-                                          .append("\n");
-
-                                      if (run == 5) {
                                         timerOutput
-                                            .append(timeInformation.diagnosticsInChangedFiles)
+                                            .append(timeInformation.timeSpentComparingChangedFiles)
                                             .append(" ")
-                                            .append(timeInformation.diagnosticsInUnchangedFiles)
-                                            .append(" ")
-                                            .append(timeInformation.totalChangedLinesProcessed)
-                                            .append(" ")
-                                            .append(timeInformation.totalUnchangedLinesProcessed)
+                                            .append(
+                                                timeInformation.timeSpentComparingUnchangedFiles)
                                             .append("\n");
+
+                                        if (run == 6) {
+                                          timerOutput
+                                              .append(timeInformation.diagnosticsInChangedFiles)
+                                              .append(" ")
+                                              .append(timeInformation.diagnosticsInUnchangedFiles)
+                                              .append(" ")
+                                              .append(timeInformation.totalChangedLinesProcessed)
+                                              .append(" ")
+                                              .append(timeInformation.totalUnchangedLinesProcessed)
+                                              .append("\n");
+                                        }
+                                      } catch (IOException | GitAPIException e) {
+                                        e.printStackTrace();
+                                        timerOutput.append("FAILED\n");
                                       }
-                                    } catch (IOException | GitAPIException e) {
-                                      e.printStackTrace();
-                                      timerOutput.append("FAILED\n");
                                     }
-                                  }
 
-                                  System.out.println(timerOutput);
-                                }
-                              });
+                                    System.out.println(timerOutput);
+                                    return null;
+                                  });
+                            });
+                  });
+            });
 
-                          return null;
-                        })
-            .collect(ImmutableList.toImmutableList());
-
-//    tasks.forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
-      runTasksInParallel(tasks);
+    System.out.println("Tasks " + allTasks.size());
+    //    tasks.forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
+    runTasksInParallel(allTasks);
   }
 
   @Test

@@ -303,8 +303,7 @@ public final class HPCCode {
                           ImmutableList<DiagnosticsFile> diagFiles =
                               GrainDiagFile.loadSortedFiles(
                                       project,
-                                      ProjectFiles.get("diagnostics/")
-                                          .resolve(projectName))
+                                      ProjectFiles.get("diagnostics/").resolve(projectName))
                                   .stream()
                                   .filter(grainFile -> grainFile.hasGrain(maxGrain))
                                   .map(GrainDiagFile::getDiagFile)
@@ -352,6 +351,10 @@ public final class HPCCode {
                                       timerOutput
                                           .append(ns2 - ns - timeInformation.preprocessingTime)
                                           .append("\n");
+
+                                      if (run == 5) {
+                                        timerOutput.append(matcher.computeDiffInformation());
+                                      }
                                     } catch (IOException | GitAPIException e) {
                                       e.printStackTrace();
                                       timerOutput.append("FAILED\n");

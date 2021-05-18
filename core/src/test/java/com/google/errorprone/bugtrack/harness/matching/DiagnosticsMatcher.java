@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.harness.matching;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.errorprone.FormattedRepoSrcPairLoader;
@@ -24,6 +25,7 @@ import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.projects.CorpusProject;
 import com.google.errorprone.bugtrack.utils.ThrowingConsumer;
 import com.google.errorprone.bugtrack.utils.ThrowingPredicate;
+import com.sun.tools.javac.util.Pair;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.IOException;
@@ -228,5 +230,36 @@ public final class DiagnosticsMatcher {
             matchedDiagnostics
                 .keySet()
                 .forEach(key -> fileContents.append(matchedDiagnostics.get(key))));
+  }
+
+  public String computeDiffInformation() {
+    Set<String> oldFiles =
+        Sets.newHashSet(Iterables.transform(oldDiagnostics, DatasetDiagnostic::getFileName));
+
+    List<Pair<Integer, Integer>> filesChanged = new ArrayList<>();
+
+    oldFiles.forEach(
+        (ThrowingConsumer<String>)
+            oldFile -> {
+              Optional<Path> newFileOpt = pathsComparer.getNewPath(oldFile);
+              if (!newFileOpt.isPresent()) {
+                return;
+              }
+
+              String newFile = newFileOpt.get().toString();
+
+              SrcPairInfo srcPairInfo = new SrcPairInfo(srcFilePairLoader.load(oldFile, newFile));
+
+              filesChanged.add(
+                  new Pair<>(
+                      srcPairInfo.files.oldFile.getLines().size(),
+                      srcPairInfo.files.newFile.getLines().size()));
+            });
+
+    return Joiner.on(' ')
+        .join(
+            filesChanged.stream()
+                .map(s -> "(" + s.fst + " " + s.snd + ")")
+                .collect(Collectors.toList()));
   }
 }

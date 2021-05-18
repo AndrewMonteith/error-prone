@@ -66,12 +66,22 @@ public final class DiagnosticsMatcher {
       DiagnosticsFile oldDiagFile,
       DiagnosticsFile newDiagFile,
       BugComparerCtor bugComparerCtor)
+      throws GitAPIException, IOException {
+    return fromFiles(project, oldDiagFile, newDiagFile, bugComparerCtor, new TimingInformation());
+  }
+
+  public static DiagnosticsMatcher fromFiles(
+      CorpusProject project,
+      DiagnosticsFile oldDiagFile,
+      DiagnosticsFile newDiagFile,
+      BugComparerCtor bugComparerCtor,
+      TimingInformation timeInformation)
       throws IOException, GitAPIException {
     return new DiagnosticsMatcher(
         oldDiagFile.diagnostics,
         newDiagFile.diagnostics,
         new FormatterSrcFilePairLoader(
-            project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId),
+            project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId, timeInformation),
         bugComparerCtor,
         new GitPathComparer(project.loadRepo(), oldDiagFile.commitId, newDiagFile.commitId));
   }

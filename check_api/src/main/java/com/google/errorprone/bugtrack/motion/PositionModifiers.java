@@ -41,6 +41,7 @@ public final class PositionModifiers {
       case "InitializeInline":
       case "MemberName":
       case "UnusedVariable":
+      case "FieldCanBeLocal":
         char pointingAt = srcFile.getChar(diagnostic.getEndPos() - 1);
         return DiagnosticPositionChanger.on(diagnostic)
             .setEndPos(diagnostic.getEndPos() - (pointingAt == ',' || pointingAt == ';' ? 1 : 0))
@@ -50,11 +51,12 @@ public final class PositionModifiers {
             .setEndPos(findEndPosOfVariableDecl(tree, diagnostic))
             .build();
       case "RedundantCondition":
-        // For a if (<redundant-condition>), it poinst to the brackets which are not included in the JDT node
+        // For a if (<redundant-condition>), it points to the brackets which are not included in the
+        // JDT node
         return DiagnosticPositionChanger.on(diagnostic)
-                .setStartPos(diagnostic.getStartPos() + 1)
-                .setEndPos(diagnostic.getEndPos() - 1)
-                .build();
+            .setStartPos(diagnostic.getStartPos() + 1)
+            .setEndPos(diagnostic.getEndPos() - 1)
+            .build();
       case "AndroidJdkLibsChecker":
       case "Java7ApiChecker":
         return DiagnosticPositionChanger.on(diagnostic).setPos(diagnostic.getPos() + 1).build();
@@ -79,6 +81,7 @@ public final class PositionModifiers {
         case "InitializeInline":
         case "MemberName":
         case "UnusedVariable":
+        case "FieldCanBeLocal":
           return diagPosEqualityOracle.hasSamePosition(diagnostic)
               || diagPosEqualityOracle.hasSamePosition(
                   DiagnosticPositionChanger.on(diagnostic)

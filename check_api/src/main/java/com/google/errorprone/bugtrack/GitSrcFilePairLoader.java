@@ -30,11 +30,21 @@ public class GitSrcFilePairLoader implements SrcFilePairLoader {
   private final Repository repo;
   private final RevCommit oldCommit;
   private final RevCommit newCommit;
+  private final TimingInformation timingInformation;
 
   public GitSrcFilePairLoader(Repository repo, RevCommit oldCommit, RevCommit newCommit) {
+    this(repo, oldCommit, newCommit, new TimingInformation());
+  }
+
+  public GitSrcFilePairLoader(
+      Repository repo,
+      RevCommit oldCommit,
+      RevCommit newCommit,
+      TimingInformation timingInformation) {
     this.repo = repo;
     this.oldCommit = oldCommit;
     this.newCommit = newCommit;
+    this.timingInformation = timingInformation;
   }
 
   public GitSrcFilePairLoader(Repository repo, String oldCommit, String newCommit)
@@ -42,11 +52,27 @@ public class GitSrcFilePairLoader implements SrcFilePairLoader {
     this(repo, GitUtils.parseCommit(repo, oldCommit), GitUtils.parseCommit(repo, newCommit));
   }
 
+  public GitSrcFilePairLoader(
+      Repository repo, String oldCommit, String newCommit, TimingInformation timingInformation)
+      throws IOException {
+    this(
+        repo,
+        GitUtils.parseCommit(repo, oldCommit),
+        GitUtils.parseCommit(repo, newCommit),
+        timingInformation);
+  }
+
   @Override
   public SrcFilePair load(Path oldPath, Path newPath) throws IOException, FormatterException {
+    final long ns = System.nanoTime();
+
     String oldSrc = GitUtils.loadSrc(repo, oldCommit, oldPath);
     String newSrc = GitUtils.loadSrc(repo, newCommit, newPath);
 
-    return new SrcFilePair(SrcFile.of(oldPath, oldSrc), SrcFile.of(newPath, newSrc));
+    SrcFilePair result = new SrcFilePair(SrcFile.of(oldPath, oldSrc), SrcFile.of(newPath, newSrc));
+
+    timingInformation.preprocessingTime += (System.nanoTime() - ns);
+
+    return result;
   }
 }

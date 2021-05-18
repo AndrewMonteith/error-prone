@@ -34,6 +34,7 @@ import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
 import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
@@ -56,6 +57,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
+import static com.google.errorprone.bugtrack.BugComparers.*;
+import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 @RunWith(JUnit4.class)
 public class ProjectTests {
@@ -221,25 +226,41 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new JRubyProject();
+    CorpusProject project = new DubboProject();
 
     DiagnosticsFile oldFile =
-        //                DiagnosticsFile.load(project,
-        //         "/home/monty/IdeaProjects/java-corpus/diagnostics/old");
-        DiagnosticsFile.load(
-            project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby/1 605ea8a5dff72df66dbfc6a7548c1c4929024739");
+        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/old_diag");
 
     DiagnosticsFile newFile =
-        //                DiagnosticsFile.load(project,
-        //         "/home/monty/IdeaProjects/java-corpus/diagnostics/new");
-        DiagnosticsFile.load(
-            project,
-            "/home/monty/IdeaProjects/java-corpus/diagnostics/jruby/2 65be33e0bb15965255b50db67ade87aff4bc9170");
+        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/new_diag");
 
-    MatchResults results = DiagnosticsMatcher.fromFiles(project, oldFile, newFile).match();
+    BugComparerCtor tracker =
+        BugComparers.and(
+            matchProblem(),
+            conditional(
+                DiagnosticPredicates.canTrackIdenticalLocation(),
+                matchIdenticalLocation(),
+                trackPosition(newTokenizedLineTracker())));
 
-    System.out.println(results);
+    System.out.println(DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker).match());
+
+    //    MatchResults resultsStartAndEnd =
+    //        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, startAndEnd).match();
+    //
+    //    MatchResults resultsPoint =
+    //        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, posTracker).match();
+    //
+    //    Map<DatasetDiagnostic, DatasetDiagnostic> posMatched =
+    // resultsPoint.getMatchedDiagnostics();
+    //
+    //    for (DatasetDiagnostic unmatchedStartAndEnd :
+    // resultsStartAndEnd.getUnmatchedOldDiagnostics()) {
+    //      if (posMatched.containsKey(unmatchedStartAndEnd)) {
+    //        System.out.println(unmatchedStartAndEnd);
+    //        System.out.println(" to ");
+    //        System.out.println(posMatched.get(unmatchedStartAndEnd));
+    //      }
+    //    }
   }
 
   @Test
@@ -290,16 +311,7 @@ public class ProjectTests {
                 "54b7613484be714a769a8d62f1ac507912e61a01",
                 "9ad61c6bf757be8d8968fd5977ab3ae15b0c5aba"));
 
-    ImmutableList<Integer> grainSizes = ImmutableList.of(50,
-            50,
-            25,
-            50,
-            50,
-            500,
-            50,
-            200,
-            50,
-            100);
+    ImmutableList<Integer> grainSizes = ImmutableList.of(50, 50, 25, 50, 50, 500, 50, 200, 50, 100);
 
     for (int i = 0; i < projects.size(); ++i) {
       Repository repo = projects.get(i).loadRepo();
@@ -307,7 +319,7 @@ public class ProjectTests {
 
       CommitRange range = new CommitRange(commitRange.get(0), commitRange.get(1));
 
-      int commits = CommitDAGPathFinders.in(repo, range).longest().size();
+      int commits = CommitDAGPathFinders.in(repo, range).dfs().size();
 
       System.out.println("Total commits  " + commits);
     }
@@ -315,13 +327,13 @@ public class ProjectTests {
 
   @Test
   public void trackProject() throws IOException {
-    CorpusProject project = new GuiceProject();
-    Path output = ProjectFiles.get("java-corpus/comparison_data/guice");
+    CorpusProject project = new JUnitProject();
+    Path output = ProjectFiles.get("java-corpus/comparison_data/junit4");
     List<GrainDiagFile> grainFiles =
         GrainDiagFile.loadSortedFiles(
-            project, ProjectFiles.get("java-corpus/diagnostics/guice_full"));
+            project, ProjectFiles.get("java-corpus/diagnostics/junit4_full"));
 
-    MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, true);
+    MultiGrainDiagFileComparer.compareFiles(project, output, grainFiles, false);
   }
 
   @Test
@@ -344,7 +356,8 @@ public class ProjectTests {
 
   @Test
   public void parseIntoJDT() throws Exception {
-    String code = new Formatter().formatSource("public class Foo {\n private int x = 1, y; \n }");
+    String code =
+        new Formatter().formatSource("public class Foo {\n private List<Integer> i; \n }");
 
     List<String> lines = Splitter.on('\n').splitToList(code);
     SrcFile f = new SrcFile("foo.java", lines);

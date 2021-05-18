@@ -26,6 +26,7 @@ import com.google.errorprone.bugtrack.harness.Verbosity;
 import com.google.errorprone.bugtrack.harness.evaluating.*;
 import com.google.errorprone.bugtrack.harness.matching.DiagnosticsMatcher;
 import com.google.errorprone.bugtrack.harness.matching.MatchResults;
+import com.google.errorprone.bugtrack.TimingInformation;
 import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
@@ -44,15 +45,10 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.google.errorprone.bugtrack.BugComparers.conditional;
@@ -169,7 +165,7 @@ public final class HPCCode {
   }
 
   @Test
-  public void genCommits() throws GitAPIException, IOException, InterruptedException {
+  public void genCommits() throws GitAPIException, IOException {
     Repository repo = projects.get(System.getProperty("project")).loadRepo();
     CommitRange range =
         new CommitRange(System.getProperty("oldCommit"), System.getProperty("newCommit"));
@@ -211,7 +207,7 @@ public final class HPCCode {
   private static ImmutableList<DiagnosticsFile> loadInterleavedDiagnosticsFiles(
       String projectName, CorpusProject project) throws IOException {
     return GrainDiagFile.loadSortedFiles(
-            project, ProjectFiles.get("diagnostics/").resolve(projectName + "_full"))
+            project, ProjectFiles.get("diagnostics/").resolve(projectName))
         .stream()
         .map(GrainDiagFile::getDiagFile)
         .collect(ImmutableList.toImmutableList());
@@ -279,11 +275,19 @@ public final class HPCCode {
   public void tryManyPositionTrackers_Lowres() {
     ImmutableMap<String, DiagnosticPositionTrackerConstructor> positionTrackers =
         ImmutableMap.of(
-            "character_line_tracker", newCharacterLineTracker(),
-            "token_line_tracker", newTokenizedLineTracker(),
-            "ijm_pos_tracker", newIJMPosTracker(),
-            "ijm_start_and_end", newIJMStartAndEndTracker(),
-            "ijm_joint", any(newIJMPosTracker(), newIJMStartAndEndTracker()));
+            "character_line_tracker",
+            newCharacterLineTracker(),
+            "token_line_tracker",
+            newTokenizedLineTracker(),
+            "ijm_pos_tracker",
+            newIJMPosTracker(),
+            "ijm_start_and_end",
+            newIJMStartAndEndTracker(),
+            "ijm_joint",
+            any(newIJMPosTracker(), newIJMStartAndEndTracker()));
+
+    Iterator<Integer> grainSizes =
+        ImmutableList.of(50, 50, 25, 50, 50, 500, 50, 200, 50, 100).iterator();
 
     ImmutableList<Callable<Void>> tasks =
         projects.entrySet().stream()
@@ -294,87 +298,20 @@ public final class HPCCode {
                           String projectName = proj.getKey();
                           CorpusProject project = proj.getValue();
 
-                          ImmutableList<GrainDiagFile> allGrainFiles =
-                              GrainDiagFile.loadSortedFiles(
-                                  project,
-                                  ProjectFiles.get("diagnostics/").resolve(projectName + "_full"));
+                          final int maxGrain = grainSizes.next();
 
-                          // First file will have every grain
-                          final int maxGrain =
-                              allGrainFiles.get(0).getGrains().stream().max(Integer::compare).get();
-
-                          positionTrackers.forEach(
-                              (trackerName, tracker) -> {
-                                System.out.println(
-                                    "Running " + projectName + " with " + trackerName);
-
-                                Path output =
-                                    ProjectFiles.get("comparison_data/")
-                                        .resolve(projectName + "_" + trackerName + "_lowres");
-
-                                ImmutableList<DiagnosticsFile> diagFiles =
-                                    allGrainFiles.stream()
-                                        .filter(grainFile -> grainFile.hasGrain(maxGrain))
-                                        .map(GrainDiagFile::getDiagFile)
-                                        .collect(ImmutableList.toImmutableList());
-
-                                if (!output.toFile().exists()) {
-                                  output.toFile().mkdir();
-                                }
-
-                                BugComparerCtor comparer =
-                                    and(
-                                        matchProblem(),
-                                        conditional(
-                                            DiagnosticPredicates.canTrackIdenticalLocation(),
-                                            matchIdenticalLocation(),
-                                            trackPosition(tracker)));
-
-                                createScanTasks(project, diagFiles, comparer, output)
-                                    .forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
-                              });
-
-                          return null;
-                        })
-            .collect(ImmutableList.toImmutableList());
-
-    runTasksInParallel(tasks);
-  }
-
-  @Test
-  public void tryManyPositionTrackers() {
-    ImmutableMap<String, DiagnosticPositionTrackerConstructor> positionTrackers =
-        ImmutableMap.of(
-            "character_line_tracker", newCharacterLineTracker(),
-            "token_line_tracker", newTokenizedLineTracker(),
-            "ijm_pos_tracker", newIJMPosTracker(),
-            "ijm_start_and_end", newIJMStartAndEndTracker(),
-            "ijm_joint", any(newIJMPosTracker(), newIJMStartAndEndTracker()));
-
-    ImmutableList<Callable<Void>> tasks =
-        projects.entrySet().stream()
-            .map(
-                proj ->
-                    (Callable<Void>)
-                        () -> {
-                          String projectName = proj.getKey();
-                          CorpusProject project = proj.getValue();
                           ImmutableList<DiagnosticsFile> diagFiles =
-                              loadInterleavedDiagnosticsFiles(projectName, project);
+                              GrainDiagFile.loadSortedFiles(
+                                      project,
+                                      ProjectFiles.get("diagnostics/")
+                                          .resolve(projectName))
+                                  .stream()
+                                  .filter(grainFile -> grainFile.hasGrain(maxGrain))
+                                  .map(GrainDiagFile::getDiagFile)
+                                  .collect(ImmutableList.toImmutableList());
 
                           positionTrackers.forEach(
                               (trackerName, tracker) -> {
-                                System.out.println(
-                                    "Running " + projectName + " with " + trackerName);
-
-                                Path output =
-                                    ProjectFiles.get("comparison_data/")
-                                        .resolve(projectName + "_" + trackerName);
-
-                                if (!output.toFile().exists()) {
-                                  output.toFile().mkdir();
-                                }
-
                                 BugComparerCtor comparer =
                                     and(
                                         matchProblem(),
@@ -383,15 +320,53 @@ public final class HPCCode {
                                             matchIdenticalLocation(),
                                             trackPosition(tracker)));
 
-                                createScanTasks(project, diagFiles, comparer, output)
-                                    .forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
+                                for (int i = 0; i < diagFiles.size() - 1; ++i) {
+                                  DiagnosticsFile before = diagFiles.get(i);
+                                  DiagnosticsFile after = diagFiles.get(i + 1);
+
+                                  StringBuilder timerOutput = new StringBuilder();
+                                  timerOutput
+                                      .append("Benchmark ")
+                                      .append(projectName)
+                                      .append(" ")
+                                      .append(trackerName)
+                                      .append(" ")
+                                      .append(before.name)
+                                      .append(" ")
+                                      .append(after.name)
+                                      .append("\n");
+
+                                  for (int run = 0; run < 6; ++run) {
+                                    try {
+
+                                      TimingInformation timeInformation = new TimingInformation();
+
+                                      DiagnosticsMatcher matcher =
+                                          DiagnosticsMatcher.fromFiles(
+                                              project, before, after, comparer, timeInformation);
+
+                                      final long ns = System.nanoTime();
+                                      matcher.match();
+                                      final long ns2 = System.nanoTime();
+
+                                      timerOutput
+                                          .append(ns2 - ns - timeInformation.preprocessingTime)
+                                          .append("\n");
+                                    } catch (IOException | GitAPIException e) {
+                                      e.printStackTrace();
+                                      timerOutput.append("FAILED\n");
+                                    }
+                                  }
+
+                                  System.out.println(timerOutput);
+                                }
                               });
 
                           return null;
                         })
             .collect(ImmutableList.toImmutableList());
 
-    runTasksInParallel(tasks);
+    tasks.forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
   }
 
   @Test

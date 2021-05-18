@@ -109,7 +109,7 @@ public class DiagPosMatcher implements BugComparer {
 
       return posEqOracle.isPresent()
           && PositionModifiers.modify(posEqOracle.get()).hasSamePosition(newDiagnostic);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       e.printStackTrace();
       return false;
     }

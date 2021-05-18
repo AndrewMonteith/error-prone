@@ -32,13 +32,9 @@ public class FormatterSrcFilePairLoader implements SrcFilePairLoader {
     this.srcFilePairLoader = srcFilePairLoader;
   }
 
-  public FormatterSrcFilePairLoader(Repository repo, RevCommit oldCommit, RevCommit newCommit) {
-    this.srcFilePairLoader = new GitSrcFilePairLoader(repo, oldCommit, newCommit);
-  }
-
-  public FormatterSrcFilePairLoader(Repository repo, String oldCommit, String newCommit)
+  public FormatterSrcFilePairLoader(Repository repo, String oldCommit, String newCommit, TimingInformation timingInformation)
       throws IOException {
-    this.srcFilePairLoader = new GitSrcFilePairLoader(repo, oldCommit, newCommit);
+    this.srcFilePairLoader = new GitSrcFilePairLoader(repo, oldCommit, newCommit, timingInformation);
   }
 
   @Override

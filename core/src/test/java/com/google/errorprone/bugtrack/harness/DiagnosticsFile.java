@@ -46,6 +46,13 @@ public class DiagnosticsFile {
     this.diagnostics = diagnostics;
   }
 
+  public DiagnosticsFile filter(Predicate<DatasetDiagnostic> includeDiagnostic) {
+    return new DiagnosticsFile(
+        name,
+        commitId,
+        ImmutableList.copyOf(Iterables.filter(diagnostics, includeDiagnostic::test)));
+  }
+
   public static int getSequenceNumberFromName(String fileName) {
     return Integer.parseInt(fileName.split(" ")[0]);
   }
@@ -66,7 +73,7 @@ public class DiagnosticsFile {
       CorpusProject project, String[] locationDetails, String message) {
     long line = Long.parseLong(locationDetails[1]);
     long col = Long.parseLong(locationDetails[2]);
-//    String fileName = giveFileNameCorrectRoot(project, locationDetails[0]);
+    //    String fileName = giveFileNameCorrectRoot(project, locationDetails[0]);
 
     if (locationDetails.length == 6) { // old version without position
       return new DatasetDiagnostic(

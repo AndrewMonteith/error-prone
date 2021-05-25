@@ -226,13 +226,14 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new DubboProject();
+    CorpusProject project = new CheckstyleProject();
 
     DiagnosticsFile oldFile =
-        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/old_diag");
+        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/checkstyle/" +
+                "105 f4e2b8f58dbb536ad9206828bcf70a81007b45d0.12-25-50");
 
     DiagnosticsFile newFile =
-        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/new_diag");
+        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/checkstyle/107 55522d255b3f58990f7df1cecd92d10ed5abc00b.12-25-50");
 
     BugComparerCtor tracker =
         BugComparers.and(
@@ -240,27 +241,17 @@ public class ProjectTests {
             conditional(
                 DiagnosticPredicates.canTrackIdenticalLocation(),
                 matchIdenticalLocation(),
-                trackPosition(newTokenizedLineTracker())));
+                trackPosition(newIJMStartAndEndTracker())));
+    // Warmup
+    DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker).match();
 
-    System.out.println(DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker).match());
+    TimingInformation timeInformation = new TimingInformation();
 
-    //    MatchResults resultsStartAndEnd =
-    //        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, startAndEnd).match();
-    //
-    //    MatchResults resultsPoint =
-    //        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, posTracker).match();
-    //
-    //    Map<DatasetDiagnostic, DatasetDiagnostic> posMatched =
-    // resultsPoint.getMatchedDiagnostics();
-    //
-    //    for (DatasetDiagnostic unmatchedStartAndEnd :
-    // resultsStartAndEnd.getUnmatchedOldDiagnostics()) {
-    //      if (posMatched.containsKey(unmatchedStartAndEnd)) {
-    //        System.out.println(unmatchedStartAndEnd);
-    //        System.out.println(" to ");
-    //        System.out.println(posMatched.get(unmatchedStartAndEnd));
-    //      }
-    //    }
+    DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker, timeInformation).match();
+
+    System.out.println(timeInformation.timeSpentComparingChangedFiles / 1_000_000_000);
+
+   //    }
   }
 
   @Test

@@ -32,7 +32,9 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
+
 import javax.lang.model.element.Modifier;
+import java.util.List;
 
 /** A {@link BugChecker}; see the associated {@link BugPattern} annotation for details. */
 @BugPattern(
@@ -99,7 +101,13 @@ public class MissingOverride extends BugChecker implements MethodTreeMatcher {
       // pretend the method does not override anything
       return null;
     }
-    for (Type s : types.closure(owner.type)) {
+
+    List<Type> sortedTypes = types.closure(owner.type)
+            .stream()
+            .sorted((type1, type2) -> type1.tsym.getQualifiedName().compareTo(type2.tsym.getQualifiedName()))
+
+
+    for (Type s : sortedTypes) {
       if (types.isSameType(s, owner.type)) {
         continue;
       }

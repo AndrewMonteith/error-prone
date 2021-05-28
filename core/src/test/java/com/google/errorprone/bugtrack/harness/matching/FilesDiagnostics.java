@@ -16,6 +16,7 @@
 
 package com.google.errorprone.bugtrack.harness.matching;
 
+import com.google.common.collect.ImmutableList;
 import com.google.errorprone.bugtrack.DatasetDiagnostic;
 
 import java.util.ArrayList;
@@ -34,7 +35,9 @@ public final class FilesDiagnostics {
     }
   }
 
+  private static final ImmutableList<DatasetDiagnostic> NO_DIAGNOSTICS = ImmutableList.of();
+
   public Collection<DatasetDiagnostic> getDiagnosticsInFile(String file) {
-    return filesAndDiagnostics.get(file);
+    return filesAndDiagnostics.getOrDefault(file, NO_DIAGNOSTICS);
   }
 }

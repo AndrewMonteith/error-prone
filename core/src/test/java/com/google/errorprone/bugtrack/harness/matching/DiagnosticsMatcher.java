@@ -28,6 +28,7 @@ import com.google.errorprone.bugtrack.utils.ThrowingPredicate;
 import com.sun.tools.javac.util.Pair;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -164,6 +165,9 @@ public final class DiagnosticsMatcher {
     Set<String> oldFiles =
         Sets.newHashSet(Iterables.transform(oldDiagnostics, DatasetDiagnostic::getFileName));
 
+    FilesDiagnostics oldFilesDiagnostics = new FilesDiagnostics(oldDiagnostics);
+    FilesDiagnostics newFilesDiagnostics = new FilesDiagnostics(newDiagnostics);
+
     oldFiles.forEach(
         (ThrowingConsumer<String>)
             oldFile -> {
@@ -179,31 +183,58 @@ public final class DiagnosticsMatcher {
               final long ns = System.nanoTime();
 
               Collection<DatasetDiagnostic> newFileDiags =
-                  getDiagnosticsInFile(newDiagnostics, newFile);
+                  newFilesDiagnostics.getDiagnosticsInFile(newFile);
+              //                  getDiagnosticsInFile(newDiagnostics, newFile);
 
-              oldDiagnostics.stream()
-                  .filter(oldDiag -> oldDiag.getFileName().equals(oldFile))
-                  .forEach(
-                      oldDiag -> {
-                        Collection<DatasetDiagnostic> matching =
-                            newFileDiags.stream()
-                                .filter(
-                                    (ThrowingPredicate<DatasetDiagnostic>)
-                                        newDiag -> comparer.areSame(oldDiag, newDiag))
-                                .collect(Collectors.toList());
+              next_diag:
+              for (DatasetDiagnostic oldDiag : oldFilesDiagnostics.getDiagnosticsInFile(oldFile)) {
+                DatasetDiagnostic match = null;
 
-                        if (matching.size() == 1) {
-                          matchedDiagnostics.put(oldDiag, Iterables.getOnlyElement(matching));
-                        } else if (matching.size() > 1) {
-                          if (printMultiMatches) {
-                            System.out.println("A diagnostic matched with multiple diagnostics");
-                            System.out.println("Old diagnostic:");
-                            System.out.println(oldDiag);
-                            System.out.println("Candidate new:");
-                            matching.forEach(System.out::println);
-                          }
-                        }
-                      });
+                for (DatasetDiagnostic newDiag : newFileDiags) {
+                  if (!comparer.areSame(oldDiag, newDiag)) {
+                    continue;
+                  }
+
+                  if (match != null) {
+                    continue next_diag;
+                  }
+
+                  match = newDiag;
+                }
+
+                if (match == null) {
+                  continue;
+                }
+
+                matchedDiagnostics.put(oldDiag, match);
+              }
+
+              //                oldDiagnostics.stream()
+              //                  .filter(oldDiag -> oldDiag.getFileName().equals(oldFile))
+              //                  .forEach(
+              //                      oldDiag -> {
+              //                        Collection<DatasetDiagnostic> matching =
+              //                            newFileDiags.stream()
+              //                                .filter(
+              //                                    (ThrowingPredicate<DatasetDiagnostic>)
+              //                                        newDiag -> comparer.areSame(oldDiag,
+              // newDiag))
+              //                                .collect(Collectors.toList());
+              //
+              //                        if (matching.size() == 1) {
+              //                          matchedDiagnostics.put(oldDiag,
+              // Iterables.getOnlyElement(matching));
+              //                        } else if (matching.size() > 1) {
+              //                          if (printMultiMatches) {
+              //                            System.out.println("A diagnostic matched with multiple
+              // diagnostics");
+              //                            System.out.println("Old diagnostic:");
+              //                            System.out.println(oldDiag);
+              //                            System.out.println("Candidate new:");
+              //                            matching.forEach(System.out::println);
+              //                          }
+              //                        }
+              //                      });
 
               final long matchingTime = System.nanoTime() - ns;
               final long diagsInFile =

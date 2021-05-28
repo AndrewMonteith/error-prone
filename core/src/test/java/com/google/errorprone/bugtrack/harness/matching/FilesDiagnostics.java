@@ -16,5 +16,25 @@
 
 package com.google.errorprone.bugtrack.harness.matching;
 
-public class FilesDiagnostics {
+import com.google.errorprone.bugtrack.DatasetDiagnostic;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+public final class FilesDiagnostics {
+  private final Map<String, Collection<DatasetDiagnostic>> filesAndDiagnostics;
+
+  public FilesDiagnostics(Collection<DatasetDiagnostic> diagnostics) {
+    this.filesAndDiagnostics = new HashMap<>();
+
+    for (DatasetDiagnostic diag : diagnostics) {
+      filesAndDiagnostics.computeIfAbsent(diag.getFileName(), file -> new ArrayList<>()).add(diag);
+    }
+  }
+
+  public Collection<DatasetDiagnostic> getDiagnosticsInFile(String file) {
+    return filesAndDiagnostics.get(file);
+  }
 }

@@ -34,6 +34,7 @@ import com.google.errorprone.bugtrack.harness.scanning.DiagnosticsScan;
 import com.google.errorprone.bugtrack.harness.utils.CommitDAGPathFinders;
 import com.google.errorprone.bugtrack.motion.SrcFile;
 import com.google.errorprone.bugtrack.motion.trackers.BetterJdtVisitor;
+import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackerConstructor;
 import com.google.errorprone.bugtrack.motion.trackers.DiagnosticPredicates;
 import com.google.errorprone.bugtrack.projects.*;
 import com.google.errorprone.bugtrack.utils.GitUtils;
@@ -226,14 +227,19 @@ public class ProjectTests {
 
   @Test
   public void compareSinglePair() throws IOException, GitAPIException {
-    CorpusProject project = new CheckstyleProject();
+    CorpusProject project = new HazelcastProject();
 
     DiagnosticsFile oldFile =
-        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/checkstyle/" +
-                "105 f4e2b8f58dbb536ad9206828bcf70a81007b45d0.12-25-50");
+        DiagnosticsFile.load(
+            project,
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/hazelcast/0 6a5bc11894e312366e82d4c808df31c2d441d0fc.125-250-500");
 
     DiagnosticsFile newFile =
-        DiagnosticsFile.load(project, "/home/monty/IdeaProjects/java-corpus/diagnostics/checkstyle/107 55522d255b3f58990f7df1cecd92d10ed5abc00b.12-25-50");
+        DiagnosticsFile.load(
+            project,
+            "/home/monty/IdeaProjects/java-corpus/diagnostics/hazelcast/3 b7c48097df47b713f8192ce9fe25711f6b55dff3.125-250-500");
+
+    BugComparerCtor returnFalse = srcPairInfo -> (oldDiag, newDiag) -> false;
 
     BugComparerCtor tracker =
         BugComparers.and(
@@ -242,16 +248,20 @@ public class ProjectTests {
                 DiagnosticPredicates.canTrackIdenticalLocation(),
                 matchIdenticalLocation(),
                 trackPosition(newIJMStartAndEndTracker())));
-    // Warmup
-    DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker).match();
+    //                trackPosition(any(newIJMPosTracker(), newIJMStartAndEndTracker()))));
+    //     Warmup
+    //    DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker).match();
 
     TimingInformation timeInformation = new TimingInformation();
 
-    DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker, timeInformation).match();
+    MatchResults results =
+        DiagnosticsMatcher.fromFiles(project, oldFile, newFile, tracker, timeInformation).match();
 
-    System.out.println(timeInformation.timeSpentComparingChangedFiles / 1_000_000_000);
+    System.out.println((double) timeInformation.timeSpentComparingChangedFiles / 1_000_000_000);
 
-   //    }
+    System.out.println(results);
+
+    //    }
   }
 
   @Test

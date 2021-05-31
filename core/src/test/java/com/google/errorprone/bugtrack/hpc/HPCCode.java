@@ -16,8 +16,11 @@
 
 package com.google.errorprone.bugtrack.hpc;
 
+import com.github.difflib.algorithm.DiffException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.errorprone.bugtrack.*;
 import com.google.errorprone.bugtrack.harness.DiagnosticsFile;
 import com.google.errorprone.bugtrack.harness.JavaLinesChangedFilter;
@@ -35,6 +38,7 @@ import com.google.errorprone.bugtrack.utils.GitUtils;
 import com.google.errorprone.bugtrack.utils.ProjectFiles;
 import com.google.errorprone.bugtrack.utils.ThrowingBiConsumer;
 import com.google.errorprone.bugtrack.utils.ThrowingConsumer;
+import com.google.googlejavaformat.java.FormatterException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -59,22 +63,45 @@ import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionT
 import static com.google.errorprone.bugtrack.motion.trackers.DiagnosticPositionTrackers.*;
 
 public final class HPCCode {
-  private static final Map<String, CorpusProject> projects;
+  private static final ImmutableMap<String, CorpusProject> projects;
+  private static final ImmutableMap<String, Integer> projectGrains;
 
   static {
     Map<String, CorpusProject> projs = new HashMap<>();
+    Map<String, Integer> grains = new HashMap<>();
+
     projs.put("guice", new GuiceProject());
+    grains.put("guice", 50);
+
     projs.put("jsoup", new JSoupProject());
+    grains.put("jsoup", 50);
+
     projs.put("metrics", new MetricsProject());
+    grains.put("metrics", 50);
+
     projs.put("checkstyle", new CheckstyleProject());
+    grains.put("checkstyle", 50);
+
     projs.put("junit4", new JUnitProject());
+    grains.put("junit4", 100);
+
     projs.put("dubbo", new DubboProject());
+    grains.put("dubbo", 50);
+
     projs.put("hazelcast", new HazelcastProject());
+    grains.put("hazelcast", 500);
+
     projs.put("mcMMO", new McMMOProject());
+    grains.put("mcMMO", 200);
+
     projs.put("cobertura", new CoberturaProject());
+    grains.put("cobertura", 25);
+
     projs.put("jruby", new JRubyProject());
+    grains.put("jruby", 50);
 
     projects = ImmutableMap.copyOf(projs);
+    projectGrains = ImmutableMap.copyOf(grains);
   }
 
   public static void main(String[] args) throws GitAPIException, IOException, InterruptedException {
@@ -287,23 +314,25 @@ public final class HPCCode {
             "ijm_joint",
             any(newIJMPosTracker(), newIJMStartAndEndTracker()));
 
-    Iterator<Integer> grainSizes =
-        ImmutableList.of(50, 50, 25, 50, 50, 500, 50, 200, 50, 100).iterator();
+    ImmutableSet<String> BAD_MESSAGES =
+        ImmutableSet.of("FunctionalInterfaceClash", "UngroupedOverloads", "MissingOverride");
 
     List<Callable<Void>> allTasks = new ArrayList<>();
 
     projects.forEach(
         (ThrowingBiConsumer<String, CorpusProject>)
             (projectName, project) -> {
-              final int maxGrain = grainSizes.next();
+              final int maxGrain = projectGrains.get(project);
 
               ImmutableList<DiagnosticsFile> diagFiles =
                   GrainDiagFile.loadSortedFiles(
-                          project,
-                          ProjectFiles.get("java-corpus/diagnostics/").resolve(projectName))
+                          project, ProjectFiles.get("diagnostics/").resolve(projectName + "_full"))
                       .stream()
                       .filter(grainFile -> grainFile.hasGrain(maxGrain))
                       .map(GrainDiagFile::getDiagFile)
+                      .map(
+                          diagFile ->
+                              diagFile.filter(diag -> !BAD_MESSAGES.contains(diag.getType())))
                       .collect(ImmutableList.toImmutableList());
 
               positionTrackers.forEach(
@@ -389,6 +418,105 @@ public final class HPCCode {
 
     System.out.println("Tasks " + allTasks.size());
     //    tasks.forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
+
+    Collections.shuffle(allTasks);
+
+    runTasksInParallel(allTasks);
+  }
+
+  @Test
+  public void simulateChangedLinesFilter() throws Exception {
+    List<Callable<Void>> allTasks = new ArrayList<>();
+
+    projects.forEach(
+        (ThrowingBiConsumer<String, CorpusProject>)
+            (projectName, project) -> {
+              final int maxGrain = projectGrains.get(projectName);
+
+              ImmutableList<DiagnosticsFile> diagFiles =
+                  GrainDiagFile.loadSortedFiles(
+                          project, ProjectFiles.get("diagnostics/").resolve(projectName + "_full"))
+                      .stream()
+                      .filter(grainFile -> grainFile.hasGrain(maxGrain))
+                      .map(GrainDiagFile::getDiagFile)
+                      .collect(ImmutableList.toImmutableList());
+
+              BugComparerCtor comparer =
+                  and(
+                      matchProblem(),
+                      conditional(
+                          DiagnosticPredicates.canTrackIdenticalLocation(),
+                          matchIdenticalLocation(),
+                          conditional(
+                              DiagnosticPredicates.betterWithLineTracking(),
+                              trackPosition(newTokenizedLineTracker()),
+                              trackPosition(any(newIJMPosTracker(), newIJMStartAndEndTracker())))));
+
+              IntStream.range(0, diagFiles.size() - 1)
+                  .forEach(
+                      i ->
+                          allTasks.add(
+                              () -> {
+                                DiagnosticsFile before = diagFiles.get(i);
+                                DiagnosticsFile after = diagFiles.get(i + 1);
+
+                                // Get the matchings for our results
+                                MatchResults results =
+                                    DiagnosticsMatcher.fromFiles(project, before, after, comparer)
+                                        .match();
+
+                                ChangedLineFilter.Results clf =
+                                    ChangedLineFilter.filter(project, before, after);
+
+                                StringBuilder result = new StringBuilder();
+
+                                Sets.difference(
+                                        results.getUnmatchedOldDiagnostics(),
+                                        clf.visibleOldDiagnostics)
+                                    .forEach(
+                                        unmatchedOldHiddenByFilter ->
+                                            result
+                                                .append("Removed but hidden by filter\n")
+                                                .append(unmatchedOldHiddenByFilter));
+
+                                Sets.difference(
+                                        results.getUnmatchedNewDiagnostics(),
+                                        clf.visibleNewDiagnostics)
+                                    .forEach(
+                                        unmatchedNewHiddenByFilter ->
+                                            result
+                                                .append("Added but hidden by filter\n")
+                                                .append(unmatchedNewHiddenByFilter));
+
+                                Sets.difference(
+                                        clf.visibleOldDiagnostics,
+                                        results.getUnmatchedOldDiagnostics())
+                                    .forEach(
+                                        shownByFilter ->
+                                            result
+                                                .append("Old matched shown by filter\n")
+                                                .append(shownByFilter));
+
+                                Sets.difference(
+                                        clf.visibleNewDiagnostics,
+                                        results.getUnmatchedNewDiagnostics())
+                                    .forEach(
+                                        shownByFilter ->
+                                            result
+                                                .append("New matched shown by filter\n")
+                                                .append(shownByFilter));
+
+                                if (result.length() > 0) {
+                                  System.out.printf(
+                                      "Project %s %s -> %s\n%s",
+                                      projectName, before.commitId, after.commitId, result);
+                                }
+
+                                return null;
+                              }));
+            });
+    //    allTasks.forEach((ThrowingConsumer<Callable<Void>>) Callable::call);
+
     runTasksInParallel(allTasks);
   }
 

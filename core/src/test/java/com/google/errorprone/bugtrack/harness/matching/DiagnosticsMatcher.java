@@ -184,7 +184,6 @@ public final class DiagnosticsMatcher {
 
               Collection<DatasetDiagnostic> newFileDiags =
                   newFilesDiagnostics.getDiagnosticsInFile(newFile);
-              //                  getDiagnosticsInFile(newDiagnostics, newFile);
 
               next_diag:
               for (DatasetDiagnostic oldDiag : oldFilesDiagnostics.getDiagnosticsInFile(oldFile)) {

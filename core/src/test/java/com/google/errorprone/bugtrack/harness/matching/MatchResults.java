@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,11 +57,11 @@ public final class MatchResults {
     return matchedDiagnostics;
   }
 
-  public Collection<DatasetDiagnostic> getUnmatchedOldDiagnostics() {
+  public Set<DatasetDiagnostic> getUnmatchedOldDiagnostics() {
     return unmatchedOld;
   }
 
-  public Collection<DatasetDiagnostic> getUnmatchedNewDiagnostics() {
+  public Set<DatasetDiagnostic> getUnmatchedNewDiagnostics() {
     return unmatchedNew;
   }
 
